@@ -60,6 +60,10 @@ export default function HomeScreen() {
           </Link.Menu>
         </Link>
 
+        <Link href="/auth-test">
+          <ThemedText type="subtitle">Open Auth Test</ThemedText>
+        </Link>
+
         <ThemedText>
           {`Tap the Explore tab to learn more about what's included in this starter app.`}
         </ThemedText>
