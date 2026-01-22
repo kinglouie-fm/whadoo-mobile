@@ -42,3 +42,9 @@ app-example
 # generated native folders
 /ios
 /android
+
+GoogleService-Info.plist
+*.p8
+*.mobileprovision
+ios/Pods/
+ios/Podfile.lock
