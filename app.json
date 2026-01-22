@@ -21,7 +21,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.kinglouiefm.whadoo",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "web": {
       "output": "static",
