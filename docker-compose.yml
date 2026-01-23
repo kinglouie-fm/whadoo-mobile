@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: whadoo_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: whadoo
+      POSTGRES_PASSWORD: whadoo_password
+      POSTGRES_DB: whadoo_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - whadoo_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whadoo -d whadoo_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  whadoo_pgdata:
