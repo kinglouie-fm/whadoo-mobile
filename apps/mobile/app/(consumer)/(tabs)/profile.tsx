@@ -1,5 +1,6 @@
 import { apiPatch, apiPost } from "@/src/lib/api";
 import { useAuth } from "@/src/providers/auth-context";
+import { getAuth, sendEmailVerification } from "@react-native-firebase/auth";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, Button, Text, TextInput, View } from "react-native";
@@ -25,6 +26,21 @@ export default function ProfileScreen() {
             await refreshMe(); // role becomes business
             // RouteGuard will also redirect, but this makes it immediate:
             router.replace("/(business)/(tabs)");
+        } catch (e: any) {
+            Alert.alert("Failed", e?.message ?? String(e));
+        }
+    };
+
+    const resendVerification = async () => {
+        const u = getAuth().currentUser;
+        if (!u) return;
+        try {
+            if (u.emailVerified) {
+                Alert.alert("Already verified", "Your email is already verified.");
+                return;
+            }
+            await sendEmailVerification(u);
+            Alert.alert("Sent", "Verification email sent.");
         } catch (e: any) {
             Alert.alert("Failed", e?.message ?? String(e));
         }
@@ -94,6 +110,7 @@ export default function ProfileScreen() {
             <Button title="Create business (MVP)" onPress={createBusinessAndSwitch} />
             <Button title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
             <Button title="Refresh" onPress={refreshMe} />
+            <Button title="Resend verification email" onPress={resendVerification} />
             <Button title="Sign out" onPress={signOut} />
         </View>
     );

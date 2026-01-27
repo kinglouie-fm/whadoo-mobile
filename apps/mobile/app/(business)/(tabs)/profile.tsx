@@ -17,7 +17,7 @@ type Business = {
 };
 
 export default function BusinessProfileScreen() {
-    const { refreshMe } = useAuth();
+    const { refreshMe, signOut } = useAuth();
 
     const [business, setBusiness] = useState<Business | null>(null);
     const [loading, setLoading] = useState(true);
@@ -46,6 +46,15 @@ export default function BusinessProfileScreen() {
                 setContactPhone(data.business.contactPhone ?? "");
                 setAddress(data.business.address ?? "");
                 setDescription(data.business.description ?? "");
+            } else {
+                // reset form if no business
+                setName("");
+                setCity("");
+                setCategory("");
+                setContactEmail("");
+                setContactPhone("");
+                setAddress("");
+                setDescription("");
             }
         } catch (e: any) {
             Alert.alert("Load failed", e?.message ?? String(e));
@@ -78,7 +87,7 @@ export default function BusinessProfileScreen() {
 
             setBusiness(data.business);
 
-            // important: role may have been promoted to business in backend
+            // role might be promoted in backend, keep appUser in sync
             await refreshMe();
 
             Alert.alert("Created", "Business created.");
@@ -91,6 +100,11 @@ export default function BusinessProfileScreen() {
 
     const save = async () => {
         if (!business) return;
+
+        if (!name.trim()) {
+            Alert.alert("Missing", "Business name is required.");
+            return;
+        }
 
         setBusy(true);
         try {
@@ -173,7 +187,13 @@ export default function BusinessProfileScreen() {
                 onChangeText={setDescription}
                 placeholder="Description"
                 multiline
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12, minHeight: 90 }}
+                style={{
+                    borderWidth: 1,
+                    borderColor: "#999",
+                    borderRadius: 10,
+                    padding: 12,
+                    minHeight: 90,
+                }}
             />
 
             {isNew ? (
@@ -182,7 +202,9 @@ export default function BusinessProfileScreen() {
                 <Button title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
             )}
 
-            <Button title="Reload" onPress={load} />
+            <Button title="Refresh business" onPress={load} />
+            <Button title="Refresh user (/me)" onPress={refreshMe} />
+            <Button title="Sign out" onPress={signOut} />
         </View>
     );
 }

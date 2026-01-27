@@ -1,5 +1,12 @@
-import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword } from "@react-native-firebase/auth";
+import {
+    getAuth,
+    GoogleAuthProvider,
+    sendPasswordResetEmail,
+    signInWithCredential,
+    signInWithEmailAndPassword,
+} from "@react-native-firebase/auth";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { Link } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Button, Text, TextInput, View } from "react-native";
 
@@ -12,6 +19,7 @@ export default function LoginScreen() {
         setBusy(true);
         try {
             await signInWithEmailAndPassword(getAuth(), email.trim(), password);
+            // RouteGuard handles redirect
         } catch (e: any) {
             Alert.alert("Sign in failed", e?.message ?? String(e));
         } finally {
@@ -19,12 +27,19 @@ export default function LoginScreen() {
         }
     };
 
-    const signUp = async () => {
+    const resetPassword = async () => {
+        const e = email.trim();
+        if (!e) {
+            Alert.alert("Missing email", "Enter your email first, then tap 'Forgot password'.");
+            return;
+        }
+
         setBusy(true);
         try {
-            await createUserWithEmailAndPassword(getAuth(), email.trim(), password);
+            await sendPasswordResetEmail(getAuth(), e);
+            Alert.alert("Email sent", "If an account exists for this email, a reset link was sent.");
         } catch (e: any) {
-            Alert.alert("Sign up failed", e?.message ?? String(e));
+            Alert.alert("Reset failed", e?.message ?? String(e));
         } finally {
             setBusy(false);
         }
@@ -33,18 +48,15 @@ export default function LoginScreen() {
     const signInGoogle = async () => {
         setBusy(true);
         try {
-            // (works on iOS; harmless on iOS even though name says PlayServices)
             await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
             const res = await GoogleSignin.signIn();
             const idToken = (res as any)?.idToken ?? (res as any)?.data?.idToken ?? null;
-
-            if (!idToken) {
-                throw new Error("Google Sign-In did not return an idToken.");
-            }
+            if (!idToken) throw new Error("Google Sign-In did not return an idToken.");
 
             const credential = GoogleAuthProvider.credential(idToken);
             await signInWithCredential(getAuth(), credential);
+            // RouteGuard handles redirect
         } catch (e: any) {
             Alert.alert("Google sign-in failed", e?.message ?? String(e));
         } finally {
@@ -75,8 +87,15 @@ export default function LoginScreen() {
             />
 
             <Button title={busy ? "Please wait..." : "Sign in"} onPress={signIn} disabled={busy} />
-            <Button title={busy ? "Please wait..." : "Create account"} onPress={signUp} disabled={busy} />
             <Button title={busy ? "Please wait..." : "Sign in with Google"} onPress={signInGoogle} disabled={busy} />
+
+            <Button title="Forgot password" onPress={resetPassword} disabled={busy} />
+
+            <Link href="/(auth)/register" asChild>
+                <Text style={{ marginTop: 8, textAlign: "center", textDecorationLine: "underline" }}>
+                    Create an account
+                </Text>
+            </Link>
         </View>
     );
 }
