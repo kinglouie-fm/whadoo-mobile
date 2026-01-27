@@ -1,0 +1,14 @@
+{
+    "name": "whadoo",
+    "private": true,
+    "packageManager": "pnpm@10.28.1",
+    "scripts": {
+        "mobile": "pnpm --filter mobile start",
+        "mobile:dev": "pnpm --filter mobile exec expo start --dev-client",
+        "ios": "pnpm --filter mobile ios",
+        "android": "pnpm --filter mobile android",
+        "api": "pnpm --filter api start:dev",
+        "db": "docker compose -f apps/infra/docker-compose.yml up -d",
+        "db:down": "docker compose -f apps/infra/docker-compose.yml down"
+    }
+}

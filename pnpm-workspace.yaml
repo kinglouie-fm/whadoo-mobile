@@ -1,13 +1,13 @@
 packages:
-  - .
-  - backend/*
+  - "apps/*"
+  - "packages/*"
 
 ignoredBuiltDependencies:
-  - '@firebase/util'
+  - "@firebase/util"
 
 onlyBuiltDependencies:
-  - '@nestjs/core'
-  - '@prisma/engines'
+  - "@nestjs/core"
+  - "@prisma/engines"
   - prisma
   - protobufjs
   - unrs-resolver
