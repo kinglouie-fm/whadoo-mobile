@@ -4,6 +4,7 @@ import { AuthModule } from "./auth/auth.module";
 import { DevModule } from "./dev/dev.module";
 import { FirebaseModule } from "./firebase/firebase.module";
 import { HealthModule } from "./health/health.module";
+import { MeModule } from "./me/me.module";
 import { PrismaModule } from "./prisma/prisma.module";
 
 @Module({
@@ -14,6 +15,7 @@ import { PrismaModule } from "./prisma/prisma.module";
     AuthModule,
     HealthModule,
     DevModule,
+    MeModule,
   ],
 })
 export class AppModule {}

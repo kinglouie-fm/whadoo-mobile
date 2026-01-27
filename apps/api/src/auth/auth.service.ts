@@ -27,6 +27,7 @@ export class AuthService {
         email: true,
         firstName: true,
         lastName: true,
+        city: true,
         phoneNumber: true,
         photoUrl: true,
       },

@@ -11,6 +11,7 @@ type AppUser = {
     email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
+    city?: string | null;
     phoneNumber?: string | null;
     photoUrl?: string | null;
 };
@@ -20,7 +21,7 @@ type AuthContextValue = {
     loadingAuth: boolean;
 
     appUser: AppUser | null;
-    role: Role; // derived from appUser
+    role: Role;
     loadingRole: boolean;
 
     refreshMe: () => Promise<void>;

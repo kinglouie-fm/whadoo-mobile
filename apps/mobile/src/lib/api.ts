@@ -1,18 +1,21 @@
-import { getAuth } from "@react-native-firebase/auth";
+import { getAuth, getIdToken } from "@react-native-firebase/auth";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL; 
 
-export async function apiGet<T>(path: string): Promise<T> {
+async function getToken(): Promise<string> {
   const user = getAuth().currentUser;
   if (!user) throw new Error("Not signed in");
 
-  const token = await user.getIdToken();
+  // forceRefresh=false is fine for MVP
+  return getIdToken(user, false);
+}
+
+export async function apiGet<T>(path: string): Promise<T> {
+  const token = await getToken();
 
   const res = await fetch(`${API_URL}${path}`, {
-    method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
     },
   });
 
@@ -23,3 +26,24 @@ export async function apiGet<T>(path: string): Promise<T> {
 
   return res.json() as Promise<T>;
 }
+
+export async function apiPatch<T>(path: string, body: any): Promise<T> {
+  const token = await getToken();
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API ${res.status}: ${text}`);
+  }
+
+  return res.json() as Promise<T>;
+}
+
