@@ -1,5 +1,6 @@
-import { apiPatch } from "@/src/lib/api";
+import { apiPatch, apiPost } from "@/src/lib/api";
 import { useAuth } from "@/src/providers/auth-context";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, Button, Text, TextInput, View } from "react-native";
 
@@ -11,6 +12,23 @@ export default function ProfileScreen() {
     const [phoneNumber, setPhoneNumber] = useState("");
     const [city, setCity] = useState("");
     const [busy, setBusy] = useState(false);
+
+    const router = useRouter();
+
+    const createBusinessAndSwitch = async () => {
+        try {
+            // minimal create: name required — replace this with a small form later
+            const data = await apiPost<{ business: any }>("/businesses", {
+                name: "My Business",
+            });
+
+            await refreshMe(); // role becomes business
+            // RouteGuard will also redirect, but this makes it immediate:
+            router.replace("/(business)/(tabs)");
+        } catch (e: any) {
+            Alert.alert("Failed", e?.message ?? String(e));
+        }
+    };
 
     useEffect(() => {
         setFirstName(appUser?.firstName ?? "");
@@ -73,6 +91,7 @@ export default function ProfileScreen() {
                 style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
             />
 
+            <Button title="Create business (MVP)" onPress={createBusinessAndSwitch} />
             <Button title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
             <Button title="Refresh" onPress={refreshMe} />
             <Button title="Sign out" onPress={signOut} />

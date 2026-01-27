@@ -47,3 +47,22 @@ export async function apiPatch<T>(path: string, body: any): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export async function apiPost<T>(path: string, body: any): Promise<T> {
+  const token = await getToken();
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API ${res.status}: ${text}`);
+  }
+
+  return res.json() as Promise<T>;
+}
