@@ -1,4 +1,4 @@
-import auth from '@react-native-firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Alert, Button, Text, View } from 'react-native';
 
@@ -7,8 +7,9 @@ export default function AuthTestScreen() {
         try {
             const email = `test${Date.now()}@example.com`;
             const password = 'Test123456!';
+            const auth = getAuth();
 
-            await auth().createUserWithEmailAndPassword(email, password);
+            await createUserWithEmailAndPassword(auth, email, password);
             console.log('Email user created');
             Alert.alert('Success', `Created user: ${email}`);
         } catch (e: any) {
@@ -38,10 +39,11 @@ export default function AuthTestScreen() {
                 );
             }
 
-            const credential = auth.GoogleAuthProvider.credential(idToken);
-            await auth().signInWithCredential(credential);
+            const auth = getAuth();
+            const credential = GoogleAuthProvider.credential(idToken);
+            await signInWithCredential(auth, credential);
 
-            const user = auth().currentUser;
+            const user = getAuth().currentUser;
             console.log('Google sign-in success:', user?.uid, user?.email);
             Alert.alert('Success', `Google signed in: ${user?.email ?? user?.uid}`);
         } catch (e: any) {
