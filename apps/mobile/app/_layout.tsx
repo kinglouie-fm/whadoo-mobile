@@ -1,8 +1,9 @@
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/src/providers/auth-context';
@@ -16,32 +17,32 @@ function RouteGuard() {
     if (loadingAuth || loadingRole) return;
 
     const group = segments[0]; // "(auth)" | "(consumer)" | "(business)" | undefined
-    const inAuth = group === '(auth)';
-    const inConsumer = group === '(consumer)';
-    const inBusiness = group === '(business)';
+    const inAuth = group === "(auth)";
+    const inConsumer = group === "(consumer)";
+    const inBusiness = group === "(business)";
 
-    // Not logged in → force auth
     if (!firebaseUser) {
-      if (!inAuth) router.replace('/(auth)/login');
+      if (!inAuth) router.replace("/(auth)/login");
       return;
     }
 
-    // Logged in → never stay in auth group
     if (inAuth) {
-      router.replace(role === 'business' ? '/(business)/(tabs)' : '/(consumer)/(tabs)');
+      router.replace(role === "business" ? "/(business)/(tabs)" : "/(consumer)/(tabs)");
       return;
     }
 
-    // Logged in → enforce role area
-    if (role === 'business' && inConsumer) {
-      router.replace('/(business)/(tabs)');
-      return;
-    }
-    if (role === 'user' && inBusiness) {
-      router.replace('/(consumer)/(tabs)');
-      return;
-    }
+    if (role === "business" && inConsumer) router.replace("/(business)/(tabs)");
+    if (role === "user" && inBusiness) router.replace("/(consumer)/(tabs)");
   }, [firebaseUser, loadingAuth, loadingRole, role, segments, router]);
+
+  // AFTER hooks: it's safe to conditionally render UI
+  if (loadingAuth || loadingRole) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return null;
 }
@@ -49,10 +50,11 @@ function RouteGuard() {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
-  // Avoid GoogleSignin.configure running on web
   useEffect(() => {
     if (Platform.OS === 'web') return;
-    // If you still want GoogleSignin.configure here, keep it behind Platform check
+    GoogleSignin.configure({
+      iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    });
   }, []);
 
   return (

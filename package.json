@@ -8,7 +8,9 @@
         "ios": "pnpm --filter mobile ios",
         "android": "pnpm --filter mobile android",
         "api": "pnpm --filter api start:dev",
-        "db": "docker compose -f apps/infra/docker-compose.yml up -d",
-        "db:down": "docker compose -f apps/infra/docker-compose.yml down"
+        "db": "docker start whadoo_postgres || docker compose -f apps/infra/docker-compose.yml up -d",
+        "db:stop": "docker stop whadoo_postgres",
+        "db:down": "docker compose -f apps/infra/docker-compose.yml down",
+        "db:logs": "docker logs -f whadoo_postgres"
     }
 }
