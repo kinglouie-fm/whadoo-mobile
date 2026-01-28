@@ -1,117 +1,92 @@
-import { apiPatch, apiPost } from "@/src/lib/api";
 import { useAuth } from "@/src/providers/auth-context";
-import { getAuth, sendEmailVerification } from "@react-native-firebase/auth";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Alert, Button, Text, TextInput, View } from "react-native";
+import React from "react";
+import { Alert, Pressable, Text, View } from "react-native";
 
-export default function ProfileScreen() {
-    const { appUser, firebaseUser, role, refreshMe, signOut, loadingRole } = useAuth();
-
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const [city, setCity] = useState("");
-    const [busy, setBusy] = useState(false);
-
-    const router = useRouter();
-
-    const createBusinessAndSwitch = async () => {
-        try {
-            // minimal create: name required — replace this with a small form later
-            const data = await apiPost<{ business: any }>("/businesses", {
-                name: "My Business",
-            });
-
-            await refreshMe(); // role becomes business
-            // RouteGuard will also redirect, but this makes it immediate:
-            router.replace("/(business)/(tabs)");
-        } catch (e: any) {
-            Alert.alert("Failed", e?.message ?? String(e));
-        }
-    };
-
-    const resendVerification = async () => {
-        const u = getAuth().currentUser;
-        if (!u) return;
-        try {
-            if (u.emailVerified) {
-                Alert.alert("Already verified", "Your email is already verified.");
-                return;
-            }
-            await sendEmailVerification(u);
-            Alert.alert("Sent", "Verification email sent.");
-        } catch (e: any) {
-            Alert.alert("Failed", e?.message ?? String(e));
-        }
-    };
-
-    useEffect(() => {
-        setFirstName(appUser?.firstName ?? "");
-        setLastName(appUser?.lastName ?? "");
-        setPhoneNumber(appUser?.phoneNumber ?? "");
-        setCity(appUser?.city ?? "");
-    }, [appUser?.firstName, appUser?.lastName, appUser?.phoneNumber, appUser?.city]);
-
-    const save = async () => {
-        setBusy(true);
-        try {
-            const payload = {
-                firstName: firstName.trim() || undefined,
-                lastName: lastName.trim() || undefined,
-                phoneNumber: phoneNumber.trim() || undefined,
-                city: city.trim() || undefined,
-            };
-
-            await apiPatch<{ user: any }>("/me", payload);
-            await refreshMe();
-            Alert.alert("Saved", "Profile updated.");
-        } catch (e: any) {
-            Alert.alert("Save failed", e?.message ?? String(e));
-        } finally {
-            setBusy(false);
-        }
-    };
+function Avatar({ name }: { name: string }) {
+    const initials =
+        name
+            .split(" ")
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((p) => p[0]?.toUpperCase())
+            .join("") || "U";
 
     return (
-        <View style={{ flex: 1, padding: 24, gap: 12 }}>
-            <Text style={{ fontSize: 18, fontWeight: "700" }}>Profile</Text>
+        <View
+            style={{
+                width: 54,
+                height: 54,
+                borderRadius: 27,
+                backgroundColor: "#222",
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                borderColor: "#333",
+            }}
+        >
+            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18 }}>{initials}</Text>
+        </View>
+    );
+}
 
-            <Text>Role: {loadingRole ? "Loading..." : role}</Text>
-            <Text>UID: {firebaseUser?.uid ?? "-"}</Text>
-            <Text>Email: {appUser?.email ?? firebaseUser?.email ?? "-"}</Text>
+function MenuRow({ title, subtitle, onPress }: { title: string; subtitle?: string; onPress: () => void }) {
+    return (
+        <Pressable onPress={onPress} style={{ paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#333" }}>
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{title}</Text>
+            {subtitle ? <Text style={{ color: "#777", marginTop: 4 }}>{subtitle}</Text> : null}
+        </Pressable>
+    );
+}
 
-            <TextInput
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="First name"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
-            />
-            <TextInput
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Last name"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
-            />
-            <TextInput
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                placeholder="Phone number"
-                keyboardType="phone-pad"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
-            />
-            <TextInput
-                value={city}
-                onChangeText={setCity}
-                placeholder="City"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
-            />
+export default function ConsumerProfileHome() {
+    const { appUser, signOut } = useAuth();
+    const router = useRouter();
 
-            <Button title="Create business (MVP)" onPress={createBusinessAndSwitch} />
-            <Button title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
-            <Button title="Refresh" onPress={refreshMe} />
-            <Button title="Resend verification email" onPress={resendVerification} />
-            <Button title="Sign out" onPress={signOut} />
+    const name =
+        [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") ||
+        appUser?.email ||
+        "User";
+
+    return (
+        <View style={{ flex: 1, padding: 20, backgroundColor: "#111" }}>
+            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "800", marginBottom: 16 }}>Profile</Text>
+
+            {/* Header */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 18 }}>
+                <Avatar name={name} />
+
+                <View style={{ flex: 1 }}>
+                    <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>{name}</Text>
+                    <Text style={{ color: "#aaa", marginTop: 2 }}>{appUser?.email ?? ""}</Text>
+                </View>
+
+                <Pressable onPress={() => router.push("/settings/profile")} style={{ padding: 10 }}>
+                    <Text style={{ color: "#9eff00", fontWeight: "700" }}>Edit</Text>
+                </Pressable>
+            </View>
+
+            {/* Quick actions */}
+            <View style={{ marginTop: 8 }}>
+                <MenuRow title="My Bookings" subtitle="View upcoming and past bookings" onPress={() => router.push("/bookings")} />
+                <MenuRow title="Saved Activities" subtitle="Your saved activities" onPress={() => router.push("/saved")} />
+                <MenuRow title="Settings" subtitle="Account, privacy, security" onPress={() => router.push("/settings")} />
+            </View>
+
+            {/* Logout */}
+            <Pressable
+                onPress={async () => {
+                    try {
+                        await signOut();
+                    } catch (e: any) {
+                        Alert.alert("Logout failed", e?.message ?? String(e));
+                    }
+                }}
+                style={{ marginTop: 28 }}
+            >
+                <Text style={{ color: "#ff4d4d", fontSize: 16, fontWeight: "800" }}>Log out</Text>
+                <Text style={{ color: "#777", marginTop: 2 }}>Log out of this account</Text>
+            </Pressable>
         </View>
     );
 }

@@ -4,16 +4,20 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 
 type Role = "user" | "business";
 
-type AppUser = {
+export type AppUser = {
     id: string;
     firebaseUid: string;
     role: Role;
     email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
-    city?: string | null;
     phoneNumber?: string | null;
+    city?: string | null;
     photoUrl?: string | null;
+};
+
+type AppStats = {
+    totalBookings: number;
 };
 
 type AuthContextValue = {
@@ -21,6 +25,7 @@ type AuthContextValue = {
     loadingAuth: boolean;
 
     appUser: AppUser | null;
+    stats: AppStats | null;
     role: Role;
     loadingRole: boolean;
 
@@ -35,28 +40,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loadingAuth, setLoadingAuth] = useState(true);
 
     const [appUser, setAppUser] = useState<AppUser | null>(null);
+    const [stats, setStats] = useState<AppStats | null>(null);
     const [loadingRole, setLoadingRole] = useState(true);
 
-    // Track Firebase auth (modular API)
     useEffect(() => {
         const auth = getAuth();
-
         const unsub = onAuthStateChanged(auth, async (user) => {
             setFirebaseUser(user);
             setLoadingAuth(false);
 
-            // When logged out: clear app user and role loading
             if (!user) {
                 setAppUser(null);
+                setStats(null);
                 setLoadingRole(false);
                 return;
             }
 
-            // When logged in: fetch /me
             setLoadingRole(true);
             try {
-                const data = await apiGet<{ user: AppUser }>("/me");
+                const data = await apiGet<{ user: AppUser; stats: AppStats }>("/me");
                 setAppUser(data.user);
+                setStats(data.stats);
             } finally {
                 setLoadingRole(false);
             }
@@ -71,30 +75,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setLoadingRole(true);
         try {
-            const data = await apiGet<{ user: AppUser }>("/me");
+            const data = await apiGet<{ user: AppUser; stats: AppStats }>("/me");
             setAppUser(data.user);
+            setStats(data.stats);
         } finally {
             setLoadingRole(false);
         }
     };
 
     const signOut = async () => {
-        await fbSignOut(getAuth());
+        const auth = getAuth();
+        await fbSignOut(auth);
     };
 
-    const role: Role = appUser?.role ?? "user"; // safe fallback while loading
+    const role: Role = appUser?.role ?? "user";
 
     const value = useMemo<AuthContextValue>(
         () => ({
             firebaseUser,
             loadingAuth,
             appUser,
+            stats,
             role,
             loadingRole,
             refreshMe,
             signOut,
         }),
-        [firebaseUser, loadingAuth, appUser, role, loadingRole]
+        [firebaseUser, loadingAuth, appUser, stats, role, loadingRole]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

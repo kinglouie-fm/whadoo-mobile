@@ -1,42 +1,19 @@
 import { getAuth, getIdToken } from "@react-native-firebase/auth";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL; 
+const API_URL = process.env.EXPO_PUBLIC_API_URL!;
 
-async function getToken(): Promise<string> {
-  const user = getAuth().currentUser;
-  if (!user) throw new Error("Not signed in");
-
-  // forceRefresh=false is fine for MVP
-  return getIdToken(user, false);
-}
-
-export async function apiGet<T>(path: string): Promise<T> {
-  const token = await getToken();
+async function apiRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  const token = user ? await getIdToken(user) : null;
 
   const res = await fetch(`${API_URL}${path}`, {
+    method,
     headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API ${res.status}: ${text}`);
-  }
-
-  return res.json() as Promise<T>;
-}
-
-export async function apiPatch<T>(path: string, body: any): Promise<T> {
-  const token = await getToken();
-
-  const res = await fetch(`${API_URL}${path}`, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify(body),
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
 
   if (!res.ok) {
@@ -44,25 +21,11 @@ export async function apiPatch<T>(path: string, body: any): Promise<T> {
     throw new Error(`API ${res.status}: ${text}`);
   }
 
-  return res.json() as Promise<T>;
+  // DELETE may return empty; backend returns JSON ok:true anyway
+  return (await res.json()) as T;
 }
 
-export async function apiPost<T>(path: string, body: any): Promise<T> {
-  const token = await getToken();
-
-  const res = await fetch(`${API_URL}${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API ${res.status}: ${text}`);
-  }
-
-  return res.json() as Promise<T>;
-}
+export const apiGet = <T,>(path: string) => apiRequest<T>("GET", path);
+export const apiPost = <T,>(path: string, body: unknown) => apiRequest<T>("POST", path, body);
+export const apiPatch = <T,>(path: string, body: unknown) => apiRequest<T>("PATCH", path, body);
+export const apiDelete = <T,>(path: string) => apiRequest<T>("DELETE", path);

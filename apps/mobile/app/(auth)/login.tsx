@@ -1,12 +1,14 @@
+import { theme } from "@/src/theme/theme";
 import {
+    createUserWithEmailAndPassword,
     getAuth,
     GoogleAuthProvider,
+    sendEmailVerification,
     sendPasswordResetEmail,
     signInWithCredential,
     signInWithEmailAndPassword,
 } from "@react-native-firebase/auth";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { Link } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Button, Text, TextInput, View } from "react-native";
 
@@ -19,7 +21,6 @@ export default function LoginScreen() {
         setBusy(true);
         try {
             await signInWithEmailAndPassword(getAuth(), email.trim(), password);
-            // RouteGuard handles redirect
         } catch (e: any) {
             Alert.alert("Sign in failed", e?.message ?? String(e));
         } finally {
@@ -27,19 +28,37 @@ export default function LoginScreen() {
         }
     };
 
-    const resetPassword = async () => {
+    const signUp = async () => {
+        setBusy(true);
+        try {
+            await createUserWithEmailAndPassword(getAuth(), email.trim(), password);
+
+            const user = getAuth().currentUser;
+            if (user && !user.emailVerified) {
+                await sendEmailVerification(user);
+                Alert.alert("Account created", "Verification email sent. Please check your inbox.");
+            } else {
+                Alert.alert("Account created", "You can now sign in.");
+            }
+        } catch (e: any) {
+            Alert.alert("Sign up failed", e?.message ?? String(e));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const forgotPassword = async () => {
         const e = email.trim();
         if (!e) {
-            Alert.alert("Missing email", "Enter your email first, then tap 'Forgot password'.");
+            Alert.alert("Enter email", "Please type your email address first.");
             return;
         }
-
         setBusy(true);
         try {
             await sendPasswordResetEmail(getAuth(), e);
-            Alert.alert("Email sent", "If an account exists for this email, a reset link was sent.");
-        } catch (e: any) {
-            Alert.alert("Reset failed", e?.message ?? String(e));
+            Alert.alert("Sent", "Password reset email sent. Check your inbox.");
+        } catch (err: any) {
+            Alert.alert("Failed", err?.message ?? String(err));
         } finally {
             setBusy(false);
         }
@@ -52,11 +71,11 @@ export default function LoginScreen() {
 
             const res = await GoogleSignin.signIn();
             const idToken = (res as any)?.idToken ?? (res as any)?.data?.idToken ?? null;
+
             if (!idToken) throw new Error("Google Sign-In did not return an idToken.");
 
             const credential = GoogleAuthProvider.credential(idToken);
             await signInWithCredential(getAuth(), credential);
-            // RouteGuard handles redirect
         } catch (e: any) {
             Alert.alert("Google sign-in failed", e?.message ?? String(e));
         } finally {
@@ -65,9 +84,9 @@ export default function LoginScreen() {
     };
 
     return (
-        <View style={{ flex: 1, padding: 24, justifyContent: "center", gap: 12 }}>
-            <Text style={{ fontSize: 22, fontWeight: "700" }}>Whadoo</Text>
-            <Text style={{ opacity: 0.7 }}>Sign in to continue</Text>
+        <View style={{ flex: 1, padding: 24, justifyContent: "center", gap: 12, backgroundColor: theme.colors.bg }}>
+            <Text style={{ fontSize: 22, fontWeight: "700", color: theme.colors.text }}>Whadoo</Text>
+            <Text style={{ opacity: 0.7, color: theme.colors.muted }}>Sign in to continue</Text>
 
             <TextInput
                 value={email}
@@ -75,7 +94,8 @@ export default function LoginScreen() {
                 placeholder="Email"
                 autoCapitalize="none"
                 keyboardType="email-address"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
+                style={{ borderWidth: 1, borderColor: "#444", borderRadius: 10, padding: 12, color: theme.colors.text }}
+                placeholderTextColor="#666"
             />
 
             <TextInput
@@ -83,19 +103,14 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
                 placeholder="Password"
                 secureTextEntry
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
+                style={{ borderWidth: 1, borderColor: "#444", borderRadius: 10, padding: 12, color: theme.colors.text }}
+                placeholderTextColor="#666"
             />
 
             <Button title={busy ? "Please wait..." : "Sign in"} onPress={signIn} disabled={busy} />
+            <Button title={busy ? "Please wait..." : "Create account"} onPress={signUp} disabled={busy} />
             <Button title={busy ? "Please wait..." : "Sign in with Google"} onPress={signInGoogle} disabled={busy} />
-
-            <Button title="Forgot password" onPress={resetPassword} disabled={busy} />
-
-            <Link href="/(auth)/register" asChild>
-                <Text style={{ marginTop: 8, textAlign: "center", textDecorationLine: "underline" }}>
-                    Create an account
-                </Text>
-            </Link>
+            <Button title="Forgot password" onPress={forgotPassword} disabled={busy} />
         </View>
     );
 }
