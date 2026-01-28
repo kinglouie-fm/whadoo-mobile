@@ -29,7 +29,7 @@ export function ConsumerTabBar({ state, descriptors, navigation }: BottomTabBarP
                 paddingHorizontal: 18,
                 paddingTop: 10,
                 paddingBottom: insets.bottom + 10,
-                backgroundColor: "transparent",
+                backgroundColor: theme.colors.bg,
             }}
         >
             <View

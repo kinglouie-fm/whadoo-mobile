@@ -19,19 +19,14 @@ export class FirebaseAuthGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<AuthedRequest>();
     const header = req.headers.authorization;
 
-    console.log("AUTH header present?", !!header);
-    console.log("AUTH header prefix:", header?.slice(0, 12));
-
     if (!header?.startsWith("Bearer ")) {
       throw new UnauthorizedException("Missing Bearer token");
     }
 
     const token = header.slice("Bearer ".length).trim();
-    console.log("Token length:", token.length);
 
     try {
       const decoded = await this.firebaseAdmin.auth().verifyIdToken(token);
-      console.log("verifyIdToken OK uid=", decoded.uid, "aud=", decoded.aud);
 
       req.firebase = {
         uid: decoded.uid,

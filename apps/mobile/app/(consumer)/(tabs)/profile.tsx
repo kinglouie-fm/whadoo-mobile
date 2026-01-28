@@ -171,10 +171,6 @@ export default function ConsumerProfileHome() {
                             Total bookings: {stats?.totalBookings ?? 0}
                         </Text>
                     </View>
-
-                    <Pressable onPress={() => router.push("/settings/profile")} style={{ padding: 10 }}>
-                        <Text style={{ color: theme.colors.accent, fontWeight: "700" }}>Edit</Text>
-                    </Pressable>
                 </View>
 
                 {/* Rows (no subscription card) */}

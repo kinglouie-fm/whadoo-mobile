@@ -1,4 +1,5 @@
 import { ConsumerTabBar } from "@/src/components/ConsumerTabBar";
+import { theme } from "@/src/theme/theme";
 import { Tabs } from "expo-router";
 import React from "react";
 
@@ -9,6 +10,8 @@ export default function ConsumerTabsLayout() {
       screenOptions={{
         tabBarShowLabel: false,
         headerShown: false,
+
+        sceneStyle: { backgroundColor: theme.colors.bg },
       }}
     >
       <Tabs.Screen name="index" />
