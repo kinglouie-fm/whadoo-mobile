@@ -1,9 +1,13 @@
 import { useAuth } from "@/src/providers/auth-context";
+import { theme } from "@/src/theme/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import React, { useMemo } from "react";
+import { Alert, Image, Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-function Avatar({ name }: { name: string }) {
+function Avatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) {
     const initials =
         name
             .split(" ")
@@ -15,78 +19,200 @@ function Avatar({ name }: { name: string }) {
     return (
         <View
             style={{
-                width: 54,
-                height: 54,
-                borderRadius: 27,
-                backgroundColor: "#222",
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: "#2b2b2b",
                 alignItems: "center",
                 justifyContent: "center",
-                borderWidth: 1,
-                borderColor: "#333",
+                overflow: "hidden",
             }}
         >
-            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18 }}>{initials}</Text>
+            {photoUrl ? (
+                <Image source={{ uri: photoUrl }} style={{ width: "100%", height: "100%" }} />
+            ) : (
+                <Text style={{ color: theme.colors.text, fontWeight: "800" }}>{initials}</Text>
+            )}
         </View>
     );
 }
 
-function MenuRow({ title, subtitle, onPress }: { title: string; subtitle?: string; onPress: () => void }) {
+function TopBar({ title }: { title: string }) {
+    const router = useRouter();
+    const navigation = useNavigation();
+
+    const canGoBack = navigation.canGoBack();
+
     return (
-        <Pressable onPress={onPress} style={{ paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#333" }}>
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{title}</Text>
-            {subtitle ? <Text style={{ color: "#777", marginTop: 4 }}>{subtitle}</Text> : null}
+        <View
+            style={{
+                paddingHorizontal: 16,
+                paddingTop: 6,
+                paddingBottom: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+            }}
+        >
+            <Pressable
+                onPress={() => router.back()}
+                disabled={!canGoBack}
+                style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 19,
+                    backgroundColor: "#1f1f1f",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: canGoBack ? 1 : 0,
+                }}
+            >
+                <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
+            </Pressable>
+
+            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: "700" }}>{title}</Text>
+
+            <Pressable
+                onPress={() => { }}
+                style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 19,
+                    backgroundColor: "#1f1f1f",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+            >
+                <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.text} />
+            </Pressable>
+        </View>
+    );
+}
+
+function Row({
+    icon,
+    title,
+    subtitle,
+    onPress,
+    danger,
+}: {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    subtitle?: string;
+    onPress: () => void;
+    danger?: boolean;
+}) {
+    return (
+        <Pressable
+            onPress={onPress}
+            style={{
+                paddingVertical: 14,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                borderTopWidth: 1,
+                borderTopColor: theme.colors.divider,
+            }}
+        >
+            <Ionicons
+                name={icon}
+                size={18}
+                color={danger ? theme.colors.danger : theme.colors.text}
+                style={{ width: 20 }}
+            />
+            <View style={{ flex: 1 }}>
+                <Text style={{ color: danger ? theme.colors.danger : theme.colors.text, fontSize: 16, fontWeight: "600" }}>
+                    {title}
+                </Text>
+                {subtitle ? <Text style={{ color: theme.colors.muted, marginTop: 3 }}>{subtitle}</Text> : null}
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.muted} />
         </Pressable>
     );
 }
 
 export default function ConsumerProfileHome() {
-    const { appUser, signOut } = useAuth();
+    const { appUser, stats, signOut } = useAuth();
     const router = useRouter();
 
-    const name =
-        [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") ||
-        appUser?.email ||
-        "User";
+    const name = useMemo(() => {
+        return (
+            [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") ||
+            appUser?.email ||
+            "User"
+        );
+    }, [appUser?.firstName, appUser?.lastName, appUser?.email]);
+
+    const email = appUser?.email ?? "";
 
     return (
-        <View style={{ flex: 1, padding: 20, backgroundColor: "#111" }}>
-            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "800", marginBottom: 16 }}>Profile</Text>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+            <TopBar title="Profile" />
 
-            {/* Header */}
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 18 }}>
-                <Avatar name={name} />
+            <View style={{ paddingHorizontal: 16 }}>
 
-                <View style={{ flex: 1 }}>
-                    <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>{name}</Text>
-                    <Text style={{ color: "#aaa", marginTop: 2 }}>{appUser?.email ?? ""}</Text>
+                <View
+                    style={{
+                        backgroundColor: theme.colors.card,
+                        borderRadius: 18,
+                        padding: 14,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 12,
+                        marginBottom: 14,
+                    }}
+                >
+                    <Avatar name={name} photoUrl={appUser?.photoUrl} />
+
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: "800" }}>{name}</Text>
+                        <Text style={{ color: theme.colors.muted, marginTop: 2 }}>{email}</Text>
+                        <Text style={{ color: theme.colors.muted, marginTop: 6 }}>
+                            Total bookings: {stats?.totalBookings ?? 0}
+                        </Text>
+                    </View>
+
+                    <Pressable onPress={() => router.push("/settings/profile")} style={{ padding: 10 }}>
+                        <Text style={{ color: theme.colors.accent, fontWeight: "700" }}>Edit</Text>
+                    </Pressable>
                 </View>
 
-                <Pressable onPress={() => router.push("/settings/profile")} style={{ padding: 10 }}>
-                    <Text style={{ color: "#9eff00", fontWeight: "700" }}>Edit</Text>
+                {/* Rows (no subscription card) */}
+                <View style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.divider }}>
+                    <Row
+                        icon="calendar-outline"
+                        title="My Bookings"
+                        subtitle="View upcoming and past bookings"
+                        onPress={() => router.push("/bookings")}
+                    />
+                    <Row
+                        icon="heart-outline"
+                        title="Saved Activities"
+                        subtitle="Your saved activities"
+                        onPress={() => router.push("/saved")}
+                    />
+                    <Row
+                        icon="settings-outline"
+                        title="Settings"
+                        subtitle="Account, privacy, security"
+                        onPress={() => router.push("/settings")}
+                    />
+                </View>
+
+                <Pressable
+                    onPress={async () => {
+                        try {
+                            await signOut();
+                        } catch (e: any) {
+                            Alert.alert("Logout failed", e?.message ?? String(e));
+                        }
+                    }}
+                    style={{ paddingVertical: 18 }}
+                >
+                    <Text style={{ color: theme.colors.danger, fontSize: 18, fontWeight: "800" }}>Log out</Text>
+                    <Text style={{ color: theme.colors.muted, marginTop: 4 }}>Log out of this account</Text>
                 </Pressable>
             </View>
-
-            {/* Quick actions */}
-            <View style={{ marginTop: 8 }}>
-                <MenuRow title="My Bookings" subtitle="View upcoming and past bookings" onPress={() => router.push("/bookings")} />
-                <MenuRow title="Saved Activities" subtitle="Your saved activities" onPress={() => router.push("/saved")} />
-                <MenuRow title="Settings" subtitle="Account, privacy, security" onPress={() => router.push("/settings")} />
-            </View>
-
-            {/* Logout */}
-            <Pressable
-                onPress={async () => {
-                    try {
-                        await signOut();
-                    } catch (e: any) {
-                        Alert.alert("Logout failed", e?.message ?? String(e));
-                    }
-                }}
-                style={{ marginTop: 28 }}
-            >
-                <Text style={{ color: "#ff4d4d", fontSize: 16, fontWeight: "800" }}>Log out</Text>
-                <Text style={{ color: "#777", marginTop: 2 }}>Log out of this account</Text>
-            </Pressable>
-        </View>
+        </SafeAreaView>
     );
 }
