@@ -1,9 +1,11 @@
+import { TopBar } from "@/src/components/TopBar";
 import { useAuth } from "@/src/providers/auth-context";
 import { theme } from "@/src/theme/theme";
 import { getAuth } from "@react-native-firebase/auth";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function Row({
     title,
@@ -45,42 +47,45 @@ export default function AccountScreen() {
     const isPasswordUser = providers.includes("password");
 
     return (
-        <View style={{ flex: 1, padding: 20, backgroundColor: theme.colors.bg }}>
-            <Row title="User ID" right={appUser?.id ?? "-"} />
-            <Row
-                title="E-mail Address"
-                right={fbUser?.email ?? appUser?.email ?? "-"}
-                onPress={() => router.push("/settings/account/email")}
-            />
-            <Row
-                title="Phone Number"
-                right={appUser?.phoneNumber ?? "Not set"}
-                onPress={() => router.push("/settings/account/phone")}
-            />
-            <Row
-                title="Password"
-                right={isPasswordUser ? "" : "Google account"}
-                onPress={() => router.push("/settings/account/password")}
-            />
-            <Row title="Other" onPress={() => router.push("/settings/account/other")} />
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+            <TopBar title="Account" />
+            <View style={{ flex: 1, padding: 20, backgroundColor: theme.colors.bg }}>
+                <Row title="User ID" right={appUser?.id ?? "-"} />
+                <Row
+                    title="E-mail Address"
+                    right={fbUser?.email ?? appUser?.email ?? "-"}
+                    onPress={() => router.push("/settings/account/email")}
+                />
+                <Row
+                    title="Phone Number"
+                    right={appUser?.phoneNumber ?? "Not set"}
+                    onPress={() => router.push("/settings/account/phone")}
+                />
+                <Row
+                    title="Password"
+                    right={isPasswordUser ? "" : "Google account"}
+                    onPress={() => router.push("/settings/account/password")}
+                />
+                <Row title="Other" onPress={() => router.push("/settings/account/other")} />
 
-            {!appUser?.phoneNumber ? (
-                <View
-                    style={{
-                        marginTop: 14,
-                        padding: 12,
-                        borderRadius: 12,
-                        backgroundColor: theme.colors.surface,
-                    }}
-                >
-                    <Text style={{ color: theme.colors.text, fontWeight: "600" }}>
-                        Phone number missing
-                    </Text>
-                    <Text style={{ color: theme.colors.muted, marginTop: 4 }}>
-                        Please add a phone number — it’s required to confirm bookings.
-                    </Text>
-                </View>
-            ) : null}
-        </View>
+                {!appUser?.phoneNumber ? (
+                    <View
+                        style={{
+                            marginTop: 14,
+                            padding: 12,
+                            borderRadius: 12,
+                            backgroundColor: theme.colors.surface,
+                        }}
+                    >
+                        <Text style={{ color: theme.colors.text, fontWeight: "600" }}>
+                            Phone number missing
+                        </Text>
+                        <Text style={{ color: theme.colors.muted, marginTop: 4 }}>
+                            Please add a phone number — it’s required to confirm bookings.
+                        </Text>
+                    </View>
+                ) : null}
+            </View>
+        </SafeAreaView>
     );
 }

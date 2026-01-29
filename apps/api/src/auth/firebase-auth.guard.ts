@@ -2,6 +2,14 @@ import { CanActivate, ExecutionContext, Inject, Injectable, UnauthorizedExceptio
 import { Request } from "express";
 import type admin from "firebase-admin";
 
+export type Role = "user" | "business";
+
+export type RequestAppUser = {
+  id: string;
+  firebaseUid: string;
+  role: Role;
+};
+
 export type AuthedRequest = Request & {
   firebase?: {
     uid: string;
@@ -9,6 +17,7 @@ export type AuthedRequest = Request & {
     name?: string;
     picture?: string;
   };
+  appUser?: RequestAppUser;
 };
 
 @Injectable()

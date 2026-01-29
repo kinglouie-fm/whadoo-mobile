@@ -1,10 +1,12 @@
 // app/(consumer)/settings/account/email.tsx
+import { TopBar } from "@/src/components/TopBar";
 import { useAuth } from "@/src/providers/auth-context";
 import { theme } from "@/src/theme/theme";
 import * as Auth from "@react-native-firebase/auth";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useMemo, useState } from "react";
 import { Alert, Button, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EmailScreen() {
     const { refreshMe } = useAuth();
@@ -118,59 +120,62 @@ export default function EmailScreen() {
     };
 
     return (
-        <View style={{ flex: 1, padding: 20, backgroundColor: theme.colors.bg, gap: 12 }}>
-            <Text style={{ color: theme.colors.text, fontSize: 16 }}>
-                Current email: <Text style={{ color: theme.colors.muted }}>{currentEmail || "-"}</Text>
-            </Text>
-
-            <Text style={{ color: theme.colors.muted }}>
-                Status: {emailVerified ? "Verified" : "Not verified"}
-            </Text>
-
-            {!emailVerified ? <Button title="Send verification email" onPress={sendVerify} /> : null}
-
-            <View style={{ height: 12 }} />
-
-            {!canEdit ? (
-                <Text style={{ color: theme.colors.muted }}>
-                    This email is managed by your Google account and can’t be changed here.
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+            <TopBar title="E-Mail" />
+            <View style={{ flex: 1, padding: 20, backgroundColor: theme.colors.bg, gap: 12 }}>
+                <Text style={{ color: theme.colors.text, fontSize: 16 }}>
+                    Current email: <Text style={{ color: theme.colors.muted }}>{currentEmail || "-"}</Text>
                 </Text>
-            ) : (
-                <>
-                    <TextInput
-                        value={newEmail}
-                        onChangeText={setNewEmail}
-                        placeholder="New email address"
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                        style={{
-                            borderWidth: 1,
-                            borderColor: "#444",
-                            borderRadius: 10,
-                            padding: 12,
-                            color: theme.colors.text,
-                        }}
-                        placeholderTextColor="#666"
-                    />
 
-                    <TextInput
-                        value={currentPassword}
-                        onChangeText={setCurrentPassword}
-                        placeholder="Current password (required)"
-                        secureTextEntry
-                        style={{
-                            borderWidth: 1,
-                            borderColor: "#444",
-                            borderRadius: 10,
-                            padding: 12,
-                            color: theme.colors.text,
-                        }}
-                        placeholderTextColor="#666"
-                    />
+                <Text style={{ color: theme.colors.muted }}>
+                    Status: {emailVerified ? "Verified" : "Not verified"}
+                </Text>
 
-                    <Button title={busy ? "Saving..." : "Save"} onPress={saveEmail} disabled={busy} />
-                </>
-            )}
-        </View>
+                {!emailVerified ? <Button title="Send verification email" onPress={sendVerify} /> : null}
+
+                <View style={{ height: 12 }} />
+
+                {!canEdit ? (
+                    <Text style={{ color: theme.colors.muted }}>
+                        This email is managed by your Google account and can’t be changed here.
+                    </Text>
+                ) : (
+                    <>
+                        <TextInput
+                            value={newEmail}
+                            onChangeText={setNewEmail}
+                            placeholder="New email address"
+                            autoCapitalize="none"
+                            keyboardType="email-address"
+                            style={{
+                                borderWidth: 1,
+                                borderColor: "#444",
+                                borderRadius: 10,
+                                padding: 12,
+                                color: theme.colors.text,
+                            }}
+                            placeholderTextColor="#666"
+                        />
+
+                        <TextInput
+                            value={currentPassword}
+                            onChangeText={setCurrentPassword}
+                            placeholder="Current password (required)"
+                            secureTextEntry
+                            style={{
+                                borderWidth: 1,
+                                borderColor: "#444",
+                                borderRadius: 10,
+                                padding: 12,
+                                color: theme.colors.text,
+                            }}
+                            placeholderTextColor="#666"
+                        />
+
+                        <Button title={busy ? "Saving..." : "Save"} onPress={saveEmail} disabled={busy} />
+                    </>
+                )}
+            </View>
+        </SafeAreaView>
     );
 }

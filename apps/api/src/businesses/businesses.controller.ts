@@ -1,11 +1,13 @@
 import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { AppUserGuard } from "../auth/app-user.guard";
 import { AuthService } from "../auth/auth.service";
 import { AuthedRequest, FirebaseAuthGuard } from "../auth/firebase-auth.guard";
+import { RolesGuard } from "../auth/roles.guard";
 import { BusinessesService } from "./businesses.service";
 import { CreateBusinessDto } from "./dto/create-business.dto";
 import { UpdateBusinessDto } from "./dto/update-business.dto";
 
-@UseGuards(FirebaseAuthGuard)
+@UseGuards(FirebaseAuthGuard, AppUserGuard, RolesGuard)
 @Controller("businesses")
 export class BusinessesController {
   constructor(

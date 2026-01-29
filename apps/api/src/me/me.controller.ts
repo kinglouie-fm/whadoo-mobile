@@ -1,9 +1,11 @@
 import { Body, Controller, Delete, Get, Patch, Req, UseGuards } from "@nestjs/common";
+import { AppUserGuard } from "../auth/app-user.guard";
 import { AuthedRequest, FirebaseAuthGuard } from "../auth/firebase-auth.guard";
+import { RolesGuard } from "../auth/roles.guard";
 import { UpdateMeDto } from "./dto/update-me.dto";
 import { MeService } from "./me.service";
 
-@UseGuards(FirebaseAuthGuard)
+@UseGuards(FirebaseAuthGuard, AppUserGuard, RolesGuard)
 @Controller()
 export class MeController {
   constructor(private readonly meService: MeService) {}
@@ -12,7 +14,7 @@ export class MeController {
   async me(@Req() req: AuthedRequest) {
     const fb = req.firebase!;
     const result = await this.meService.getOrCreateFromFirebase(fb.uid, fb.email, fb.picture);
-    return result; // { user, stats }
+    return result; 
   }
 
   @Patch("me")

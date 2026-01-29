@@ -1,8 +1,10 @@
+import { TopBar } from "@/src/components/TopBar";
 import { apiDelete } from "@/src/lib/api";
 import { useAuth } from "@/src/providers/auth-context";
 import { theme } from "@/src/theme/theme";
 import React, { useState } from "react";
-import { Alert, Button, Text, View } from "react-native";
+import { Alert, Button, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function OtherScreen() {
     const { signOut, role } = useAuth();
@@ -47,17 +49,19 @@ export default function OtherScreen() {
     };
 
     return (
-        <View style={{ flex: 1, padding: 20, backgroundColor: theme.colors.bg, gap: 12 }}>
-            <Text style={{ color: theme.colors.text, fontSize: 22, fontWeight: "700" }}>Other</Text>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+            <TopBar title="Other" />
+            <View style={{ flex: 1, padding: 20, backgroundColor: theme.colors.bg, gap: 12 }}>
 
-            <Button
-                title={busy ? "Deleting..." : "Delete account"}
-                onPress={onDeleteAccount}
-                disabled={busy}
-                color="#ff4d4d"
-            />
+                <Button
+                    title={busy ? "Deleting..." : "Delete account"}
+                    onPress={onDeleteAccount}
+                    disabled={busy}
+                    color="#ff4d4d"
+                />
 
-            <Button title="Sign out" onPress={signOut} disabled={busy} color="#ff4d4d" />
-        </View>
+                <Button title="Sign out" onPress={signOut} disabled={busy} color="#ff4d4d" />
+            </View>
+        </SafeAreaView>
     );
 }
