@@ -84,8 +84,7 @@ export default function EmailScreen() {
             const cred = Auth.EmailAuthProvider.credential(email, currentPassword);
             await Auth.reauthenticateWithCredential(u, cred);
 
-            // EEP-safe email change:
-            // Use verifyBeforeUpdateEmail if your RNFirebase version exposes it.
+            // EEP-safe email change
             const verifyBeforeUpdateEmailFn = (Auth as any).verifyBeforeUpdateEmail as
                 | undefined
                 | ((user: any, newEmail: string) => Promise<void>);
