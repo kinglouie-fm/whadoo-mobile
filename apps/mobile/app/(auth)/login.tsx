@@ -1,18 +1,72 @@
 import { theme } from "@/src/theme/theme";
-import {
-    createUserWithEmailAndPassword,
-    getAuth,
-    GoogleAuthProvider,
-    sendEmailVerification,
-    sendPasswordResetEmail,
-    signInWithCredential,
-    signInWithEmailAndPassword,
-} from "@react-native-firebase/auth";
+import { GoogleAuthProvider, getAuth, signInWithCredential, signInWithEmailAndPassword } from "@react-native-firebase/auth";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, Button, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, Text, TextInput, View } from "react-native";
+
+function InputLine(props: React.ComponentProps<typeof TextInput>) {
+    return (
+        <TextInput
+            {...props}
+            style={[
+                {
+                    height: 44,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#4a4a4a",
+                    color: theme.colors.text,
+                    fontFamily: theme.fonts.regular,
+                    fontSize: 16,
+                },
+                props.style,
+            ]}
+            placeholderTextColor="#7a7a7a"
+        />
+    );
+}
+
+function PrimaryButton({ title, onPress, disabled }: { title: string; onPress: () => void; disabled?: boolean }) {
+    return (
+        <Pressable
+            onPress={onPress}
+            disabled={disabled}
+            style={{
+                height: 54,
+                borderRadius: 999,
+                backgroundColor: theme.colors.accent,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: disabled ? 0.6 : 1,
+            }}
+        >
+            <Text style={{ fontFamily: theme.fonts.bold, color: theme.colors.buttonTextOnAccent, fontSize: 16 }}>{title}</Text>
+        </Pressable>
+    );
+}
+
+function OutlineButton({ title, onPress, disabled }: { title: string; onPress: () => void; disabled?: boolean }) {
+    return (
+        <Pressable
+            onPress={onPress}
+            disabled={disabled}
+            style={{
+                height: 54,
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: "#5a5a5a",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: disabled ? 0.6 : 1,
+            }}
+        >
+            <Text style={{ fontFamily: theme.fonts.medium, color: theme.colors.text, fontSize: 16 }}>{title}</Text>
+        </Pressable>
+    );
+}
 
 export default function LoginScreen() {
+    const router = useRouter();
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [busy, setBusy] = useState(false);
@@ -28,50 +82,12 @@ export default function LoginScreen() {
         }
     };
 
-    const signUp = async () => {
-        setBusy(true);
-        try {
-            await createUserWithEmailAndPassword(getAuth(), email.trim(), password);
-
-            const user = getAuth().currentUser;
-            if (user && !user.emailVerified) {
-                await sendEmailVerification(user);
-                Alert.alert("Account created", "Verification email sent. Please check your inbox.");
-            } else {
-                Alert.alert("Account created", "You can now sign in.");
-            }
-        } catch (e: any) {
-            Alert.alert("Sign up failed", e?.message ?? String(e));
-        } finally {
-            setBusy(false);
-        }
-    };
-
-    const forgotPassword = async () => {
-        const e = email.trim();
-        if (!e) {
-            Alert.alert("Enter email", "Please type your email address first.");
-            return;
-        }
-        setBusy(true);
-        try {
-            await sendPasswordResetEmail(getAuth(), e);
-            Alert.alert("Sent", "Password reset email sent. Check your inbox.");
-        } catch (err: any) {
-            Alert.alert("Failed", err?.message ?? String(err));
-        } finally {
-            setBusy(false);
-        }
-    };
-
     const signInGoogle = async () => {
         setBusy(true);
         try {
             await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-
             const res = await GoogleSignin.signIn();
             const idToken = (res as any)?.idToken ?? (res as any)?.data?.idToken ?? null;
-
             if (!idToken) throw new Error("Google Sign-In did not return an idToken.");
 
             const credential = GoogleAuthProvider.credential(idToken);
@@ -84,33 +100,50 @@ export default function LoginScreen() {
     };
 
     return (
-        <View style={{ flex: 1, padding: 24, justifyContent: "center", gap: 12, backgroundColor: theme.colors.bg }}>
-            <Text style={{ fontSize: 22, fontWeight: "700", color: theme.colors.text }}>Whadoo</Text>
-            <Text style={{ opacity: 0.7, color: theme.colors.muted }}>Sign in to continue</Text>
+        <View style={{ flex: 1, backgroundColor: theme.colors.bg, padding: 24, justifyContent: "center" }}>
+            <Text style={{ fontFamily: theme.fonts.bold, color: theme.colors.text, fontSize: 26, textAlign: "center" }}>
+                Welcome Back
+            </Text>
+            <Text style={{ fontFamily: theme.fonts.regular, color: theme.colors.muted, textAlign: "center", marginTop: 8, marginBottom: 26 }}>
+                Please enter your details.
+            </Text>
 
-            <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Email"
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={{ borderWidth: 1, borderColor: "#444", borderRadius: 10, padding: 12, color: theme.colors.text }}
-                placeholderTextColor="#666"
-            />
+            <Text style={{ fontFamily: theme.fonts.medium, color: theme.colors.text, marginBottom: 6 }}>Email</Text>
+            <InputLine value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
 
-            <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Password"
-                secureTextEntry
-                style={{ borderWidth: 1, borderColor: "#444", borderRadius: 10, padding: 12, color: theme.colors.text }}
-                placeholderTextColor="#666"
-            />
+            <View style={{ height: 16 }} />
 
-            <Button title={busy ? "Please wait..." : "Sign in"} onPress={signIn} disabled={busy} />
-            <Button title={busy ? "Please wait..." : "Create account"} onPress={signUp} disabled={busy} />
-            <Button title={busy ? "Please wait..." : "Sign in with Google"} onPress={signInGoogle} disabled={busy} />
-            <Button title="Forgot password" onPress={forgotPassword} disabled={busy} />
+            <Text style={{ fontFamily: theme.fonts.medium, color: theme.colors.text, marginBottom: 6 }}>Password</Text>
+            <InputLine value={password} onChangeText={setPassword} secureTextEntry />
+
+            <View style={{ height: 10 }} />
+
+            <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+                <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
+                    <Text style={{ fontFamily: theme.fonts.medium, color: theme.colors.muted }}>Forgot password?</Text>
+                </Pressable>
+            </View>
+
+            <View style={{ height: 18 }} />
+
+            <PrimaryButton title={busy ? "..." : "Login"} onPress={signIn} disabled={busy} />
+
+            <View style={{ height: 18, flexDirection: "row", alignItems: "center", gap: 10, margin: 20 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: "#3a3a3a" }} />
+                <Text style={{ color: theme.colors.muted, fontFamily: theme.fonts.regular }}>Or</Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: "#3a3a3a" }} />
+            </View>
+
+            <OutlineButton title={busy ? "..." : "Continue with Google"} onPress={signInGoogle} disabled={busy} />
+
+            <View style={{ marginTop: 18, alignItems: "center" }}>
+                <Text style={{ color: theme.colors.muted, fontFamily: theme.fonts.regular }}>
+                    Don’t have an account?{" "}
+                    <Link href="/(auth)/register" style={{ color: theme.colors.accent, fontFamily: theme.fonts.bold }}>
+                        Register
+                    </Link>
+                </Text>
+            </View>
         </View>
     );
 }

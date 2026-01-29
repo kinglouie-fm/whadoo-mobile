@@ -1,22 +1,25 @@
+import { isConsumerProfileComplete } from "@/src/lib/profile";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { Stack, useRouter, useSegments } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect } from "react";
+import { ActivityIndicator, Platform, View } from "react-native";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { AuthProvider, useAuth } from '@/src/providers/auth-context';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { AuthProvider, useAuth } from "@/src/providers/auth-context";
+
+import { Roboto_400Regular, Roboto_500Medium, Roboto_700Bold, useFonts } from "@expo-google-fonts/roboto";
 
 function RouteGuard() {
-  const { firebaseUser, loadingAuth, role, loadingRole } = useAuth();
+  const { firebaseUser, loadingAuth, role, loadingRole, appUser } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (loadingAuth || loadingRole) return;
 
-    const group = segments[0]; // "(auth)" | "(consumer)" | "(business)" | undefined
+    const group = segments[0];
     const inAuth = group === "(auth)";
     const inConsumer = group === "(consumer)";
     const inBusiness = group === "(business)";
@@ -31,11 +34,25 @@ function RouteGuard() {
       return;
     }
 
+    const inCompleteProfile =
+      group === "(consumer)" && segments[1] === "complete-profile";
+
+    if (role === "user") {
+      const complete = isConsumerProfileComplete(appUser);
+      if (!complete && !inCompleteProfile) {
+        router.replace("/(consumer)/complete-profile");
+        return;
+      }
+      if (complete && inCompleteProfile) {
+        router.replace("/(consumer)/(tabs)");
+        return;
+      }
+    }
+
     if (role === "business" && inConsumer) router.replace("/(business)/(tabs)");
     if (role === "user" && inBusiness) router.replace("/(consumer)/(tabs)");
-  }, [firebaseUser, loadingAuth, loadingRole, role, segments, router]);
+  }, [firebaseUser, loadingAuth, loadingRole, role, segments, router, appUser]);
 
-  // AFTER hooks: it's safe to conditionally render UI
   if (loadingAuth || loadingRole) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -50,24 +67,37 @@ function RouteGuard() {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
+  const [fontsLoaded] = useFonts({
+    Roboto_400Regular,
+    Roboto_500Medium,
+    Roboto_700Bold,
+  });
+
   useEffect(() => {
-    if (Platform.OS === 'web') return;
+    if (Platform.OS === "web") return;
     GoogleSignin.configure({
       iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
     });
   }, []);
 
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
   return (
     <AuthProvider>
       <RouteGuard />
-
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(consumer)" />
           <Stack.Screen name="(business)" />
         </Stack>
-        <StatusBar style="auto" />
+        <StatusBar style="light" />
       </ThemeProvider>
     </AuthProvider>
   );

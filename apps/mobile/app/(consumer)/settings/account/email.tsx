@@ -1,16 +1,7 @@
 // app/(consumer)/settings/account/email.tsx
-
 import { useAuth } from "@/src/providers/auth-context";
 import { theme } from "@/src/theme/theme";
-import {
-    EmailAuthProvider,
-    getAuth,
-    getIdToken,
-    reauthenticateWithCredential,
-    reload,
-    sendEmailVerification,
-    updateEmail,
-} from "@react-native-firebase/auth";
+import * as Auth from "@react-native-firebase/auth";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useMemo, useState } from "react";
 import { Alert, Button, Text, TextInput, View } from "react-native";
@@ -18,32 +9,30 @@ import { Alert, Button, Text, TextInput, View } from "react-native";
 export default function EmailScreen() {
     const { refreshMe } = useAuth();
 
-    const auth = getAuth();
+    const auth = Auth.getAuth();
     const user = auth.currentUser;
 
     const providers = user?.providerData?.map((p) => p.providerId) ?? [];
     const isPasswordUser = providers.includes("password");
     const canEdit = useMemo(() => isPasswordUser, [isPasswordUser]);
 
-    const currentEmail = user?.email ?? "";
-
     const [newEmail, setNewEmail] = useState("");
     const [currentPassword, setCurrentPassword] = useState("");
     const [busy, setBusy] = useState(false);
     const [emailVerified, setEmailVerified] = useState(!!user?.emailVerified);
 
-    // Refresh verified status whenever you open this screen
+    const currentEmail = user?.email ?? "";
+
     useFocusEffect(
         useCallback(() => {
             let cancelled = false;
 
             (async () => {
-                const u = getAuth().currentUser;
+                const u = Auth.getAuth().currentUser;
                 if (!u) return;
-
                 try {
-                    await reload(u); // ✅ modular reload(user)
-                    if (!cancelled) setEmailVerified(!!getAuth().currentUser?.emailVerified);
+                    await Auth.reload(u);
+                    if (!cancelled) setEmailVerified(!!Auth.getAuth().currentUser?.emailVerified);
                 } catch {
                     // ignore
                 }
@@ -56,18 +45,17 @@ export default function EmailScreen() {
     );
 
     const sendVerify = async () => {
-        const u = getAuth().currentUser;
+        const u = Auth.getAuth().currentUser;
         if (!u) return;
 
         try {
-            await reload(u);
-            if (getAuth().currentUser?.emailVerified) {
+            await Auth.reload(u);
+            if (Auth.getAuth().currentUser?.emailVerified) {
                 setEmailVerified(true);
                 Alert.alert("Already verified", "Your email is already verified.");
                 return;
             }
-
-            await sendEmailVerification(u);
+            await Auth.sendEmailVerification(u);
             Alert.alert("Sent", "Verification email sent. Please check your inbox.");
         } catch (e: any) {
             Alert.alert("Failed", e?.message ?? String(e));
@@ -75,7 +63,7 @@ export default function EmailScreen() {
     };
 
     const saveEmail = async () => {
-        const u = getAuth().currentUser;
+        const u = Auth.getAuth().currentUser;
         if (!u) return;
 
         if (!canEdit) {
@@ -83,41 +71,46 @@ export default function EmailScreen() {
             return;
         }
 
-        const email = u.email ?? "";
         const next = newEmail.trim();
+        const email = u.email ?? "";
 
-        if (!next || !next.includes("@")) {
-            Alert.alert("Invalid email", "Please enter a valid email address.");
-            return;
-        }
-        if (!currentPassword) {
-            Alert.alert("Required", "Please enter your current password.");
-            return;
-        }
-        if (!email) {
-            Alert.alert("Error", "No current email found for this account.");
-            return;
-        }
+        if (!next || !next.includes("@")) return Alert.alert("Invalid email", "Please enter a valid email address.");
+        if (!email) return Alert.alert("Error", "No current email found for this account.");
+        if (!currentPassword) return Alert.alert("Required", "Please enter your current password.");
 
         setBusy(true);
         try {
-            const cred = EmailAuthProvider.credential(email, currentPassword);
-            await reauthenticateWithCredential(u, cred);
+            // Re-auth required for sensitive operations
+            const cred = Auth.EmailAuthProvider.credential(email, currentPassword);
+            await Auth.reauthenticateWithCredential(u, cred);
 
-            await updateEmail(u, next);
+            // EEP-safe email change:
+            // Use verifyBeforeUpdateEmail if your RNFirebase version exposes it.
+            const verifyBeforeUpdateEmailFn = (Auth as any).verifyBeforeUpdateEmail as
+                | undefined
+                | ((user: any, newEmail: string) => Promise<void>);
 
-            // after email change, it’s typically unverified again
-            await sendEmailVerification(u);
+            if (typeof verifyBeforeUpdateEmailFn !== "function") {
+                Alert.alert(
+                    "Needs update",
+                    "Your Firebase project uses Email Enumeration Protection, so updateEmail is blocked. " +
+                    "Update @react-native-firebase/auth to a version that supports verifyBeforeUpdateEmail."
+                );
+                return;
+            }
 
-            await getIdToken(u, true); // refresh token so backend gets updated email (if you sync it)
+            await verifyBeforeUpdateEmailFn(u, next);
+
+            Alert.alert(
+                "Check your new email",
+                "We sent a confirmation link to your new email address. Open it to complete the change."
+            );
+
+            // Refresh local state (email will update after link is clicked + user reloaded)
+            await Auth.getIdToken(u, true);
             await refreshMe();
-
-            Alert.alert("Saved", "Email updated. Please verify the new email address.");
             setNewEmail("");
             setCurrentPassword("");
-
-            await reload(u);
-            setEmailVerified(!!getAuth().currentUser?.emailVerified);
         } catch (e: any) {
             Alert.alert("Failed", e?.message ?? String(e));
         } finally {
@@ -129,6 +122,10 @@ export default function EmailScreen() {
         <View style={{ flex: 1, padding: 20, backgroundColor: theme.colors.bg, gap: 12 }}>
             <Text style={{ color: theme.colors.text, fontSize: 16 }}>
                 Current email: <Text style={{ color: theme.colors.muted }}>{currentEmail || "-"}</Text>
+            </Text>
+
+            <Text style={{ color: theme.colors.muted }}>
+                Status: {emailVerified ? "Verified" : "Not verified"}
             </Text>
 
             {!emailVerified ? <Button title="Send verification email" onPress={sendVerify} /> : null}

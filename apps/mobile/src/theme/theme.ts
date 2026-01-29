@@ -1,27 +1,38 @@
 export const theme = {
   colors: {
-    bg: "#111",
-    surface: "#1a1a1a",
-    text: "#fff",
-    muted: "#9b9b9b",
-    card: "#161616",
-    divider: "#2a2a2a",
-    accent: "#b6ff2e",
-    danger: "#ff4d4d",
-    avatarFallback: "#ddd",
+    bg: "#1F1F1F",
+    surface: "#232323",
+    text: "#FFFFFF",
+    muted: "#9B9B9B",
+    card: "#1C1C1C",
+    divider: "#2A2A2A",
+    accent: "#CDFF49",
+    danger: "#FF4D4D",
+    avatarFallback: "#DDDDDD",
+
+    // buttons
+    buttonTextOnAccent: "#111111",
+
     // tab bar
-    tabBarBg: "#1a1a1a",
-    tabIconInactive: "#9a9a9a",
-    tabIconActive: "#111",
+    tabBarBg: "#1A1A1A",
+    tabIconInactive: "#9A9A9A",
+    tabIconActive: "#111111",
   },
   radius: {
     md: 12,
     lg: 16,
+    xl: 24,
   },
   spacing: {
     sm: 8,
     md: 12,
     lg: 20,
     xl: 24,
+    xxl: 32,
+  },
+  fonts: {
+    regular: "Roboto_400Regular",
+    medium: "Roboto_500Medium",
+    bold: "Roboto_700Bold",
   },
 } as const;
