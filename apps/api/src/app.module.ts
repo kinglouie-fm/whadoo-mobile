@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ActivitiesModule } from "./activities/activities.module";
 import { AuthModule } from "./auth/auth.module";
 import { AvailabilityTemplatesModule } from "./availability-templates/availability-templates.module";
 import { BusinessesModule } from "./businesses/businesses.module";
@@ -20,6 +21,7 @@ import { PrismaModule } from "./prisma/prisma.module";
     MeModule,
     BusinessesModule,
     AvailabilityTemplatesModule,
+    ActivitiesModule,
   ],
 })
 export class AppModule {}

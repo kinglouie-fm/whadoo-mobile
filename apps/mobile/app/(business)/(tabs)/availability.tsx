@@ -1,10 +1,10 @@
-import { useAuth } from "@/src/providers/auth-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
     AvailabilityTemplate,
     deactivateTemplate,
     fetchTemplates,
 } from "@/src/store/slices/availability-template-slice";
+import { useBusiness } from "@/src/lib/use-business";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -23,22 +23,11 @@ const DAY_NAMES = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export default function AvailabilityScreen() {
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { appUser } = useAuth();
+    const { business, loading: businessLoading } = useBusiness();
     const { templates, loading, error } = useAppSelector((state) => state.availabilityTemplates);
     const [refreshing, setRefreshing] = useState(false);
 
-    // Get business ID from appUser stats
-    const [businessId, setBusinessId] = useState<string | null>(null);
-
-    useEffect(() => {
-        // In a real app, you'd get this from the appUser/business context
-        // For now, we'll need to fetch it or pass it from navigation
-        // This is a placeholder - you'll need to implement business ID retrieval
-        if (appUser?.id) {
-            // TODO: Fetch business ID from /businesses/my endpoint
-            // For now, we can't load templates without businessId
-        }
-    }, [appUser]);
+    const businessId = business?.id;
 
     const loadTemplates = async () => {
         if (!businessId) return;
@@ -148,9 +137,10 @@ export default function AvailabilityScreen() {
         </TouchableOpacity>
     );
 
-    if (!businessId) {
+    if (businessLoading || !businessId) {
         return (
             <View style={styles.container}>
+                <ActivityIndicator size="large" color="#007AFF" />
                 <Text style={styles.emptyText}>Loading business information...</Text>
             </View>
         );
