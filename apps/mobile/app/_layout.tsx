@@ -8,6 +8,8 @@ import { ActivityIndicator, Platform, View } from "react-native";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider, useAuth } from "@/src/providers/auth-context";
+import { store } from "@/src/store";
+import { Provider as ReduxProvider } from "react-redux";
 
 import { Roboto_400Regular, Roboto_500Medium, Roboto_700Bold, useFonts } from "@expo-google-fonts/roboto";
 
@@ -89,16 +91,18 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <RouteGuard />
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(consumer)" />
-          <Stack.Screen name="(business)" />
-        </Stack>
-        <StatusBar style="light" />
-      </ThemeProvider>
-    </AuthProvider>
+    <ReduxProvider store={store}>
+      <AuthProvider>
+        <RouteGuard />
+        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(consumer)" />
+            <Stack.Screen name="(business)" />
+          </Stack>
+          <StatusBar style="light" />
+        </ThemeProvider>
+      </AuthProvider>
+    </ReduxProvider>
   );
 }

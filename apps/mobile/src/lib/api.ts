@@ -27,5 +27,6 @@ async function apiRequest<T>(method: string, path: string, body?: unknown): Prom
 
 export const apiGet = <T,>(path: string) => apiRequest<T>("GET", path);
 export const apiPost = <T,>(path: string, body: unknown) => apiRequest<T>("POST", path, body);
+export const apiPut = <T,>(path: string, body: unknown) => apiRequest<T>("PUT", path, body);
 export const apiPatch = <T,>(path: string, body: unknown) => apiRequest<T>("PATCH", path, body);
 export const apiDelete = <T,>(path: string) => apiRequest<T>("DELETE", path);

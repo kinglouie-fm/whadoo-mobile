@@ -22,6 +22,17 @@ enum BusinessStatus {
   inactive
 }
 
+enum AvailabilityTemplateStatus {
+  active
+  inactive
+}
+
+enum ActivityStatus {
+  draft
+  published
+  inactive
+}
+
 model User {
   id          String   @id @default(uuid()) @db.Uuid
   firebaseUid String   @unique
@@ -57,9 +68,100 @@ model Business {
   lng          Decimal?
   status       BusinessStatus @default(active)
 
+  availabilityTemplates AvailabilityTemplate[]
+  activities            Activity[]
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([ownerUserId])
   @@index([status])
+}
+
+model AvailabilityTemplate {
+  id                   String                       @id @default(uuid()) @db.Uuid
+  businessId           String                       @map("business_id") @db.Uuid
+  business             Business                     @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  
+  name                 String
+  daysOfWeek           Int[]                        @map("days_of_week") @db.SmallInt
+  startTime            DateTime                     @map("start_time") @db.Time
+  endTime              DateTime                     @map("end_time") @db.Time
+  slotDurationMinutes  Int                          @map("slot_duration_minutes")
+  capacity             Int
+  imageUrl             String?                      @map("image_url")
+  status               AvailabilityTemplateStatus   @default(active)
+
+  exceptions           AvailabilityException[]
+  activities           Activity[]
+
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("availability_templates")
+  @@index([businessId, updatedAt(sort: Desc)])
+  @@index([status])
+}
+
+model AvailabilityException {
+  id         String               @id @default(uuid()) @db.Uuid
+  templateId String               @map("template_id") @db.Uuid
+  template   AvailabilityTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  startDate  DateTime             @map("start_date") @db.Date
+  endDate    DateTime             @map("end_date") @db.Date
+  reason     String?
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("availability_exceptions")
+  @@index([templateId, startDate, endDate])
+}
+
+model Activity {
+  id                     String         @id @default(uuid()) @db.Uuid
+  businessId             String         @map("business_id") @db.Uuid
+  business               Business       @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  status                 ActivityStatus @default(draft)
+  typeId                 String         @map("type_id")
+  schemaVersion          Int            @default(1) @map("schema_version")
+  title                  String
+  description            String?
+  category               String?
+  address                String?
+  city                   String?
+  lat                    Decimal?       @db.Decimal(10, 8)
+  lng                    Decimal?       @db.Decimal(11, 8)
+  priceFrom              Decimal?       @map("price_from") @db.Decimal(10, 2)
+  config                 Json           @default("{}")
+  pricing                Json           @default("{}")
+
+  availabilityTemplateId String?                  @map("availability_template_id") @db.Uuid
+  availabilityTemplate   AvailabilityTemplate?    @relation(fields: [availabilityTemplateId], references: [id], onDelete: SetNull)
+
+  images                 ActivityImage[]
+
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@map("activities")
+  @@index([businessId, updatedAt(sort: Desc)])
+  @@index([status, city, updatedAt(sort: Desc)])
+  @@index([availabilityTemplateId])
+}
+
+model ActivityImage {
+  id          String   @id @default(uuid()) @db.Uuid
+  activityId  String   @map("activity_id") @db.Uuid
+  activity    Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  imageUrl    String   @map("image_url")
+  isThumbnail Boolean  @default(false) @map("is_thumbnail")
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("activity_images")
+  @@index([activityId])
 }
