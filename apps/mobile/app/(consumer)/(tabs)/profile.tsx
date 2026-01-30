@@ -106,9 +106,9 @@ function Row({
         <Pressable
             onPress={onPress}
             style={{
-                paddingVertical: 14,
+                paddingVertical: 16,
                 flexDirection: "row",
-                alignItems: "center",
+                alignItems: "flex-start",
                 gap: 12,
                 borderTopWidth: 1,
                 borderTopColor: theme.colors.divider,
@@ -116,17 +116,34 @@ function Row({
         >
             <Ionicons
                 name={icon}
-                size={18}
+                size={20}
                 color={danger ? theme.colors.danger : theme.colors.text}
-                style={{ width: 20 }}
+                style={{ width: 20, marginTop: 2 }}
             />
+
             <View style={{ flex: 1 }}>
-                <Text style={{ color: danger ? theme.colors.danger : theme.colors.text, fontSize: 16, fontWeight: "600" }}>
+                <Text
+                    style={{
+                        color: danger ? theme.colors.danger : theme.colors.text,
+                        fontSize: 18,
+                    }}
+                >
                     {title}
                 </Text>
-                {subtitle ? <Text style={{ color: theme.colors.muted, marginTop: 3 }}>{subtitle}</Text> : null}
+
+                {subtitle ? (
+                    <Text style={{ color: theme.colors.muted, marginTop: 4 }}>
+                        {subtitle}
+                    </Text>
+                ) : null}
             </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.muted} />
+
+            <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={theme.colors.muted}
+                style={{ marginTop: 2 }}
+            />
         </Pressable>
     );
 }
@@ -138,12 +155,9 @@ export default function ConsumerProfileHome() {
     const name = useMemo(() => {
         return (
             [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") ||
-            appUser?.email ||
             "User"
         );
-    }, [appUser?.firstName, appUser?.lastName, appUser?.email]);
-
-    const email = appUser?.email ?? "";
+    }, [appUser?.firstName, appUser?.lastName]);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
@@ -166,7 +180,6 @@ export default function ConsumerProfileHome() {
 
                     <View style={{ flex: 1 }}>
                         <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: "800" }}>{name}</Text>
-                        <Text style={{ color: theme.colors.muted, marginTop: 2 }}>{email}</Text>
                         <Text style={{ color: theme.colors.muted, marginTop: 6 }}>
                             Total bookings: {stats?.totalBookings ?? 0}
                         </Text>
@@ -188,7 +201,7 @@ export default function ConsumerProfileHome() {
                         onPress={() => router.push("/saved")}
                     />
                     <Row
-                        icon="settings-outline"
+                        icon="cog-outline"
                         title="Settings"
                         subtitle="Account, privacy, security"
                         onPress={() => router.push("/settings")}
@@ -203,11 +216,32 @@ export default function ConsumerProfileHome() {
                             Alert.alert("Logout failed", e?.message ?? String(e));
                         }
                     }}
-                    style={{ paddingVertical: 18 }}
+                    style={{
+                        paddingVertical: 32,
+                        flexDirection: "row",
+                        alignItems: "flex-start",
+                        gap: 12,
+                        borderTopWidth: 1,
+                        borderTopColor: theme.colors.divider,
+                    }}
                 >
-                    <Text style={{ color: theme.colors.danger, fontSize: 18, fontWeight: "800" }}>Log out</Text>
-                    <Text style={{ color: theme.colors.muted, marginTop: 4 }}>Log out of this account</Text>
+                    <Ionicons
+                        name="log-out-outline"
+                        size={20}
+                        color={theme.colors.danger}
+                        style={{ width: 20, marginTop: 2 }}
+                    />
+
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ color: theme.colors.danger, fontSize: 18 }}>
+                            Log Out
+                        </Text>
+                        <Text style={{ color: theme.colors.muted, marginTop: 4 }}>
+                            Log out the account
+                        </Text>
+                    </View>
                 </Pressable>
+
             </View>
         </SafeAreaView>
     );
