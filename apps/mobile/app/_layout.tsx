@@ -5,6 +5,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider, useAuth } from "@/src/providers/auth-context";
@@ -102,6 +103,7 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="light" />
         </ThemeProvider>
+        <Toast />
       </AuthProvider>
     </ReduxProvider>
   );

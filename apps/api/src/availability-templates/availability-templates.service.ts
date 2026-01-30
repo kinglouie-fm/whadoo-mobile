@@ -1,10 +1,10 @@
 import {
-    BadRequestException,
-    ConflictException,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException
 } from "@nestjs/common";
+import { ConflictErrorResponse, ErrorCodes } from "../common/error-responses";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateTemplateDto } from "./dto/create-template.dto";
 import { UpdateTemplateDto } from "./dto/update-template.dto";
@@ -232,17 +232,23 @@ export class AvailabilityTemplatesService {
       throw new ForbiddenException("You do not own this template");
     }
 
-    // Check for published activities
-    const publishedActivityCount = await this.prisma.activity.count({
+    // Check for published activities and return details
+    const linkedPublishedActivities = await this.prisma.activity.findMany({
       where: {
         availabilityTemplateId: templateId,
         status: "published",
       },
+      select: {
+        id: true,
+        title: true,
+      },
     });
 
-    if (publishedActivityCount > 0) {
-      throw new ConflictException(
-        "Cannot deactivate template linked to published activity. Unlink or deactivate activity first."
+    if (linkedPublishedActivities.length > 0) {
+      throw new ConflictErrorResponse(
+        ErrorCodes.CANNOT_DEACTIVATE_LINKED_PUBLISHED,
+        `Cannot deactivate template linked to ${linkedPublishedActivities.length} published activity(ies). Deactivate or unlink those activities first.`,
+        { linkedActivities: linkedPublishedActivities }
       );
     }
 

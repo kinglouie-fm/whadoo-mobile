@@ -19,6 +19,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 type FilterStatus = "all" | "draft" | "published" | "inactive";
 
@@ -54,19 +55,69 @@ export default function ActivitiesScreen() {
         setRefreshing(false);
     };
 
+    const handlePublishError = (error: any) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        const missingFields = error.missingFields;
+
+        switch (errorCode) {
+            case "TEMPLATE_REQUIRED":
+                Alert.alert(
+                    "Link Availability Template",
+                    "You must link an availability template before publishing.",
+                    [{ text: "OK" }]
+                );
+                break;
+
+            case "TEMPLATE_NOT_FOUND":
+                Alert.alert(
+                    "Template Not Found",
+                    "The linked availability template no longer exists. Please link a different template.",
+                    [{ text: "OK" }]
+                );
+                break;
+
+            case "TEMPLATE_INACTIVE":
+                Alert.alert(
+                    "Template Inactive",
+                    "The linked availability template is inactive. Activate it or link a different template.",
+                    [{ text: "OK" }]
+                );
+                break;
+
+            case "REQUIRED_FIELDS_MISSING":
+                const fields = missingFields?.join(", ") || "unknown";
+                Alert.alert("Missing Required Fields", `Please fill in: ${fields}`, [{ text: "OK" }]);
+                break;
+
+            default:
+                Alert.alert("Publish Failed", errorMessage || "An error occurred while publishing.", [
+                    { text: "OK" },
+                ]);
+        }
+    };
+
     const handlePublish = async (activityId: string) => {
         try {
             await dispatch(publishActivity(activityId)).unwrap();
-            Alert.alert("Success", "Activity published successfully");
+            Toast.show({
+                type: "success",
+                text1: "Success",
+                text2: "Activity published successfully",
+            });
         } catch (err: any) {
-            Alert.alert("Error", err.message || "Failed to publish activity");
+            handlePublishError(err);
         }
     };
 
     const handleUnpublish = async (activityId: string) => {
         try {
             await dispatch(unpublishActivity(activityId)).unwrap();
-            Alert.alert("Success", "Activity unpublished successfully");
+            Toast.show({
+                type: "success",
+                text1: "Success",
+                text2: "Activity unpublished successfully",
+            });
         } catch (err: any) {
             Alert.alert("Error", err.message || "Failed to unpublish activity");
         }
@@ -81,7 +132,11 @@ export default function ActivitiesScreen() {
                 onPress: async () => {
                     try {
                         await dispatch(deactivateActivity(activityId)).unwrap();
-                        Alert.alert("Success", "Activity deactivated successfully");
+                        Toast.show({
+                            type: "success",
+                            text1: "Success",
+                            text2: "Activity deactivated successfully",
+                        });
                     } catch (err: any) {
                         Alert.alert("Error", err.message || "Failed to deactivate activity");
                     }
@@ -93,6 +148,16 @@ export default function ActivitiesScreen() {
     const renderActivity = ({ item }: { item: Activity }) => {
         const canPublish = item.status === "draft" && item.availabilityTemplateId;
 
+        // Determine publish readiness status
+        const getPublishStatus = () => {
+            if (item.status === "published") return { label: "Published", style: styles.publishedBadge };
+            if (item.status === "draft" && !item.availabilityTemplateId) return { label: "Needs Template", style: styles.warningBadge };
+            if (item.status === "draft" && item.availabilityTemplateId) return { label: "Ready to Publish", style: styles.readyBadge };
+            return { label: item.status, style: styles.inactiveBadge };
+        };
+
+        const publishStatus = getPublishStatus();
+
         return (
             <TouchableOpacity
                 style={styles.card}
@@ -101,17 +166,8 @@ export default function ActivitiesScreen() {
                 <View style={styles.cardHeader}>
                     <View style={styles.titleRow}>
                         <Text style={styles.activityTitle}>{item.title}</Text>
-                        <View
-                            style={[
-                                styles.statusBadge,
-                                item.status === "published"
-                                    ? styles.publishedBadge
-                                    : item.status === "draft"
-                                      ? styles.draftBadge
-                                      : styles.inactiveBadge,
-                            ]}
-                        >
-                            <Text style={styles.statusText}>{item.status}</Text>
+                        <View style={[styles.statusBadge, publishStatus.style]}>
+                            <Text style={styles.statusText}>{publishStatus.label}</Text>
                         </View>
                     </View>
                 </View>
@@ -319,8 +375,14 @@ const styles = StyleSheet.create({
     publishedBadge: {
         backgroundColor: "#4CAF50",
     },
-    draftBadge: {
+    readyBadge: {
+        backgroundColor: "#2196F3",
+    },
+    warningBadge: {
         backgroundColor: "#FF9800",
+    },
+    draftBadge: {
+        backgroundColor: "#9E9E9E",
     },
     inactiveBadge: {
         backgroundColor: "#9E9E9E",

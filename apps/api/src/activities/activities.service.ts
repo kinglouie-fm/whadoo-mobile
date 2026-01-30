@@ -6,6 +6,11 @@ import {
 } from "@nestjs/common";
 import { ActivityTypeDefinitionsService } from "../activity-type-definitions/activity-type-definitions.service";
 import { AvailabilityTemplatesService } from "../availability-templates/availability-templates.service";
+import {
+  ConflictErrorResponse,
+  ErrorCodes,
+  PublishValidationError
+} from "../common/error-responses";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateActivityDto } from "./dto/create-activity.dto";
 import { UpdateActivityDto } from "./dto/update-activity.dto";
@@ -268,6 +273,29 @@ export class ActivitiesService {
       throw new ForbiddenException("You do not own this activity");
     }
 
+    // Prevent changing/unlinking template from published activity
+    if (existing.status === "published" && dto.availabilityTemplateId !== undefined) {
+      if (
+        dto.availabilityTemplateId === null ||
+        dto.availabilityTemplateId !== existing.availabilityTemplateId
+      ) {
+        throw new ConflictErrorResponse(
+          ErrorCodes.CANNOT_UNLINK_PUBLISHED,
+          "Cannot unlink or change availability template for a published activity. Unpublish the activity first.",
+          { field: "availabilityTemplateId" }
+        );
+      }
+    }
+
+    // Prevent changing type from published activity
+    if (existing.status === "published" && dto.typeId && dto.typeId !== existing.typeId) {
+      throw new ConflictErrorResponse(
+        ErrorCodes.CANNOT_CHANGE_TYPE_PUBLISHED,
+        "Cannot change activity type for a published activity. Unpublish the activity first.",
+        { field: "typeId" }
+      );
+    }
+
     // Update activity
     const updated = await this.prisma.activity.update({
       where: { id: activityId },
@@ -322,16 +350,58 @@ export class ActivitiesService {
       throw new ForbiddenException("You do not own this activity");
     }
 
-    // Validation: required fields
-    if (!activity.title) {
-      throw new BadRequestException("Title is required to publish");
+    // Check required fields
+    const missingFields: string[] = [];
+    if (!activity.title) missingFields.push("title");
+    if (!activity.typeId) missingFields.push("typeId");
+    if (!activity.city) missingFields.push("city");
+
+    if (missingFields.length > 0) {
+      throw new PublishValidationError(
+        ErrorCodes.REQUIRED_FIELDS_MISSING,
+        `Missing required fields: ${missingFields.join(", ")}`,
+        undefined,
+        missingFields
+      );
+    }
+
+    // Check: availability template is linked
+    if (!activity.availabilityTemplateId) {
+      throw new PublishValidationError(
+        ErrorCodes.TEMPLATE_REQUIRED,
+        "Availability template must be linked before publishing.",
+        "availabilityTemplateId"
+      );
+    }
+
+    // Verify template exists and is active
+    const template = await this.templatesService.getTemplateById(activity.availabilityTemplateId);
+
+    if (!template) {
+      throw new PublishValidationError(
+        ErrorCodes.TEMPLATE_NOT_FOUND,
+        "Linked availability template does not exist.",
+        "availabilityTemplateId"
+      );
+    }
+
+    if (template.status !== "active") {
+      throw new PublishValidationError(
+        ErrorCodes.TEMPLATE_INACTIVE,
+        "Linked availability template is inactive. Activate or link a different template.",
+        "availabilityTemplateId"
+      );
     }
 
     // Validate type exists
     try {
       await this.typeDefinitionsService.getTypeDefinition(activity.typeId);
     } catch (error) {
-      throw new BadRequestException(`Invalid activity type: ${activity.typeId}`);
+      throw new PublishValidationError(
+        ErrorCodes.INVALID_TYPE,
+        `Activity type '${activity.typeId}' is not supported.`,
+        "typeId"
+      );
     }
 
     // Validate config against type schema
@@ -356,29 +426,6 @@ export class ActivitiesService {
         message: "Activity pricing must be complete before publishing",
         errors: pricingValidation.errors,
       });
-    }
-
-    if (!activity.typeId) {
-      throw new BadRequestException("Type is required to publish");
-    }
-
-    if (!activity.city) {
-      throw new BadRequestException("City is required to publish");
-    }
-
-    if (!activity.availabilityTemplateId) {
-      throw new BadRequestException("Availability template is required to publish");
-    }
-
-    // Verify template exists and is active
-    const template = await this.templatesService.getTemplateById(activity.availabilityTemplateId);
-
-    if (!template) {
-      throw new BadRequestException("Linked availability template not found");
-    }
-
-    if (template.status !== "active") {
-      throw new BadRequestException("Linked availability template is not active");
     }
 
     // Publish activity

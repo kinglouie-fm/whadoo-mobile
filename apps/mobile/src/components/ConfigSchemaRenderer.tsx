@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { ActivityTypeDefinition } from "../store/slices/activity-type-slice";
 import { DynamicFormFieldRenderer } from "./DynamicFormFieldRenderer";
 

@@ -306,8 +306,14 @@ export default function ActivityDetailScreen() {
 
                     {/* Availability Template Picker */}
                     <View style={styles.field}>
-                        <Text style={styles.label}>Availability Template</Text>
-                        <Text style={styles.helperText}>Required to publish</Text>
+                        <View style={styles.labelRow}>
+                            <Text style={styles.label}>Availability Template</Text>
+                            {!availabilityTemplateId && (
+                                <View style={styles.requiredIndicator}>
+                                    <Text style={styles.requiredText}>⚠️ Required to publish</Text>
+                                </View>
+                            )}
+                        </View>
                         {templates.length > 0 ? (
                             <View style={styles.templatePicker}>
                                 {templates
@@ -318,22 +324,26 @@ export default function ActivityDetailScreen() {
                                             style={[
                                                 styles.templateOption,
                                                 availabilityTemplateId === template.id &&
-                                                    styles.templateOptionSelected,
+                                                styles.templateOptionSelected,
                                             ]}
                                             onPress={() => setAvailabilityTemplateId(template.id)}
+                                            disabled={isEditMode && currentActivity?.status === "published"}
                                         >
                                             <Text
                                                 style={[
                                                     styles.templateOptionText,
                                                     availabilityTemplateId === template.id &&
-                                                        styles.templateOptionTextSelected,
+                                                    styles.templateOptionTextSelected,
                                                 ]}
                                             >
                                                 {template.name}
                                             </Text>
+                                            <Text style={styles.templateDetails}>
+                                                {template.daysOfWeek?.length || 0} days • {template.capacity} capacity
+                                            </Text>
                                         </TouchableOpacity>
                                     ))}
-                                {availabilityTemplateId && (
+                                {availabilityTemplateId && currentActivity?.status !== "published" && (
                                     <TouchableOpacity
                                         style={styles.templateClearButton}
                                         onPress={() => setAvailabilityTemplateId("")}
@@ -343,9 +353,18 @@ export default function ActivityDetailScreen() {
                                 )}
                             </View>
                         ) : (
-                            <Text style={styles.helperText}>
-                                No active templates found. Create one in the Availability tab first.
-                            </Text>
+                            <View style={styles.warningBox}>
+                                <Text style={styles.warningText}>
+                                    ⚠️ No active templates found. Create one in the Availability tab first.
+                                </Text>
+                            </View>
+                        )}
+                        {isEditMode && currentActivity?.status === "published" && (
+                            <View style={styles.infoBox}>
+                                <Text style={styles.infoText}>
+                                    ✓ Template is linked and cannot be changed while published
+                                </Text>
+                            </View>
                         )}
                     </View>
                 </View>
@@ -483,5 +502,47 @@ const styles = StyleSheet.create({
     templateClearText: {
         fontSize: 14,
         color: "#666",
+    },
+    labelRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8,
+    },
+    requiredIndicator: {
+        backgroundColor: "#FFF3E0",
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    requiredText: {
+        fontSize: 12,
+        color: "#F57C00",
+        fontWeight: "600",
+    },
+    templateDetails: {
+        fontSize: 12,
+        color: "#666",
+        marginTop: 4,
+    },
+    warningBox: {
+        backgroundColor: "#FFF3E0",
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 8,
+    },
+    warningText: {
+        fontSize: 14,
+        color: "#F57C00",
+    },
+    infoBox: {
+        backgroundColor: "#E3F2FD",
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 8,
+    },
+    infoText: {
+        fontSize: 14,
+        color: "#1976D2",
     },
 });
