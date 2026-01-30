@@ -1,3 +1,5 @@
+import { ConfigSchemaRenderer } from "@/src/components/ConfigSchemaRenderer";
+import { PricingSchemaRenderer } from "@/src/components/PricingSchemaRenderer";
 import { useBusiness } from "@/src/lib/use-business";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
@@ -8,6 +10,7 @@ import {
     updateActivity,
     UpdateActivityData,
 } from "@/src/store/slices/activity-slice";
+import { fetchTypeDefinition, fetchTypeDefinitions } from "@/src/store/slices/activity-type-slice";
 import { fetchTemplates } from "@/src/store/slices/availability-template-slice";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -30,6 +33,7 @@ export default function ActivityDetailScreen() {
     const { business } = useBusiness();
     const { currentActivity, loading } = useAppSelector((state) => state.activities);
     const { templates } = useAppSelector((state) => state.availabilityTemplates);
+    const { typeDefinitions, currentTypeDefinition } = useAppSelector((state) => state.activityTypes);
 
     const isEditMode = !!id;
 
@@ -43,11 +47,16 @@ export default function ActivityDetailScreen() {
     const [priceFrom, setPriceFrom] = useState("");
     const [availabilityTemplateId, setAvailabilityTemplateId] = useState("");
 
-    // Simple config fields
-    const [duration, setDuration] = useState("");
-    const [maxParticipants, setMaxParticipants] = useState("");
+    // Dynamic config and pricing
+    const [config, setConfig] = useState<Record<string, any>>({});
+    const [pricing, setPricing] = useState<Record<string, any>>({});
 
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Load type definitions
+    useEffect(() => {
+        dispatch(fetchTypeDefinitions());
+    }, []);
 
     // Load activity if editing
     useEffect(() => {
@@ -77,12 +86,25 @@ export default function ActivityDetailScreen() {
             setAddress(currentActivity.address || "");
             setPriceFrom(currentActivity.priceFrom?.toString() || "");
             setAvailabilityTemplateId(currentActivity.availabilityTemplateId || "");
+            setConfig(currentActivity.config || {});
+            setPricing(currentActivity.pricing || {});
 
-            // Extract simple config fields
-            setDuration(currentActivity.config?.duration?.toString() || "");
-            setMaxParticipants(currentActivity.config?.maxParticipants?.toString() || "");
+            // Fetch type definition for this activity
+            if (currentActivity.typeId) {
+                dispatch(fetchTypeDefinition(currentActivity.typeId));
+            }
         }
     }, [currentActivity, isEditMode]);
+
+    // Fetch type definition when type changes
+    useEffect(() => {
+        if (typeId && !isEditMode) {
+            dispatch(fetchTypeDefinition(typeId));
+            // Reset config and pricing when type changes
+            setConfig({});
+            setPricing({});
+        }
+    }, [typeId, isEditMode]);
 
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
@@ -101,59 +123,48 @@ export default function ActivityDetailScreen() {
 
     const handleSave = async () => {
         if (!validateForm()) {
-            Alert.alert("Validation Error", "Please fix the errors in the form");
+            Alert.alert("Validation Error", "Please fix the errors before saving");
+            return;
+        }
+
+        if (!business?.id) {
+            Alert.alert("Error", "Business not found");
             return;
         }
 
         try {
-            const config = {
-                ...(duration ? { duration: parseInt(duration) } : {}),
-                ...(maxParticipants ? { maxParticipants: parseInt(maxParticipants) } : {}),
+            const activityData: CreateActivityData | UpdateActivityData = {
+                businessId: business.id,
+                title,
+                typeId,
+                description: description || undefined,
+                category: category || undefined,
+                city: city || undefined,
+                address: address || undefined,
+                priceFrom: priceFrom ? parseFloat(priceFrom) : undefined,
+                config,
+                pricing,
+                availabilityTemplateId: availabilityTemplateId || undefined,
             };
 
             if (isEditMode && id) {
-                const data: UpdateActivityData = {
-                    title,
-                    typeId,
-                    description: description || undefined,
-                    category: category || undefined,
-                    city: city || undefined,
-                    address: address || undefined,
-                    priceFrom: priceFrom ? parseFloat(priceFrom) : undefined,
-                    availabilityTemplateId: availabilityTemplateId || undefined,
-                    config,
-                };
-                await dispatch(updateActivity({ activityId: id, data })).unwrap();
+                await dispatch(updateActivity({ activityId: id, data: activityData })).unwrap();
                 Alert.alert("Success", "Activity updated successfully");
             } else {
-                if (!business?.id) {
-                    Alert.alert("Error", "Business ID not found. Please try again.");
-                    return;
-                }
-                const data: CreateActivityData = {
-                    businessId: business.id,
-                    title,
-                    typeId,
-                    description: description || undefined,
-                    category: category || undefined,
-                    city: city || undefined,
-                    address: address || undefined,
-                    priceFrom: priceFrom ? parseFloat(priceFrom) : undefined,
-                    availabilityTemplateId: availabilityTemplateId || undefined,
-                    config,
-                };
-                await dispatch(createActivity(data)).unwrap();
+                await dispatch(createActivity(activityData)).unwrap();
                 Alert.alert("Success", "Activity created successfully");
             }
+
             router.back();
-        } catch (err: any) {
-            Alert.alert("Error", err.message || "Failed to save activity");
+        } catch (error: any) {
+            console.error("Failed to save activity:", error);
+            Alert.alert("Error", error.message || "Failed to save activity");
         }
     };
 
     if (loading && isEditMode) {
         return (
-            <View style={styles.container}>
+            <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#007AFF" />
             </View>
         );
@@ -185,16 +196,35 @@ export default function ActivityDetailScreen() {
                         {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
                     </View>
 
-                    {/* Type */}
+                    {/* Type Dropdown */}
                     <View style={styles.field}>
                         <Text style={styles.label}>Type *</Text>
-                        <TextInput
-                            style={[styles.input, errors.typeId && styles.inputError]}
-                            value={typeId}
-                            onChangeText={setTypeId}
-                            placeholder="e.g., karting, cooking_class, escape_room"
-                        />
+                        <View style={styles.typeDropdown}>
+                            {typeDefinitions.map((type) => (
+                                <TouchableOpacity
+                                    key={type.typeId}
+                                    style={[
+                                        styles.typeOption,
+                                        typeId === type.typeId && styles.typeOptionSelected,
+                                    ]}
+                                    onPress={() => setTypeId(type.typeId)}
+                                    disabled={isEditMode} // Don't allow changing type in edit mode
+                                >
+                                    <Text
+                                        style={[
+                                            styles.typeOptionText,
+                                            typeId === type.typeId && styles.typeOptionTextSelected,
+                                        ]}
+                                    >
+                                        {type.displayName}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                         {errors.typeId && <Text style={styles.errorText}>{errors.typeId}</Text>}
+                        {isEditMode && (
+                            <Text style={styles.helperText}>Type cannot be changed after creation</Text>
+                        )}
                     </View>
 
                     {/* Description */}
@@ -255,29 +285,24 @@ export default function ActivityDetailScreen() {
                         />
                     </View>
 
-                    {/* Duration (config field) */}
-                    <View style={styles.field}>
-                        <Text style={styles.label}>Duration (minutes)</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={duration}
-                            onChangeText={setDuration}
-                            placeholder="60"
-                            keyboardType="numeric"
-                        />
-                    </View>
+                    {/* Dynamic Config Fields */}
+                    {currentTypeDefinition && (
+                        <>
+                            <ConfigSchemaRenderer
+                                typeDefinition={currentTypeDefinition}
+                                currentConfig={config}
+                                onConfigChange={setConfig}
+                                errors={errors}
+                            />
 
-                    {/* Max Participants (config field) */}
-                    <View style={styles.field}>
-                        <Text style={styles.label}>Max Participants</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={maxParticipants}
-                            onChangeText={setMaxParticipants}
-                            placeholder="10"
-                            keyboardType="numeric"
-                        />
-                    </View>
+                            <PricingSchemaRenderer
+                                typeDefinition={currentTypeDefinition}
+                                currentPricing={pricing}
+                                onPricingChange={setPricing}
+                                errors={errors}
+                            />
+                        </>
+                    )}
 
                     {/* Availability Template Picker */}
                     <View style={styles.field}>
@@ -292,7 +317,8 @@ export default function ActivityDetailScreen() {
                                             key={template.id}
                                             style={[
                                                 styles.templateOption,
-                                                availabilityTemplateId === template.id && styles.templateOptionSelected,
+                                                availabilityTemplateId === template.id &&
+                                                    styles.templateOptionSelected,
                                             ]}
                                             onPress={() => setAvailabilityTemplateId(template.id)}
                                         >
@@ -300,7 +326,7 @@ export default function ActivityDetailScreen() {
                                                 style={[
                                                     styles.templateOptionText,
                                                     availabilityTemplateId === template.id &&
-                                                    styles.templateOptionTextSelected,
+                                                        styles.templateOptionTextSelected,
                                                 ]}
                                             >
                                                 {template.name}
@@ -331,28 +357,36 @@ export default function ActivityDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: "#f5f5f5",
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f5f5f5",
     },
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         padding: 16,
+        backgroundColor: "#fff",
         borderBottomWidth: 1,
         borderBottomColor: "#e0e0e0",
     },
     title: {
         fontSize: 18,
-        fontWeight: "bold",
+        fontWeight: "700",
+        color: "#333",
     },
     cancelButton: {
-        color: "#007AFF",
         fontSize: 16,
+        color: "#007AFF",
     },
     saveButton: {
-        color: "#007AFF",
         fontSize: 16,
         fontWeight: "600",
+        color: "#007AFF",
     },
     form: {
         padding: 16,
@@ -363,13 +397,13 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 16,
         fontWeight: "600",
-        marginBottom: 8,
         color: "#333",
+        marginBottom: 8,
     },
     helperText: {
         fontSize: 12,
         color: "#666",
-        marginBottom: 8,
+        marginTop: 4,
     },
     input: {
         borderWidth: 1,
@@ -377,9 +411,10 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
+        backgroundColor: "#fff",
     },
     textArea: {
-        minHeight: 100,
+        height: 100,
         textAlignVertical: "top",
     },
     inputError: {
@@ -390,8 +425,33 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
     },
-    templatePicker: {
+    typeDropdown: {
+        flexDirection: "row",
+        flexWrap: "wrap",
         gap: 8,
+    },
+    typeOption: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        backgroundColor: "#fff",
+    },
+    typeOptionSelected: {
+        backgroundColor: "#007AFF",
+        borderColor: "#007AFF",
+    },
+    typeOptionText: {
+        fontSize: 14,
+        color: "#333",
+    },
+    typeOptionTextSelected: {
+        color: "#fff",
+        fontWeight: "600",
+    },
+    templatePicker: {
+        marginTop: 8,
     },
     templateOption: {
         padding: 12,
@@ -399,6 +459,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#ccc",
         backgroundColor: "#fff",
+        marginBottom: 8,
     },
     templateOptionSelected: {
         backgroundColor: "#007AFF",
@@ -413,11 +474,14 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     templateClearButton: {
-        padding: 8,
+        padding: 12,
+        borderRadius: 8,
+        backgroundColor: "#f0f0f0",
         alignItems: "center",
+        marginTop: 8,
     },
     templateClearText: {
-        color: "#FF3B30",
         fontSize: 14,
+        color: "#666",
     },
 });

@@ -1,5 +1,6 @@
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { Activity, fetchPublishedActivities } from "@/src/store/slices/activity-slice";
+import { fetchTypeDefinitions } from "@/src/store/slices/activity-type-slice";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -17,8 +18,14 @@ export default function DiscoveryScreen() {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { publishedActivities, loading, error } = useAppSelector((state) => state.activities);
+    const { typeDefinitions } = useAppSelector((state) => state.activityTypes);
     const [refreshing, setRefreshing] = useState(false);
     const [cityFilter, setCityFilter] = useState("");
+
+    // Load type definitions for display names
+    useEffect(() => {
+        dispatch(fetchTypeDefinitions());
+    }, []);
 
     const loadActivities = async () => {
         try {
@@ -38,6 +45,17 @@ export default function DiscoveryScreen() {
         setRefreshing(false);
     };
 
+    const getTypeDisplayName = (typeId: string): string => {
+        const typeDef = typeDefinitions.find((t) => t.typeId === typeId);
+        return typeDef?.displayName || typeId;
+    };
+
+    const getConfigFieldLabel = (typeId: string, fieldName: string): string => {
+        const typeDef = typeDefinitions.find((t) => t.typeId === typeId);
+        const field = typeDef?.configSchema.fields.find((f) => f.name === fieldName);
+        return field?.label || fieldName;
+    };
+
     const renderActivity = ({ item }: { item: Activity }) => (
         <TouchableOpacity
             style={styles.card}
@@ -49,14 +67,29 @@ export default function DiscoveryScreen() {
         >
             <View style={styles.cardContent}>
                 <Text style={styles.activityTitle}>{item.title}</Text>
-                <Text style={styles.activityType}>{item.typeId}</Text>
-                {item.description && <Text style={styles.activityDescription} numberOfLines={2}>{item.description}</Text>}
+                <Text style={styles.activityType}>{getTypeDisplayName(item.typeId)}</Text>
+                {item.description && (
+                    <Text style={styles.activityDescription} numberOfLines={2}>
+                        {item.description}
+                    </Text>
+                )}
                 <View style={styles.activityMeta}>
                     {item.city && <Text style={styles.metaText}>📍 {item.city}</Text>}
                     {item.priceFrom && <Text style={styles.metaText}>💰 From ${item.priceFrom}</Text>}
                 </View>
-                {item.config?.duration && (
-                    <Text style={styles.metaText}>⏱️ {item.config.duration} minutes</Text>
+                {/* Display key config fields with proper labels */}
+                {item.config && Object.keys(item.config).length > 0 && (
+                    <View style={styles.configSection}>
+                        {Object.entries(item.config).slice(0, 3).map(([key, value]) => {
+                            if (value === null || value === undefined) return null;
+                            const label = getConfigFieldLabel(item.typeId, key);
+                            return (
+                                <Text key={key} style={styles.configText}>
+                                    {label}: {typeof value === "boolean" ? (value ? "Yes" : "No") : value}
+                                </Text>
+                            );
+                        })}
+                    </View>
                 )}
             </View>
         </TouchableOpacity>
@@ -209,6 +242,17 @@ const styles = StyleSheet.create({
     metaText: {
         fontSize: 13,
         color: "#666",
+    },
+    configSection: {
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: "#e0e0e0",
+    },
+    configText: {
+        fontSize: 12,
+        color: "#666",
+        marginTop: 2,
     },
     emptyContainer: {
         alignItems: "center",

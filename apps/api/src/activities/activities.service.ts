@@ -1,12 +1,12 @@
 import {
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   Injectable,
-  NotFoundException,
+  NotFoundException
 } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
+import { ActivityTypeDefinitionsService } from "../activity-type-definitions/activity-type-definitions.service";
 import { AvailabilityTemplatesService } from "../availability-templates/availability-templates.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { CreateActivityDto } from "./dto/create-activity.dto";
 import { UpdateActivityDto } from "./dto/update-activity.dto";
 
@@ -14,7 +14,8 @@ import { UpdateActivityDto } from "./dto/update-activity.dto";
 export class ActivitiesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly templatesService: AvailabilityTemplatesService
+    private readonly templatesService: AvailabilityTemplatesService,
+    private readonly typeDefinitionsService: ActivityTypeDefinitionsService
   ) {}
 
   async createActivity(userId: string, dto: CreateActivityDto) {
@@ -30,6 +31,40 @@ export class ActivitiesService {
 
     if (business.ownerUserId !== userId) {
       throw new ForbiddenException("You do not own this business");
+    }
+
+    // Validate type exists
+    try {
+      await this.typeDefinitionsService.getTypeDefinition(dto.typeId);
+    } catch (error) {
+      throw new BadRequestException(`Invalid activity type: ${dto.typeId}`);
+    }
+
+    // Validate config and pricing against type schema (if provided)
+    if (dto.config && Object.keys(dto.config).length > 0) {
+      const configValidation = await this.typeDefinitionsService.validateActivityConfig(
+        dto.typeId,
+        dto.config
+      );
+      if (!configValidation.valid) {
+        throw new BadRequestException({
+          message: "Activity configuration validation failed",
+          errors: configValidation.errors,
+        });
+      }
+    }
+
+    if (dto.pricing && Object.keys(dto.pricing).length > 0) {
+      const pricingValidation = await this.typeDefinitionsService.validateActivityPricing(
+        dto.typeId,
+        dto.pricing
+      );
+      if (!pricingValidation.valid) {
+        throw new BadRequestException({
+          message: "Activity pricing validation failed",
+          errors: pricingValidation.errors,
+        });
+      }
     }
 
     // Create activity with images
@@ -181,6 +216,54 @@ export class ActivitiesService {
       throw new NotFoundException("Activity not found");
     }
 
+    // Validate type if being changed
+    const typeId = dto.typeId || existing.typeId;
+    try {
+      await this.typeDefinitionsService.getTypeDefinition(typeId);
+    } catch (error) {
+      throw new BadRequestException(`Invalid activity type: ${typeId}`);
+    }
+
+    // Validate config if provided
+    if (dto.config !== undefined) {
+      const configToValidate = dto.config && Object.keys(dto.config).length > 0 
+        ? dto.config 
+        : existing.config;
+      
+      if (configToValidate && Object.keys(configToValidate).length > 0) {
+        const configValidation = await this.typeDefinitionsService.validateActivityConfig(
+          typeId,
+          configToValidate
+        );
+        if (!configValidation.valid) {
+          throw new BadRequestException({
+            message: "Activity configuration validation failed",
+            errors: configValidation.errors,
+          });
+        }
+      }
+    }
+
+    // Validate pricing if provided
+    if (dto.pricing !== undefined) {
+      const pricingToValidate = dto.pricing && Object.keys(dto.pricing).length > 0
+        ? dto.pricing
+        : existing.pricing;
+      
+      if (pricingToValidate && Object.keys(pricingToValidate).length > 0) {
+        const pricingValidation = await this.typeDefinitionsService.validateActivityPricing(
+          typeId,
+          pricingToValidate
+        );
+        if (!pricingValidation.valid) {
+          throw new BadRequestException({
+            message: "Activity pricing validation failed",
+            errors: pricingValidation.errors,
+          });
+        }
+      }
+    }
+
     if (existing.business.ownerUserId !== userId) {
       throw new ForbiddenException("You do not own this activity");
     }
@@ -242,6 +325,37 @@ export class ActivitiesService {
     // Validation: required fields
     if (!activity.title) {
       throw new BadRequestException("Title is required to publish");
+    }
+
+    // Validate type exists
+    try {
+      await this.typeDefinitionsService.getTypeDefinition(activity.typeId);
+    } catch (error) {
+      throw new BadRequestException(`Invalid activity type: ${activity.typeId}`);
+    }
+
+    // Validate config against type schema
+    const configValidation = await this.typeDefinitionsService.validateActivityConfig(
+      activity.typeId,
+      activity.config || {}
+    );
+    if (!configValidation.valid) {
+      throw new BadRequestException({
+        message: "Activity configuration must be complete before publishing",
+        errors: configValidation.errors,
+      });
+    }
+
+    // Validate pricing against type schema
+    const pricingValidation = await this.typeDefinitionsService.validateActivityPricing(
+      activity.typeId,
+      activity.pricing || {}
+    );
+    if (!pricingValidation.valid) {
+      throw new BadRequestException({
+        message: "Activity pricing must be complete before publishing",
+        errors: pricingValidation.errors,
+      });
     }
 
     if (!activity.typeId) {

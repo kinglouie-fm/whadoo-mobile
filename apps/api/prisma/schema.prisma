@@ -165,3 +165,17 @@ model ActivityImage {
   @@map("activity_images")
   @@index([activityId])
 }
+
+model ActivityTypeDefinition {
+  typeId        String   @map("type_id")
+  schemaVersion Int      @default(1) @map("schema_version")
+  displayName   String   @map("display_name")
+  configSchema  Json     @map("config_schema")
+  pricingSchema Json     @map("pricing_schema")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@id([typeId, schemaVersion])
+  @@map("activity_type_definitions")
+  @@index([typeId])
+}
