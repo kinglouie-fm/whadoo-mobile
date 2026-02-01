@@ -23,6 +23,9 @@ export interface Activity {
   priceFrom?: number;
   config: Record<string, any>;
   pricing: Record<string, any>;
+  catalogGroupId?: string;
+  catalogGroupTitle?: string;
+  catalogGroupKind?: string;
   availabilityTemplateId?: string;
   images: ActivityImage[];
   createdAt: string;
@@ -42,6 +45,9 @@ export interface CreateActivityData {
   priceFrom?: number;
   config?: Record<string, any>;
   pricing?: Record<string, any>;
+  catalogGroupId?: string;
+  catalogGroupTitle?: string;
+  catalogGroupKind?: string;
   availabilityTemplateId?: string;
   images?: Omit<ActivityImage, "id">[];
 }
@@ -58,6 +64,9 @@ export interface UpdateActivityData {
   priceFrom?: number;
   config?: Record<string, any>;
   pricing?: Record<string, any>;
+  catalogGroupId?: string;
+  catalogGroupTitle?: string;
+  catalogGroupKind?: string;
   availabilityTemplateId?: string;
   images?: Omit<ActivityImage, "id">[];
 }

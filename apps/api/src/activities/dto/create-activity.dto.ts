@@ -64,6 +64,18 @@ export class CreateActivityDto {
 
   @IsOptional()
   @IsString()
+  catalogGroupId?: string;
+
+  @IsOptional()
+  @IsString()
+  catalogGroupTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  catalogGroupKind?: string;
+
+  @IsOptional()
+  @IsString()
   availabilityTemplateId?: string;
 
   @IsOptional()

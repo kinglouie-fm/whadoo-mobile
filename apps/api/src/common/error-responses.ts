@@ -1,8 +1,8 @@
 import {
-    BadRequestException,
-    ConflictException,
-    ForbiddenException,
-    NotFoundException,
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
 } from "@nestjs/common";
 
 export interface ErrorResponse {
@@ -79,6 +79,13 @@ export const ErrorCodes = {
   INVALID_TYPE: "INVALID_TYPE",
   CANNOT_UNLINK_PUBLISHED: "CANNOT_UNLINK_PUBLISHED",
   CANNOT_CHANGE_TYPE_PUBLISHED: "CANNOT_CHANGE_TYPE_PUBLISHED",
+  
+  // Package errors (karting)
+  PACKAGES_REQUIRED: "PACKAGES_REQUIRED",
+  PACKAGE_CODE_REQUIRED: "PACKAGE_CODE_REQUIRED",
+  PACKAGE_TITLE_REQUIRED: "PACKAGE_TITLE_REQUIRED",
+  PACKAGE_CODE_DUPLICATE: "PACKAGE_CODE_DUPLICATE",
+  MULTIPLE_DEFAULT_PACKAGES: "MULTIPLE_DEFAULT_PACKAGES",
   
   // Template deactivation
   CANNOT_DEACTIVATE_LINKED_PUBLISHED: "CANNOT_DEACTIVATE_LINKED_PUBLISHED",

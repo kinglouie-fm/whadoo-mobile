@@ -13,6 +13,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DiscoveryScreen() {
     const router = useRouter();
@@ -82,10 +83,27 @@ export default function DiscoveryScreen() {
                     <View style={styles.configSection}>
                         {Object.entries(item.config).slice(0, 3).map(([key, value]) => {
                             if (value === null || value === undefined) return null;
+
+                            // Skip arrays and objects (like packages array)
+                            if (Array.isArray(value) || (typeof value === "object" && value !== null)) {
+                                // Special handling for packages
+                                if (key === "packages" && Array.isArray(value)) {
+                                    const packageCount = value.length;
+                                    const defaultPackage = value.find((pkg: any) => pkg.is_default) || value[0];
+                                    return (
+                                        <Text key={key} style={styles.configText}>
+                                            Packages: {packageCount} available
+                                            {defaultPackage?.title && ` (${defaultPackage.title})`}
+                                        </Text>
+                                    );
+                                }
+                                return null; // Skip other objects/arrays
+                            }
+
                             const label = getConfigFieldLabel(item.typeId, key);
                             return (
                                 <Text key={key} style={styles.configText}>
-                                    {label}: {typeof value === "boolean" ? (value ? "Yes" : "No") : value}
+                                    {label}: {typeof value === "boolean" ? (value ? "Yes" : "No") : String(value)}
                                 </Text>
                             );
                         })}
@@ -104,54 +122,56 @@ export default function DiscoveryScreen() {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Discover Activities</Text>
-            </View>
-
-            {/* Search/Filter Bar */}
-            <View style={styles.searchBar}>
-                <TextInput
-                    style={styles.searchInput}
-                    value={cityFilter}
-                    onChangeText={setCityFilter}
-                    placeholder="Filter by city..."
-                    placeholderTextColor="#999"
-                />
-                {cityFilter !== "" && (
-                    <TouchableOpacity onPress={() => setCityFilter("")} style={styles.clearButton}>
-                        <Text style={styles.clearButtonText}>✕</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-
-            {error && (
-                <View style={styles.errorBanner}>
-                    <Text style={styles.errorText}>{error}</Text>
-                    <TouchableOpacity onPress={loadActivities}>
-                        <Text style={styles.retryText}>Retry</Text>
-                    </TouchableOpacity>
+        <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>Discover Activities</Text>
                 </View>
-            )}
 
-            <FlatList
-                data={publishedActivities}
-                renderItem={renderActivity}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContent}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>No activities found.</Text>
-                        <Text style={styles.emptySubtext}>
-                            {cityFilter
-                                ? "Try a different city or clear the filter."
-                                : "Check back later for new activities!"}
-                        </Text>
+                {/* Search/Filter Bar */}
+                <View style={styles.searchBar}>
+                    <TextInput
+                        style={styles.searchInput}
+                        value={cityFilter}
+                        onChangeText={setCityFilter}
+                        placeholder="Filter by city..."
+                        placeholderTextColor="#999"
+                    />
+                    {cityFilter !== "" && (
+                        <TouchableOpacity onPress={() => setCityFilter("")} style={styles.clearButton}>
+                            <Text style={styles.clearButtonText}>✕</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {error && (
+                    <View style={styles.errorBanner}>
+                        <Text style={styles.errorText}>{error}</Text>
+                        <TouchableOpacity onPress={loadActivities}>
+                            <Text style={styles.retryText}>Retry</Text>
+                        </TouchableOpacity>
                     </View>
-                }
-            />
-        </View>
+                )}
+
+                <FlatList
+                    data={publishedActivities}
+                    renderItem={renderActivity}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.listContent}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>No activities found.</Text>
+                            <Text style={styles.emptySubtext}>
+                                {cityFilter
+                                    ? "Try a different city or clear the filter."
+                                    : "Check back later for new activities!"}
+                            </Text>
+                        </View>
+                    }
+                />
+            </View>
+        </SafeAreaView>
     );
 }
 

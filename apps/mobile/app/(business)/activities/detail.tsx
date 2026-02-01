@@ -1,4 +1,5 @@
 import { ConfigSchemaRenderer } from "@/src/components/ConfigSchemaRenderer";
+import { PackagesEditor } from "@/src/components/PackagesEditor";
 import { PricingSchemaRenderer } from "@/src/components/PricingSchemaRenderer";
 import { useBusiness } from "@/src/lib/use-business";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -46,6 +47,9 @@ export default function ActivityDetailScreen() {
     const [address, setAddress] = useState("");
     const [priceFrom, setPriceFrom] = useState("");
     const [availabilityTemplateId, setAvailabilityTemplateId] = useState("");
+    const [catalogGroupId, setCatalogGroupId] = useState("");
+    const [catalogGroupTitle, setCatalogGroupTitle] = useState("");
+    const [catalogGroupKind, setCatalogGroupKind] = useState("");
 
     // Dynamic config and pricing
     const [config, setConfig] = useState<Record<string, any>>({});
@@ -86,6 +90,9 @@ export default function ActivityDetailScreen() {
             setAddress(currentActivity.address || "");
             setPriceFrom(currentActivity.priceFrom?.toString() || "");
             setAvailabilityTemplateId(currentActivity.availabilityTemplateId || "");
+            setCatalogGroupId(currentActivity.catalogGroupId || "");
+            setCatalogGroupTitle(currentActivity.catalogGroupTitle || "");
+            setCatalogGroupKind(currentActivity.catalogGroupKind || "");
             setConfig(currentActivity.config || {});
             setPricing(currentActivity.pricing || {});
 
@@ -101,7 +108,22 @@ export default function ActivityDetailScreen() {
         if (typeId && !isEditMode) {
             dispatch(fetchTypeDefinition(typeId));
             // Reset config and pricing when type changes
-            setConfig({});
+            const newConfig: Record<string, any> = {};
+
+            // Auto-create first package for karting
+            if (typeId === "karting") {
+                newConfig.packages = [
+                    {
+                        code: "standard",
+                        title: "Standard Session",
+                        track_type: "indoor",
+                        is_default: true,
+                        sort_order: 0,
+                    },
+                ];
+            }
+
+            setConfig(newConfig);
             setPricing({});
         }
     }, [typeId, isEditMode]);
@@ -145,6 +167,9 @@ export default function ActivityDetailScreen() {
                 config,
                 pricing,
                 availabilityTemplateId: availabilityTemplateId || undefined,
+                catalogGroupId: catalogGroupId || undefined,
+                catalogGroupTitle: catalogGroupTitle || undefined,
+                catalogGroupKind: catalogGroupKind || undefined,
             };
 
             if (isEditMode && id) {
@@ -283,17 +308,76 @@ export default function ActivityDetailScreen() {
                             placeholder="0.00"
                             keyboardType="decimal-pad"
                         />
+                        <Text style={styles.helperText}>
+                            {typeId === "karting" && config.packages?.length > 0
+                                ? "Auto-calculated from packages"
+                                : "Display price for discovery feed"}
+                        </Text>
                     </View>
 
-                    {/* Dynamic Config Fields */}
+                    {/* Catalog Group Fields (for grouping multiple activities) */}
+                    {typeId === "karting" && (
+                        <>
+                            <View style={styles.field}>
+                                <Text style={styles.label}>Catalog Group ID</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={catalogGroupId}
+                                    onChangeText={setCatalogGroupId}
+                                    placeholder="e.g., acl-karting-mondercange"
+                                />
+                                <Text style={styles.helperText}>
+                                    Group related activities (e.g., different durations)
+                                </Text>
+                            </View>
+
+                            <View style={styles.field}>
+                                <Text style={styles.label}>Catalog Group Title</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={catalogGroupTitle}
+                                    onChangeText={setCatalogGroupTitle}
+                                    placeholder="e.g., Karting at ActionFunCenter"
+                                />
+                            </View>
+
+                            <View style={styles.field}>
+                                <Text style={styles.label}>Catalog Group Kind</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={catalogGroupKind}
+                                    onChangeText={setCatalogGroupKind}
+                                    placeholder="karting"
+                                />
+                            </View>
+                        </>
+                    )}
+
+                    {/* Dynamic Config Fields or Packages Editor */}
                     {currentTypeDefinition && (
                         <>
-                            <ConfigSchemaRenderer
-                                typeDefinition={currentTypeDefinition}
-                                currentConfig={config}
-                                onConfigChange={setConfig}
-                                errors={errors}
-                            />
+                            {typeId === "karting" ? (
+                                <PackagesEditor
+                                    packages={config.packages || []}
+                                    onChange={(packages) => {
+                                        setConfig({ ...config, packages });
+                                        // Auto-calculate price_from
+                                        const prices = packages
+                                            .map((pkg) => pkg.base_price)
+                                            .filter((p) => p !== undefined && p !== null);
+                                        if (prices.length > 0) {
+                                            setPriceFrom(Math.min(...prices).toString());
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <ConfigSchemaRenderer
+                                    typeDefinition={currentTypeDefinition}
+                                    currentConfig={config}
+                                    onConfigChange={setConfig}
+                                    errors={errors}
+                                />
+                            )}
 
                             <PricingSchemaRenderer
                                 typeDefinition={currentTypeDefinition}

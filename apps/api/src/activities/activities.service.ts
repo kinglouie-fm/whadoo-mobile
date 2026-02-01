@@ -87,6 +87,9 @@ export class ActivitiesService {
         priceFrom: dto.priceFrom ?? null,
         config: dto.config ?? {},
         pricing: dto.pricing ?? {},
+        catalogGroupId: dto.catalogGroupId ?? null,
+        catalogGroupTitle: dto.catalogGroupTitle ?? null,
+        catalogGroupKind: dto.catalogGroupKind ?? null,
         availabilityTemplateId: dto.availabilityTemplateId ?? null,
         status: "draft",
         images: dto.images
@@ -309,6 +312,9 @@ export class ActivitiesService {
         lat: dto.lat,
         lng: dto.lng,
         priceFrom: dto.priceFrom,
+        catalogGroupId: dto.catalogGroupId,
+        catalogGroupTitle: dto.catalogGroupTitle,
+        catalogGroupKind: dto.catalogGroupKind,
         config: dto.config,
         pricing: dto.pricing,
         availabilityTemplateId: dto.availabilityTemplateId,
@@ -416,6 +422,11 @@ export class ActivitiesService {
       });
     }
 
+    // Karting-specific package validation
+    if (activity.typeId === "karting") {
+      this.validateKartingPackages(activity.config);
+    }
+
     // Validate pricing against type schema
     const pricingValidation = await this.typeDefinitionsService.validateActivityPricing(
       activity.typeId,
@@ -510,5 +521,92 @@ export class ActivitiesService {
         },
       },
     });
+  }
+
+  private validateKartingPackages(config: any) {
+    const packages = config?.packages;
+
+    // Packages must exist and contain at least 1 item
+    if (!packages || !Array.isArray(packages) || packages.length === 0) {
+      throw new PublishValidationError(
+        ErrorCodes.PACKAGES_REQUIRED,
+        "Karting activities must have at least one package/formula defined.",
+        "config.packages"
+      );
+    }
+
+    // Validate each package
+    const codes = new Set<string>();
+    let defaultCount = 0;
+
+    for (let i = 0; i < packages.length; i++) {
+      const pkg = packages[i];
+
+      // Required fields: code and title
+      if (!pkg.code || typeof pkg.code !== "string" || pkg.code.trim() === "") {
+        throw new PublishValidationError(
+          ErrorCodes.PACKAGE_CODE_REQUIRED,
+          `Package at index ${i} is missing required field: code`,
+          `config.packages[${i}].code`
+        );
+      }
+
+      if (!pkg.title || typeof pkg.title !== "string" || pkg.title.trim() === "") {
+        throw new PublishValidationError(
+          ErrorCodes.PACKAGE_TITLE_REQUIRED,
+          `Package at index ${i} is missing required field: title`,
+          `config.packages[${i}].title`
+        );
+      }
+
+      // Normalize code (lowercase)
+      const normalizedCode = pkg.code.toLowerCase().trim();
+
+      // Check for duplicate codes
+      if (codes.has(normalizedCode)) {
+        throw new PublishValidationError(
+          ErrorCodes.PACKAGE_CODE_DUPLICATE,
+          `Duplicate package code: "${pkg.code}". Each package must have a unique code.`,
+          `config.packages[${i}].code`
+        );
+      }
+      codes.add(normalizedCode);
+
+      // Count defaults
+      if (pkg.is_default === true) {
+        defaultCount++;
+      }
+    }
+
+    // Only one default allowed
+    if (defaultCount > 1) {
+      throw new PublishValidationError(
+        ErrorCodes.MULTIPLE_DEFAULT_PACKAGES,
+        "Only one package can be marked as default.",
+        "config.packages"
+      );
+    }
+
+    // If no default, auto-set first package as default (or require one - choosing auto-set)
+    if (defaultCount === 0) {
+      packages[0].is_default = true;
+    }
+
+    // Sanitize format_lines (convert multiline string to array)
+    for (const pkg of packages) {
+      if (pkg.format_lines && typeof pkg.format_lines === "string") {
+        pkg.format_lines = pkg.format_lines
+          .split("\n")
+          .map((line: string) => line.trim())
+          .filter((line: string) => line.length > 0);
+      }
+    }
+
+    // Ensure stable sort_order
+    for (let i = 0; i < packages.length; i++) {
+      if (packages[i].sort_order === undefined || packages[i].sort_order === null) {
+        packages[i].sort_order = i;
+      }
+    }
   }
 }

@@ -137,6 +137,10 @@ model Activity {
   config                 Json           @default("{}")
   pricing                Json           @default("{}")
 
+  catalogGroupId         String?        @map("catalog_group_id")
+  catalogGroupTitle      String?        @map("catalog_group_title")
+  catalogGroupKind       String?        @map("catalog_group_kind")
+
   availabilityTemplateId String?                  @map("availability_template_id") @db.Uuid
   availabilityTemplate   AvailabilityTemplate?    @relation(fields: [availabilityTemplateId], references: [id], onDelete: SetNull)
 
@@ -149,6 +153,8 @@ model Activity {
   @@index([businessId, updatedAt(sort: Desc)])
   @@index([status, city, updatedAt(sort: Desc)])
   @@index([availabilityTemplateId])
+  @@index([businessId, catalogGroupId, updatedAt(sort: Desc)], map: "activities_business_catalog_group_idx")
+  @@index([status, catalogGroupId], map: "activities_status_catalog_group_idx")
 }
 
 model ActivityImage {
