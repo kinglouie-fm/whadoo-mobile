@@ -1,9 +1,12 @@
+// apps/mobile/app/(consumer)/(tabs)/profile.tsx
+// ✅ Replace TopBar with navigation header (same style as Activities/Availability)
+
 import { useAuth } from "@/src/providers/auth-context";
 import { theme } from "@/src/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useLayoutEffect, useMemo } from "react";
 import { Alert, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -33,58 +36,6 @@ function Avatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) 
             ) : (
                 <Text style={{ color: theme.colors.text, fontWeight: "800" }}>{initials}</Text>
             )}
-        </View>
-    );
-}
-
-function TopBar({ title }: { title: string }) {
-    const router = useRouter();
-    const navigation = useNavigation();
-
-    const canGoBack = navigation.canGoBack();
-
-    return (
-        <View
-            style={{
-                paddingHorizontal: 16,
-                paddingTop: 6,
-                paddingBottom: 10,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-            }}
-        >
-            <Pressable
-                onPress={() => router.back()}
-                disabled={!canGoBack}
-                style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 19,
-                    backgroundColor: "#1f1f1f",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: canGoBack ? 1 : 0,
-                }}
-            >
-                <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
-            </Pressable>
-
-            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: "700" }}>{title}</Text>
-
-            <Pressable
-                onPress={() => { }}
-                style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 19,
-                    backgroundColor: "#1f1f1f",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.text} />
-            </Pressable>
         </View>
     );
 }
@@ -122,28 +73,14 @@ function Row({
             />
 
             <View style={{ flex: 1 }}>
-                <Text
-                    style={{
-                        color: danger ? theme.colors.danger : theme.colors.text,
-                        fontSize: 18,
-                    }}
-                >
+                <Text style={{ color: danger ? theme.colors.danger : theme.colors.text, fontSize: 18 }}>
                     {title}
                 </Text>
 
-                {subtitle ? (
-                    <Text style={{ color: theme.colors.muted, marginTop: 4 }}>
-                        {subtitle}
-                    </Text>
-                ) : null}
+                {subtitle ? <Text style={{ color: theme.colors.muted, marginTop: 4 }}>{subtitle}</Text> : null}
             </View>
 
-            <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={theme.colors.muted}
-                style={{ marginTop: 2 }}
-            />
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.muted} style={{ marginTop: 2 }} />
         </Pressable>
     );
 }
@@ -151,20 +88,49 @@ function Row({
 export default function ConsumerProfileHome() {
     const { appUser, stats, signOut } = useAuth();
     const router = useRouter();
+    const navigation = useNavigation();
 
-    const name = useMemo(() => {
-        return (
-            [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") ||
-            "User"
-        );
-    }, [appUser?.firstName, appUser?.lastName]);
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerShown: true,
+            headerTitle: "Profile",
+            headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
+            headerStyle: { backgroundColor: theme.colors.bg },
+            headerShadowVisible: false,
+
+            // ✅ tab screen => no back button
+            headerLeft: () => null,
+
+            // ✅ optional 3-dots (same pattern as other tabs)
+            headerRight: () => null,
+            // headerRight: () => (
+            //   <View style={{ flexDirection: "row", gap: theme.spacing.sm, marginRight: theme.spacing.md }}>
+            //     <Pressable
+            //       style={{
+            //         width: 36,
+            //         height: 36,
+            //         borderRadius: 18,
+            //         alignItems: "center",
+            //         justifyContent: "center",
+            //         backgroundColor: theme.colors.surface,
+            //       }}
+            //       onPress={() => {}}
+            //     >
+            //       <Ionicons name="ellipsis-horizontal" size={22} color={theme.colors.text} />
+            //     </Pressable>
+            //   </View>
+            // ),
+        });
+    }, [navigation]);
+
+    const name = useMemo(
+        () => [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") || "User",
+        [appUser?.firstName, appUser?.lastName]
+    );
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
-            <TopBar title="Profile" />
-
             <View style={{ paddingHorizontal: 16 }}>
-
                 <View
                     style={{
                         backgroundColor: theme.colors.card,
@@ -186,7 +152,6 @@ export default function ConsumerProfileHome() {
                     </View>
                 </View>
 
-                {/* Rows (no subscription card) */}
                 <View style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.divider }}>
                     <Row
                         icon="calendar-outline"
@@ -233,15 +198,10 @@ export default function ConsumerProfileHome() {
                     />
 
                     <View style={{ flex: 1 }}>
-                        <Text style={{ color: theme.colors.danger, fontSize: 18 }}>
-                            Log Out
-                        </Text>
-                        <Text style={{ color: theme.colors.muted, marginTop: 4 }}>
-                            Log out the account
-                        </Text>
+                        <Text style={{ color: theme.colors.danger, fontSize: 18 }}>Log Out</Text>
+                        <Text style={{ color: theme.colors.muted, marginTop: 4 }}>Log out the account</Text>
                     </View>
                 </Pressable>
-
             </View>
         </SafeAreaView>
     );

@@ -46,9 +46,9 @@ export default function SettingsScreen() {
             <View style={{ flex: 1, paddingHorizontal: 16 }}>
                 <Row icon="cog-outline" title="Account" onPress={() => router.push("/(consumer)/settings/account")} />
                 <Row icon="person-outline" title="Profile" onPress={() => router.push("/(consumer)/settings/profile")} />
-                <Row icon="help-outline" title="Help & FAQ" onPress={() => { }} />
-                <Row icon="lock-closed-outline" title="Privacy Policy" onPress={() => { }} />
-                <Row icon="information-circle-outline" title="Terms & Conditions" onPress={() => { }} />
+                <Row icon="help-outline" title="Help & FAQ" onPress={() => router.push("/(consumer)/settings/help")} />
+                <Row icon="lock-closed-outline" title="Privacy Policy" onPress={() => router.push("/(consumer)/settings/privacy")} />
+                <Row icon="information-circle-outline" title="Terms & Conditions" onPress={() => router.push("/(consumer)/settings/terms")} />
             </View>
         </SafeAreaView>
     );

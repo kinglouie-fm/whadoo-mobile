@@ -39,57 +39,6 @@ function Avatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) 
     );
 }
 
-function TopBar({ title }: { title: string }) {
-    const router = useRouter();
-    const navigation = useNavigation();
-    const canGoBack = navigation.canGoBack();
-
-    return (
-        <View
-            style={{
-                paddingHorizontal: 16,
-                paddingTop: 6,
-                paddingBottom: 10,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-            }}
-        >
-            <Pressable
-                onPress={() => router.back()}
-                disabled={!canGoBack}
-                style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 19,
-                    backgroundColor: "#1f1f1f",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: canGoBack ? 1 : 0,
-                }}
-            >
-                <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
-            </Pressable>
-
-            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: "700" }}>{title}</Text>
-
-            <Pressable
-                onPress={() => { }}
-                style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 19,
-                    backgroundColor: "#1f1f1f",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.text} />
-            </Pressable>
-        </View>
-    );
-}
-
 function Row({
     icon,
     title,

@@ -9,7 +9,7 @@ export default function ConsumerTabsLayout() {
       tabBar={(props) => <ConsumerTabBar {...props} />}
       screenOptions={{
         tabBarShowLabel: false,
-        headerShown: false,
+        headerShown: true,
 
         sceneStyle: { backgroundColor: theme.colors.bg },
       }}

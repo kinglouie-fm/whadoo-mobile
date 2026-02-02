@@ -22,20 +22,19 @@ function Row({
         <Pressable
             onPress={onPress}
             style={{
-                paddingVertical: 16,
+                paddingVertical: 14,
                 flexDirection: "row",
-                alignItems: "flex-start",
+                alignItems: "center",
                 gap: 12,
                 borderBottomWidth: 1,
                 borderBottomColor: theme.colors.divider,
             }}
         >
-            <Ionicons name={icon} size={20} color={theme.colors.text} style={{ width: 20, marginTop: 2 }} />
+            <Ionicons name={icon} size={18} color={theme.colors.text} style={{ width: 20 }} />
             <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.colors.text, fontSize: 16, fontWeight: "700" }}>{title}</Text>
-                {subtitle ? <Text style={{ color: theme.colors.muted, marginTop: 4 }}>{subtitle}</Text> : null}
+                <Text style={{ color: theme.colors.text, fontSize: 16 }}>{title}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.muted} style={{ marginTop: 2 }} />
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.muted} />
         </Pressable>
     );
 }
@@ -50,13 +49,11 @@ export default function BusinessSettingsHome() {
                 <Row
                     icon="person-circle-outline"
                     title="Account"
-                    subtitle="Email, phone, password"
                     onPress={() => router.push("/(business)/settings/account")}
                 />
                 <Row
                     icon="business-outline"
                     title="Profile"
-                    subtitle="Business info shown to users"
                     onPress={() => router.push("/(business)/settings/profile")}
                 />
                 <Row

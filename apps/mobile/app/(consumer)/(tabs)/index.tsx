@@ -123,54 +123,49 @@ export default function DiscoveryScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Discover Activities</Text>
-                </View>
 
-                {/* Search/Filter Bar */}
-                <View style={styles.searchBar}>
-                    <TextInput
-                        style={styles.searchInput}
-                        value={cityFilter}
-                        onChangeText={setCityFilter}
-                        placeholder="Filter by city..."
-                        placeholderTextColor="#999"
-                    />
-                    {cityFilter !== "" && (
-                        <TouchableOpacity onPress={() => setCityFilter("")} style={styles.clearButton}>
-                            <Text style={styles.clearButtonText}>✕</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                {error && (
-                    <View style={styles.errorBanner}>
-                        <Text style={styles.errorText}>{error}</Text>
-                        <TouchableOpacity onPress={loadActivities}>
-                            <Text style={styles.retryText}>Retry</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-
-                <FlatList
-                    data={publishedActivities}
-                    renderItem={renderActivity}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.listContent}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>No activities found.</Text>
-                            <Text style={styles.emptySubtext}>
-                                {cityFilter
-                                    ? "Try a different city or clear the filter."
-                                    : "Check back later for new activities!"}
-                            </Text>
-                        </View>
-                    }
+            {/* Search/Filter Bar */}
+            <View style={styles.searchBar}>
+                <TextInput
+                    style={styles.searchInput}
+                    value={cityFilter}
+                    onChangeText={setCityFilter}
+                    placeholder="Filter by city..."
+                    placeholderTextColor="#999"
                 />
+                {cityFilter !== "" && (
+                    <TouchableOpacity onPress={() => setCityFilter("")} style={styles.clearButton}>
+                        <Text style={styles.clearButtonText}>✕</Text>
+                    </TouchableOpacity>
+                )}
             </View>
+
+            {error && (
+                <View style={styles.errorBanner}>
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity onPress={loadActivities}>
+                        <Text style={styles.retryText}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            <FlatList
+                data={publishedActivities}
+                renderItem={renderActivity}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.listContent}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>No activities found.</Text>
+                        <Text style={styles.emptySubtext}>
+                            {cityFilter
+                                ? "Try a different city or clear the filter."
+                                : "Check back later for new activities!"}
+                        </Text>
+                    </View>
+                }
+            />
         </SafeAreaView>
     );
 }
