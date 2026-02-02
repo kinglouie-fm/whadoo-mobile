@@ -203,7 +203,7 @@ export default function ConsumerProfileHome() {
                     <Row
                         icon="cog-outline"
                         title="Settings"
-                        subtitle="Account, privacy, security"
+                        subtitle="Account, profile, privacy"
                         onPress={() => router.push("/settings")}
                     />
                 </View>

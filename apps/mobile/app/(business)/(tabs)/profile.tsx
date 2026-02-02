@@ -1,210 +1,255 @@
-import { apiGet, apiPatch, apiPost } from "@/src/lib/api";
+// apps/mobile/app/(business)/(tabs)/profile.tsx
+import { useBusiness } from "@/src/lib/use-business";
 import { useAuth } from "@/src/providers/auth-context";
-import React, { useEffect, useState } from "react";
-import { Alert, Button, Text, TextInput, View } from "react-native";
+import { theme } from "@/src/theme/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import React, { useLayoutEffect, useMemo } from "react";
+import { Alert, Image, Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-type Business = {
-    id: string;
-    ownerUserId: string;
-    name: string;
-    description?: string | null;
-    category?: string | null;
-    contactPhone?: string | null;
-    contactEmail?: string | null;
-    address?: string | null;
-    city?: string | null;
-    status: "active" | "inactive";
-};
-
-export default function BusinessProfileScreen() {
-    const { refreshMe, signOut } = useAuth();
-
-    const [business, setBusiness] = useState<Business | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [busy, setBusy] = useState(false);
-
-    // form fields
-    const [name, setName] = useState("");
-    const [city, setCity] = useState("");
-    const [category, setCategory] = useState("");
-    const [contactEmail, setContactEmail] = useState("");
-    const [contactPhone, setContactPhone] = useState("");
-    const [address, setAddress] = useState("");
-    const [description, setDescription] = useState("");
-
-    const load = async () => {
-        setLoading(true);
-        try {
-            const data = await apiGet<{ business: Business | null }>("/businesses/my");
-            setBusiness(data.business);
-
-            if (data.business) {
-                setName(data.business.name ?? "");
-                setCity(data.business.city ?? "");
-                setCategory(data.business.category ?? "");
-                setContactEmail(data.business.contactEmail ?? "");
-                setContactPhone(data.business.contactPhone ?? "");
-                setAddress(data.business.address ?? "");
-                setDescription(data.business.description ?? "");
-            } else {
-                // reset form if no business
-                setName("");
-                setCity("");
-                setCategory("");
-                setContactEmail("");
-                setContactPhone("");
-                setAddress("");
-                setDescription("");
-            }
-        } catch (e: any) {
-            Alert.alert("Load failed", e?.message ?? String(e));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        load();
-    }, []);
-
-    const create = async () => {
-        if (!name.trim()) {
-            Alert.alert("Missing", "Business name is required.");
-            return;
-        }
-
-        setBusy(true);
-        try {
-            const data = await apiPost<{ business: Business }>("/businesses", {
-                name: name.trim(),
-                city: city.trim() || undefined,
-                category: category.trim() || undefined,
-                contactEmail: contactEmail.trim() || undefined,
-                contactPhone: contactPhone.trim() || undefined,
-                address: address.trim() || undefined,
-                description: description.trim() || undefined,
-            });
-
-            setBusiness(data.business);
-
-            // role might be promoted in backend, keep appUser in sync
-            await refreshMe();
-
-            Alert.alert("Created", "Business created.");
-        } catch (e: any) {
-            Alert.alert("Create failed", e?.message ?? String(e));
-        } finally {
-            setBusy(false);
-        }
-    };
-
-    const save = async () => {
-        if (!business) return;
-
-        if (!name.trim()) {
-            Alert.alert("Missing", "Business name is required.");
-            return;
-        }
-
-        setBusy(true);
-        try {
-            const data = await apiPatch<{ business: Business }>(`/businesses/${business.id}`, {
-                name: name.trim() || undefined,
-                city: city.trim() || undefined,
-                category: category.trim() || undefined,
-                contactEmail: contactEmail.trim() || undefined,
-                contactPhone: contactPhone.trim() || undefined,
-                address: address.trim() || undefined,
-                description: description.trim() || undefined,
-            });
-
-            setBusiness(data.business);
-            Alert.alert("Saved", "Business updated.");
-        } catch (e: any) {
-            Alert.alert("Save failed", e?.message ?? String(e));
-        } finally {
-            setBusy(false);
-        }
-    };
-
-    if (loading) {
-        return (
-            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                <Text>Loading...</Text>
-            </View>
-        );
-    }
-
-    const isNew = !business;
+function Avatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) {
+    const initials =
+        name
+            .split(" ")
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((p) => p[0]?.toUpperCase())
+            .join("") || "B";
 
     return (
-        <View style={{ flex: 1, padding: 24, gap: 12 }}>
-            <Text style={{ fontSize: 18, fontWeight: "700" }}>
-                {isNew ? "Create Business" : "Business Profile"}
-            </Text>
-
-            <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="Business name *"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
-            />
-            <TextInput
-                value={city}
-                onChangeText={setCity}
-                placeholder="City"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
-            />
-            <TextInput
-                value={category}
-                onChangeText={setCategory}
-                placeholder="Category"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
-            />
-            <TextInput
-                value={contactEmail}
-                onChangeText={setContactEmail}
-                placeholder="Contact email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
-            />
-            <TextInput
-                value={contactPhone}
-                onChangeText={setContactPhone}
-                placeholder="Contact phone"
-                keyboardType="phone-pad"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
-            />
-            <TextInput
-                value={address}
-                onChangeText={setAddress}
-                placeholder="Address"
-                style={{ borderWidth: 1, borderColor: "#999", borderRadius: 10, padding: 12 }}
-            />
-            <TextInput
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Description"
-                multiline
-                style={{
-                    borderWidth: 1,
-                    borderColor: "#999",
-                    borderRadius: 10,
-                    padding: 12,
-                    minHeight: 90,
-                }}
-            />
-
-            {isNew ? (
-                <Button title={busy ? "Creating..." : "Create"} onPress={create} disabled={busy} />
+        <View
+            style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: "#2b2b2b",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+            }}
+        >
+            {photoUrl ? (
+                <Image source={{ uri: photoUrl }} style={{ width: "100%", height: "100%" }} />
             ) : (
-                <Button title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
+                <Text style={{ color: theme.colors.text, fontWeight: "800" }}>{initials}</Text>
             )}
-
-            <Button title="Refresh business" onPress={load} />
-            <Button title="Refresh user (/me)" onPress={refreshMe} />
-            <Button title="Sign out" onPress={signOut} />
         </View>
+    );
+}
+
+function TopBar({ title }: { title: string }) {
+    const router = useRouter();
+    const navigation = useNavigation();
+    const canGoBack = navigation.canGoBack();
+
+    return (
+        <View
+            style={{
+                paddingHorizontal: 16,
+                paddingTop: 6,
+                paddingBottom: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+            }}
+        >
+            <Pressable
+                onPress={() => router.back()}
+                disabled={!canGoBack}
+                style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 19,
+                    backgroundColor: "#1f1f1f",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: canGoBack ? 1 : 0,
+                }}
+            >
+                <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
+            </Pressable>
+
+            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: "700" }}>{title}</Text>
+
+            <Pressable
+                onPress={() => { }}
+                style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 19,
+                    backgroundColor: "#1f1f1f",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+            >
+                <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.text} />
+            </Pressable>
+        </View>
+    );
+}
+
+function Row({
+    icon,
+    title,
+    subtitle,
+    onPress,
+    danger,
+}: {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    subtitle?: string;
+    onPress: () => void;
+    danger?: boolean;
+}) {
+    return (
+        <Pressable
+            onPress={onPress}
+            style={{
+                paddingVertical: 16,
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: 12,
+                borderTopWidth: 1,
+                borderTopColor: theme.colors.divider,
+            }}
+        >
+            <Ionicons
+                name={icon}
+                size={20}
+                color={danger ? theme.colors.danger : theme.colors.text}
+                style={{ width: 20, marginTop: 2 }}
+            />
+
+            <View style={{ flex: 1 }}>
+                <Text style={{ color: danger ? theme.colors.danger : theme.colors.text, fontSize: 18 }}>
+                    {title}
+                </Text>
+                {subtitle ? <Text style={{ color: theme.colors.muted, marginTop: 4 }}>{subtitle}</Text> : null}
+            </View>
+
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.muted} style={{ marginTop: 2 }} />
+        </Pressable>
+    );
+}
+
+export default function BusinessProfileHome() {
+    const { signOut } = useAuth();
+    const { business } = useBusiness();
+    const router = useRouter();
+    const navigation = useNavigation();
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerShown: true,
+            headerTitle: "Profile",
+            headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
+            headerStyle: { backgroundColor: theme.colors.bg },
+            headerShadowVisible: false,
+
+            // ✅ if you want NO back button in a tab:
+            headerLeft: () => null,
+
+            // ✅ optional 3-dots button like activities/availability
+            headerRight: () => null,
+            // headerRight: () => (
+            //     <View style={{ flexDirection: "row", gap: theme.spacing.sm, marginRight: theme.spacing.md }}>
+            //         <Pressable
+            //             style={{
+            //                 width: 36,
+            //                 height: 36,
+            //                 borderRadius: 18,
+            //                 alignItems: "center",
+            //                 justifyContent: "center",
+            //                 backgroundColor: theme.colors.surface,
+            //             }}
+            //             onPress={() => {
+            //                 // open menu modal / actions
+            //             }}
+            //         >
+            //             <Ionicons name="ellipsis-horizontal" size={22} color={theme.colors.text} />
+            //         </Pressable>
+            //     </View>
+            // ),
+        });
+    }, [navigation, router]);
+
+    const name = useMemo(() => business?.name || "Business", [business?.name]);
+
+    // Try a few common image keys without breaking if missing
+    const photoUrl =
+        (business as any)?.imageUrl ||
+        (business as any)?.logoUrl ||
+        (business as any)?.photoUrl ||
+        null;
+
+    return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+            <View style={{ paddingHorizontal: 16 }}>
+                <View
+                    style={{
+                        backgroundColor: theme.colors.card,
+                        borderRadius: 18,
+                        padding: 14,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 12,
+                        marginBottom: 14,
+                    }}
+                >
+                    <Avatar name={name} photoUrl={photoUrl} />
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: "800" }}>{name}</Text>
+                        <Text style={{ color: theme.colors.muted, marginTop: 6 }}>Business</Text>
+                    </View>
+                </View>
+
+                <View style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.divider }}>
+                    <Row
+                        icon="grid-outline"
+                        title="Manage activities"
+                        subtitle="Create, edit, publish activities"
+                        onPress={() => router.push("/(business)/(tabs)/activities")}
+                    />
+                    <Row
+                        icon="time-outline"
+                        title="Manage availabilities"
+                        subtitle="Availability templates"
+                        onPress={() => router.push("/(business)/(tabs)/availability")}
+                    />
+                    <Row
+                        icon="cog-outline"
+                        title="Settings"
+                        subtitle="Account, profile, privacy"
+                        onPress={() => router.push("/(business)/settings")}
+                    />
+                </View>
+
+                <Pressable
+                    onPress={async () => {
+                        try {
+                            await signOut();
+                        } catch (e: any) {
+                            Alert.alert("Logout failed", e?.message ?? String(e));
+                        }
+                    }}
+                    style={{
+                        paddingVertical: 32,
+                        flexDirection: "row",
+                        alignItems: "flex-start",
+                        gap: 12,
+                        borderTopWidth: 1,
+                        borderTopColor: theme.colors.divider,
+                    }}
+                >
+                    <Ionicons name="log-out-outline" size={20} color={theme.colors.danger} style={{ width: 20, marginTop: 2 }} />
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ color: theme.colors.danger, fontSize: 18 }}>Log out</Text>
+                        <Text style={{ color: theme.colors.muted, marginTop: 4 }}>Log out the account</Text>
+                    </View>
+                </Pressable>
+            </View>
+        </SafeAreaView>
     );
 }

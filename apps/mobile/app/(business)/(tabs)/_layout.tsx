@@ -10,7 +10,8 @@ export default function BusinessTabsLayout() {
             screenOptions={{
                 headerStyle: { backgroundColor: theme.colors.bg },
                 headerTintColor: theme.colors.text,
-                headerShadowVisible: false,
+                tabBarShowLabel: false,
+                headerShown: true,
                 tabBarStyle: { backgroundColor: theme.colors.tabBarBg, borderTopColor: theme.colors.divider },
                 tabBarActiveTintColor: theme.colors.accent,
                 tabBarInactiveTintColor: theme.colors.tabIconInactive,
