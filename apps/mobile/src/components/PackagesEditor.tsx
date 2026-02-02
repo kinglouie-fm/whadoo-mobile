@@ -1,3 +1,4 @@
+import { theme } from "@/src/theme/theme";
 import React, { useState } from "react";
 import {
     Alert,
@@ -267,6 +268,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                                 setEditingPackage((prev) => ({ ...prev!, code: text }))
                             }
                             placeholder="e.g., standard, mini-gp, grand-gp"
+                            placeholderTextColor={theme.colors.muted}
                         />
                     </View>
 
@@ -281,6 +283,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                                 setEditingPackage((prev) => ({ ...prev!, title: text }))
                             }
                             placeholder="e.g., Standard Session, Mini GP"
+                            placeholderTextColor={theme.colors.muted}
                         />
                     </View>
 
@@ -341,6 +344,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                                 setEditingPackage((prev) => ({ ...prev!, description: text }))
                             }
                             placeholder="Describe this package..."
+                            placeholderTextColor={theme.colors.muted}
                             multiline
                             numberOfLines={3}
                         />
@@ -357,6 +361,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                                 setEditingPackage((prev) => ({ ...prev!, format_lines: text }))
                             }
                             placeholder="e.g., 8 min qualifying&#10;16 min race"
+                            placeholderTextColor={theme.colors.muted}
                             multiline
                             numberOfLines={4}
                         />
@@ -375,6 +380,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                                     }))
                                 }
                                 placeholder="0.00"
+                                placeholderTextColor={theme.colors.muted}
                                 keyboardType="decimal-pad"
                             />
                         </View>
@@ -387,6 +393,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                                     setEditingPackage((prev) => ({ ...prev!, currency: text }))
                                 }
                                 placeholder="EUR"
+                                placeholderTextColor={theme.colors.muted}
                             />
                         </View>
                     </View>
@@ -403,6 +410,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                                 }))
                             }
                             placeholder="e.g., 5 karts minimum"
+                            placeholderTextColor={theme.colors.muted}
                             keyboardType="number-pad"
                         />
                     </View>
@@ -420,6 +428,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                                     }))
                                 }
                                 placeholder="e.g., 8"
+                                placeholderTextColor={theme.colors.muted}
                                 keyboardType="number-pad"
                             />
                         </View>
@@ -435,6 +444,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                                     }))
                                 }
                                 placeholder="e.g., 12"
+                                placeholderTextColor={theme.colors.muted}
                                 keyboardType="number-pad"
                             />
                         </View>
@@ -449,6 +459,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                                 setEditingPackage((prev) => ({ ...prev!, schedule_note: text }))
                             }
                             placeholder="e.g., First Wednesday of month at 17:15"
+                            placeholderTextColor={theme.colors.muted}
                         />
                     </View>
 
@@ -501,8 +512,9 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginVertical: 16,
+        marginVertical: theme.spacing.lg,
     },
+
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -510,196 +522,246 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     headerText: {
-        fontSize: 18,
-        fontWeight: "600",
+        fontSize: 14,
+        fontWeight: "800",
+        color: theme.colors.text,
     },
+
     addButton: {
-        backgroundColor: "#007AFF",
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
+        height: 34,
+        paddingHorizontal: 12,
+        borderRadius: 17,
+        backgroundColor: theme.colors.surface,
+        borderWidth: 1,
+        borderColor: theme.colors.divider,
+        alignItems: "center",
+        justifyContent: "center",
     },
     addButtonText: {
-        color: "#fff",
+        color: theme.colors.text,
+        fontWeight: "800",
+        fontSize: 13,
+    },
+
+    emptyText: {
+        color: theme.colors.muted,
+        textAlign: "center",
+        paddingVertical: 18,
         fontWeight: "600",
     },
-    emptyText: {
-        color: "#666",
-        fontStyle: "italic",
-        textAlign: "center",
-        padding: 20,
-    },
+
     packagesList: {
-        maxHeight: 400,
+        maxHeight: 420,
     },
+
     packageCard: {
-        backgroundColor: "#f5f5f5",
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 8,
+        backgroundColor: theme.colors.card,
+        padding: theme.spacing.md,
+        borderRadius: theme.radius.lg,
+        marginBottom: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.divider,
     },
     packageHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "flex-start",
+        gap: 12,
     },
     packageInfo: {
         flex: 1,
+        minWidth: 0,
     },
     packageTitle: {
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 15,
+        fontWeight: "800",
+        color: theme.colors.text,
         marginBottom: 4,
     },
     defaultBadge: {
-        color: "#007AFF",
-        fontSize: 14,
+        color: theme.colors.accent,
+        fontSize: 12,
+        fontWeight: "800",
     },
     packageCode: {
-        fontSize: 14,
-        color: "#666",
-    },
-    packageTrackType: {
-        fontSize: 14,
-        color: "#007AFF",
-        marginTop: 2,
-    },
-    packageDescription: {
-        fontSize: 14,
-        color: "#333",
-        marginTop: 8,
-    },
-    packagePrice: {
-        fontSize: 14,
-        color: "#333",
-        marginTop: 4,
-        fontWeight: "500",
-    },
-    packageActions: {
-        flexDirection: "row",
-        gap: 4,
-    },
-    actionButton: {
-        backgroundColor: "#007AFF",
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-    },
-    actionButtonDisabled: {
-        backgroundColor: "#ccc",
-    },
-    actionButtonText: {
-        color: "#fff",
         fontSize: 12,
+        color: theme.colors.muted,
         fontWeight: "600",
     },
+    packageTrackType: {
+        fontSize: 12,
+        color: theme.colors.muted,
+        marginTop: 4,
+        fontWeight: "700",
+    },
+    packageDescription: {
+        fontSize: 13,
+        color: theme.colors.text,
+        marginTop: 10,
+        fontWeight: "500",
+    },
+    packagePrice: {
+        fontSize: 13,
+        color: theme.colors.text,
+        marginTop: 8,
+        fontWeight: "800",
+    },
+
+    packageActions: {
+        flexDirection: "row",
+        gap: 6,
+        flexWrap: "wrap",
+        justifyContent: "flex-end",
+        maxWidth: 180,
+    },
+
+    actionButton: {
+        height: 30,
+        paddingHorizontal: 10,
+        borderRadius: 999,
+        backgroundColor: theme.colors.surface,
+        borderWidth: 1,
+        borderColor: theme.colors.divider,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    actionButtonDisabled: {
+        opacity: 0.4,
+    },
+    actionButtonText: {
+        color: theme.colors.text,
+        fontSize: 12,
+        fontWeight: "800",
+    },
+
     removeButton: {
-        backgroundColor: "#FF3B30",
+        backgroundColor: theme.colors.danger,
+        borderColor: theme.colors.danger,
     },
     removeButtonText: {
         color: "#fff",
         fontSize: 12,
-        fontWeight: "600",
+        fontWeight: "800",
     },
+
+    // Modal
     modalContainer: {
         flex: 1,
-        backgroundColor: "#fff",
-        padding: 16,
+        backgroundColor: theme.colors.bg,
+        padding: theme.spacing.lg,
     },
     modalHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 20,
-        paddingTop: 40,
+        marginBottom: 16,
+        paddingTop: theme.spacing.lg,
     },
     modalTitle: {
-        fontSize: 24,
-        fontWeight: "700",
+        fontSize: 16,
+        fontWeight: "800",
+        color: theme.colors.text,
     },
     closeButton: {
-        fontSize: 28,
-        color: "#666",
+        fontSize: 22,
+        color: theme.colors.muted,
+        fontWeight: "800",
     },
+
     formGroup: {
-        marginBottom: 16,
+        marginBottom: 14,
     },
     formRow: {
         flexDirection: "row",
-        gap: 12,
+        gap: 10,
     },
     formGroupHalf: {
         flex: 1,
     },
+
     label: {
-        fontSize: 16,
-        fontWeight: "500",
+        fontSize: 12,
+        fontWeight: "800",
         marginBottom: 8,
+        color: theme.colors.muted,
+        textTransform: "uppercase",
+        letterSpacing: 0.4,
     },
     required: {
-        color: "#FF3B30",
+        color: theme.colors.danger,
+        fontWeight: "900",
     },
+
     input: {
         borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
+        borderColor: theme.colors.divider,
+        borderRadius: theme.radius.lg,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        fontSize: 15,
+        backgroundColor: theme.colors.surface,
+        color: theme.colors.text,
     },
     textArea: {
-        minHeight: 80,
+        minHeight: 90,
         textAlignVertical: "top",
     },
+
     switchRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
+        gap: 12,
     },
+
     modalActions: {
         flexDirection: "row",
-        gap: 12,
-        marginTop: 24,
-        marginBottom: 40,
+        gap: 10,
+        marginTop: 16,
+        marginBottom: 30,
     },
     button: {
         flex: 1,
-        padding: 16,
-        borderRadius: 8,
+        height: 46,
+        borderRadius: 23,
         alignItems: "center",
+        justifyContent: "center",
     },
     cancelButton: {
-        backgroundColor: "#666",
+        backgroundColor: "#2A2A2A",
     },
     saveButton: {
-        backgroundColor: "#007AFF",
+        backgroundColor: theme.colors.accent,
     },
     buttonText: {
         color: "#fff",
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 13,
+        fontWeight: "900",
     },
+
     trackTypeRow: {
         flexDirection: "row",
-        gap: 12,
+        gap: 10,
     },
     trackTypeOption: {
         flex: 1,
-        padding: 12,
+        paddingVertical: 12,
         borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 8,
+        borderColor: theme.colors.divider,
+        borderRadius: 999,
         alignItems: "center",
+        backgroundColor: theme.colors.surface,
     },
     trackTypeOptionSelected: {
-        backgroundColor: "#007AFF",
-        borderColor: "#007AFF",
+        backgroundColor: theme.colors.accent,
+        borderColor: theme.colors.accent,
     },
     trackTypeText: {
-        fontSize: 16,
-        color: "#333",
+        fontSize: 13,
+        fontWeight: "800",
+        color: theme.colors.text,
     },
     trackTypeTextSelected: {
-        color: "#fff",
-        fontWeight: "600",
+        color: theme.colors.bg,
     },
 });

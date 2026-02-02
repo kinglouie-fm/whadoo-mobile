@@ -9,6 +9,7 @@ import {
     updateTemplate,
     UpdateTemplateData,
 } from "@/src/store/slices/availability-template-slice";
+import { theme } from "@/src/theme/theme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -203,7 +204,7 @@ export default function AvailabilityDetailScreen() {
     if (loading && isEditMode) {
         return (
             <View style={styles.container}>
-                <ActivityIndicator size="large" color="#007AFF" />
+                <ActivityIndicator size="large" color={theme.colors.accent} />
             </View>
         );
     }
@@ -378,143 +379,169 @@ export default function AvailabilityDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: theme.colors.bg,
     },
+
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: 16,
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: "#e0e0e0",
+        borderBottomColor: theme.colors.divider,
+        backgroundColor: theme.colors.bg,
     },
     title: {
-        fontSize: 18,
-        fontWeight: "bold",
+        fontSize: 16,
+        fontWeight: "800",
+        color: theme.colors.text,
     },
     cancelButton: {
-        color: "#007AFF",
-        fontSize: 16,
+        color: theme.colors.muted,
+        fontSize: 14,
+        fontWeight: "700",
     },
     saveButton: {
-        color: "#007AFF",
-        fontSize: 16,
-        fontWeight: "600",
+        color: theme.colors.accent,
+        fontSize: 14,
+        fontWeight: "800",
     },
+
     form: {
-        padding: 16,
+        padding: theme.spacing.lg,
     },
     field: {
-        marginBottom: 20,
+        marginBottom: theme.spacing.lg,
     },
+
     label: {
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 12,
+        fontWeight: "800",
         marginBottom: 8,
-        color: "#333",
+        color: theme.colors.muted,
+        textTransform: "uppercase",
+        letterSpacing: 0.4,
     },
     subLabel: {
-        fontSize: 14,
-        fontWeight: "500",
-        marginBottom: 4,
-        color: "#666",
+        fontSize: 12,
+        fontWeight: "700",
+        marginBottom: 6,
+        color: theme.colors.muted,
     },
+
     input: {
         borderWidth: 1,
-        borderColor: "#ccc",
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
+        borderColor: theme.colors.divider,
+        borderRadius: theme.radius.lg,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        fontSize: 15,
+        backgroundColor: theme.colors.surface,
+        color: theme.colors.text,
     },
     inputError: {
-        borderColor: "#FF3B30",
+        borderColor: theme.colors.danger,
     },
     errorText: {
-        color: "#FF3B30",
+        color: theme.colors.danger,
         fontSize: 12,
-        marginTop: 4,
+        marginTop: 6,
+        fontWeight: "700",
     },
+
     daySelector: {
         flexDirection: "row",
-        gap: 8,
         flexWrap: "wrap",
+        gap: 8,
     },
     dayButton: {
         paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 8,
+        paddingVertical: 10,
+        borderRadius: 999,
         borderWidth: 1,
-        borderColor: "#ccc",
-        backgroundColor: "#fff",
+        borderColor: theme.colors.divider,
+        backgroundColor: theme.colors.surface,
     },
     dayButtonSelected: {
-        backgroundColor: "#007AFF",
-        borderColor: "#007AFF",
+        backgroundColor: theme.colors.accent,
+        borderColor: theme.colors.accent,
     },
     dayButtonText: {
-        fontSize: 14,
-        color: "#333",
+        fontSize: 13,
+        fontWeight: "800",
+        color: theme.colors.text,
     },
     dayButtonTextSelected: {
-        color: "#fff",
+        color: theme.colors.bg,
     },
+
     timeRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 12,
+        gap: 10,
     },
     timeField: {
         flex: 1,
     },
     timeSeparator: {
         fontSize: 18,
-        color: "#666",
-        marginTop: 20,
+        color: theme.colors.muted,
+        marginTop: 18,
     },
+
     sectionHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 8,
+        marginBottom: 10,
     },
     addButton: {
-        backgroundColor: "#007AFF",
+        height: 34,
         paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 4,
+        borderRadius: 17,
+        backgroundColor: theme.colors.surface,
+        borderWidth: 1,
+        borderColor: theme.colors.divider,
+        alignItems: "center",
+        justifyContent: "center",
     },
     addButtonText: {
-        color: "#fff",
-        fontSize: 14,
-        fontWeight: "500",
+        color: theme.colors.text,
+        fontSize: 13,
+        fontWeight: "800",
     },
+
     exceptionCard: {
-        backgroundColor: "#f9f9f9",
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 12,
+        backgroundColor: theme.colors.card,
+        borderRadius: theme.radius.lg,
+        padding: theme.spacing.md,
+        marginBottom: theme.spacing.md,
         borderWidth: 1,
-        borderColor: "#e0e0e0",
+        borderColor: theme.colors.divider,
+        gap: 10,
     },
     exceptionRow: {
         flexDirection: "row",
-        gap: 8,
-        marginBottom: 8,
+        gap: 10,
     },
     exceptionField: {
         flex: 1,
     },
+
     removeButton: {
-        backgroundColor: "#FF3B30",
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 4,
+        height: 36,
+        paddingHorizontal: 14,
+        borderRadius: 18,
+        backgroundColor: theme.colors.danger,
         alignSelf: "flex-start",
-        marginTop: 8,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 2,
     },
     removeButtonText: {
         color: "#fff",
-        fontSize: 14,
-        fontWeight: "500",
+        fontSize: 13,
+        fontWeight: "800",
     },
 });

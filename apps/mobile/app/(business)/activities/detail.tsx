@@ -13,6 +13,7 @@ import {
 } from "@/src/store/slices/activity-slice";
 import { fetchTypeDefinition, fetchTypeDefinitions } from "@/src/store/slices/activity-type-slice";
 import { fetchTemplates } from "@/src/store/slices/availability-template-slice";
+import { theme } from "@/src/theme/theme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -190,7 +191,7 @@ export default function ActivityDetailScreen() {
     if (loading && isEditMode) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#007AFF" />
+                <ActivityIndicator size="large" color={theme.colors.accent} />
             </View>
         );
     }
@@ -460,74 +461,87 @@ export default function ActivityDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: theme.colors.bg,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: theme.colors.bg,
     },
+
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: 16,
-        backgroundColor: "#fff",
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.md,
+        backgroundColor: theme.colors.bg,
         borderBottomWidth: 1,
-        borderBottomColor: "#e0e0e0",
+        borderBottomColor: theme.colors.divider,
     },
     title: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: "#333",
+        fontSize: 16,
+        fontWeight: "800",
+        color: theme.colors.text,
     },
     cancelButton: {
-        fontSize: 16,
-        color: "#007AFF",
+        fontSize: 14,
+        fontWeight: "700",
+        color: theme.colors.muted,
     },
     saveButton: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#007AFF",
+        fontSize: 14,
+        fontWeight: "800",
+        color: theme.colors.accent,
     },
+
     form: {
-        padding: 16,
+        padding: theme.spacing.lg,
     },
     field: {
-        marginBottom: 20,
+        marginBottom: theme.spacing.lg,
     },
+
     label: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#333",
+        fontSize: 12,
+        fontWeight: "800",
+        color: theme.colors.muted,
         marginBottom: 8,
+        textTransform: "uppercase",
+        letterSpacing: 0.4,
     },
     helperText: {
         fontSize: 12,
-        color: "#666",
-        marginTop: 4,
+        color: theme.colors.muted,
+        marginTop: 6,
+        fontWeight: "600",
     },
+
     input: {
         borderWidth: 1,
-        borderColor: "#ccc",
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        backgroundColor: "#fff",
+        borderColor: theme.colors.divider,
+        borderRadius: theme.radius.lg,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        fontSize: 15,
+        backgroundColor: theme.colors.surface,
+        color: theme.colors.text,
     },
     textArea: {
-        height: 100,
+        height: 110,
         textAlignVertical: "top",
     },
     inputError: {
-        borderColor: "#FF3B30",
+        borderColor: theme.colors.danger,
     },
     errorText: {
-        color: "#FF3B30",
+        color: theme.colors.danger,
         fontSize: 12,
-        marginTop: 4,
+        marginTop: 6,
+        fontWeight: "700",
     },
+
     typeDropdown: {
         flexDirection: "row",
         flexWrap: "wrap",
@@ -535,58 +549,70 @@ const styles = StyleSheet.create({
     },
     typeOption: {
         paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 8,
+        paddingHorizontal: 14,
+        borderRadius: 999,
         borderWidth: 1,
-        borderColor: "#ccc",
-        backgroundColor: "#fff",
+        borderColor: theme.colors.divider,
+        backgroundColor: theme.colors.surface,
     },
     typeOptionSelected: {
-        backgroundColor: "#007AFF",
-        borderColor: "#007AFF",
+        backgroundColor: theme.colors.accent,
+        borderColor: theme.colors.accent,
     },
     typeOptionText: {
-        fontSize: 14,
-        color: "#333",
+        fontSize: 13,
+        fontWeight: "800",
+        color: theme.colors.text,
     },
     typeOptionTextSelected: {
-        color: "#fff",
-        fontWeight: "600",
+        color: theme.colors.bg,
     },
+
     templatePicker: {
         marginTop: 8,
+        gap: 10,
     },
     templateOption: {
-        padding: 12,
-        borderRadius: 8,
+        padding: theme.spacing.md,
+        borderRadius: theme.radius.lg,
         borderWidth: 1,
-        borderColor: "#ccc",
-        backgroundColor: "#fff",
-        marginBottom: 8,
+        borderColor: theme.colors.divider,
+        backgroundColor: theme.colors.card,
     },
     templateOptionSelected: {
-        backgroundColor: "#007AFF",
-        borderColor: "#007AFF",
+        borderColor: theme.colors.accent,
+        backgroundColor: theme.colors.surface,
     },
     templateOptionText: {
         fontSize: 14,
-        color: "#333",
+        fontWeight: "800",
+        color: theme.colors.text,
     },
     templateOptionTextSelected: {
-        color: "#fff",
+        color: theme.colors.text,
+    },
+    templateDetails: {
+        fontSize: 12,
+        color: theme.colors.muted,
+        marginTop: 6,
         fontWeight: "600",
     },
+
     templateClearButton: {
-        padding: 12,
-        borderRadius: 8,
-        backgroundColor: "#f0f0f0",
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: theme.colors.surface,
+        borderWidth: 1,
+        borderColor: theme.colors.divider,
         alignItems: "center",
-        marginTop: 8,
+        justifyContent: "center",
     },
     templateClearText: {
-        fontSize: 14,
-        color: "#666",
+        fontSize: 13,
+        fontWeight: "800",
+        color: theme.colors.muted,
     },
+
     labelRow: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -594,39 +620,44 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     requiredIndicator: {
-        backgroundColor: "#FFF3E0",
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
+        backgroundColor: "rgba(255,77,77,0.12)",
+        borderWidth: 1,
+        borderColor: "rgba(255,77,77,0.25)",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
     },
     requiredText: {
         fontSize: 12,
-        color: "#F57C00",
-        fontWeight: "600",
+        color: theme.colors.danger,
+        fontWeight: "800",
     },
-    templateDetails: {
-        fontSize: 12,
-        color: "#666",
-        marginTop: 4,
-    },
+
     warningBox: {
-        backgroundColor: "#FFF3E0",
-        padding: 12,
-        borderRadius: 8,
+        backgroundColor: "rgba(245,158,11,0.14)",
+        borderWidth: 1,
+        borderColor: "rgba(245,158,11,0.25)",
+        padding: theme.spacing.md,
+        borderRadius: theme.radius.lg,
         marginTop: 8,
     },
     warningText: {
-        fontSize: 14,
-        color: "#F57C00",
+        fontSize: 13,
+        color: "#F59E0B",
+        fontWeight: "700",
     },
+
     infoBox: {
-        backgroundColor: "#E3F2FD",
-        padding: 12,
-        borderRadius: 8,
+        backgroundColor: "rgba(34,197,94,0.12)",
+        borderWidth: 1,
+        borderColor: "rgba(34,197,94,0.22)",
+        padding: theme.spacing.md,
+        borderRadius: theme.radius.lg,
         marginTop: 8,
     },
     infoText: {
-        fontSize: 14,
-        color: "#1976D2",
+        fontSize: 13,
+        color: "#22C55E",
+        fontWeight: "700",
     },
 });

@@ -14,6 +14,8 @@ import { Provider as ReduxProvider } from "react-redux";
 
 import { Roboto_400Regular, Roboto_500Medium, Roboto_700Bold, useFonts } from "@expo-google-fonts/roboto";
 
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+
 function RouteGuard() {
   const { firebaseUser, loadingAuth, role, loadingRole, appUser } = useAuth();
   const segments = useSegments();
@@ -92,19 +94,21 @@ export default function RootLayout() {
   }
 
   return (
-    <ReduxProvider store={store}>
-      <AuthProvider>
-        <RouteGuard />
-        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(consumer)" />
-            <Stack.Screen name="(business)" />
-          </Stack>
-          <StatusBar style="light" />
-        </ThemeProvider>
-        <Toast />
-      </AuthProvider>
-    </ReduxProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ReduxProvider store={store}>
+        <AuthProvider>
+          <RouteGuard />
+          <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(consumer)" />
+              <Stack.Screen name="(business)" />
+            </Stack>
+            <StatusBar style="light" />
+          </ThemeProvider>
+          <Toast />
+        </AuthProvider>
+      </ReduxProvider>
+    </GestureHandlerRootView>
   );
 }
