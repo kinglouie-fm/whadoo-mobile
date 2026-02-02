@@ -156,28 +156,42 @@ export default function ActivityDetailScreen() {
         }
 
         try {
-            const activityData: CreateActivityData | UpdateActivityData = {
-                businessId: business.id,
-                title,
-                typeId,
-                description: description || undefined,
-                category: category || undefined,
-                city: city || undefined,
-                address: address || undefined,
-                priceFrom: priceFrom ? parseFloat(priceFrom) : undefined,
-                config,
-                pricing,
-                availabilityTemplateId: availabilityTemplateId || undefined,
-                catalogGroupId: catalogGroupId || undefined,
-                catalogGroupTitle: catalogGroupTitle || undefined,
-                catalogGroupKind: catalogGroupKind || undefined,
-            };
-
             if (isEditMode && id) {
-                await dispatch(updateActivity({ activityId: id, data: activityData })).unwrap();
+                const updateData: UpdateActivityData = {
+                    title,
+                    typeId,
+                    description: description || undefined,
+                    category: category || undefined,
+                    city: city || undefined,
+                    address: address || undefined,
+                    priceFrom: priceFrom ? parseFloat(priceFrom) : undefined,
+                    config,
+                    pricing,
+                    availabilityTemplateId: availabilityTemplateId || undefined,
+                    catalogGroupId: catalogGroupId || undefined,
+                    catalogGroupTitle: catalogGroupTitle || undefined,
+                    catalogGroupKind: catalogGroupKind || undefined,
+                };
+                await dispatch(updateActivity({ activityId: id, data: updateData })).unwrap();
                 Alert.alert("Success", "Activity updated successfully");
             } else {
-                await dispatch(createActivity(activityData)).unwrap();
+                const createData: CreateActivityData = {
+                    businessId: business.id,
+                    title,
+                    typeId,
+                    description: description || undefined,
+                    category: category || undefined,
+                    city: city || undefined,
+                    address: address || undefined,
+                    priceFrom: priceFrom ? parseFloat(priceFrom) : undefined,
+                    config,
+                    pricing,
+                    availabilityTemplateId: availabilityTemplateId || undefined,
+                    catalogGroupId: catalogGroupId || undefined,
+                    catalogGroupTitle: catalogGroupTitle || undefined,
+                    catalogGroupKind: catalogGroupKind || undefined,
+                };
+                await dispatch(createActivity(createData)).unwrap();
                 Alert.alert("Success", "Activity created successfully");
             }
 

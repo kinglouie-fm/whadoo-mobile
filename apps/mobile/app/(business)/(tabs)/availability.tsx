@@ -205,6 +205,7 @@ export default function AvailabilityScreen() {
     // ✅ Use top Tabs header (no second header inside screen)
     useLayoutEffect(() => {
         navigation.setOptions({
+            title: "Manage Availabilities",
             headerLeft: () => null,
             headerRight: () => (
                 <View style={styles.headerRight}>
