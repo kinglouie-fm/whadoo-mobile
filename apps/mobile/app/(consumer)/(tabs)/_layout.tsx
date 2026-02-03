@@ -10,8 +10,11 @@ export default function ConsumerTabsLayout() {
       screenOptions={{
         tabBarShowLabel: false,
         headerShown: true,
-
-        sceneStyle: { backgroundColor: theme.colors.bg },
+        headerStyle: { backgroundColor: theme.colors.bg },
+        headerTintColor: theme.colors.text,
+        tabBarStyle: { backgroundColor: theme.colors.tabBarBg, borderTopColor: theme.colors.divider },
+        tabBarActiveTintColor: theme.colors.accent,
+        tabBarInactiveTintColor: theme.colors.tabIconInactive,
       }}
     >
       <Tabs.Screen name="index" />

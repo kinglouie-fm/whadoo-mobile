@@ -13,6 +13,8 @@ import {
 } from "../common/error-responses";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateActivityDto } from "./dto/create-activity.dto";
+import { GroupedCardDto, GroupedCardsResponseDto } from "./dto/grouped-card.dto";
+import { RecordSwipeDto } from "./dto/record-swipe.dto";
 import { UpdateActivityDto } from "./dto/update-activity.dto";
 
 @Injectable()
@@ -207,6 +209,145 @@ export class ActivitiesService {
     });
 
     return activities;
+  }
+
+  async getGroupedCards(filters?: {
+    city?: string;
+    typeId?: string;
+    limit?: number;
+    cursor?: string;
+  }): Promise<GroupedCardsResponseDto> {
+    const limit = filters?.limit || 20;
+
+    // Fetch published activities with their business and availability template info
+    const activities = await this.prisma.activity.findMany({
+      where: {
+        status: "published",
+        ...(filters?.city ? { city: filters.city } : {}),
+        ...(filters?.typeId ? { typeId: filters.typeId } : {}),
+        business: {
+          status: "active",
+        },
+      },
+      include: {
+        images: {
+          where: { isThumbnail: true },
+          take: 1,
+          orderBy: { sortOrder: "asc" },
+        },
+        business: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+        availabilityTemplate: {
+          select: {
+            slotDurationMinutes: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    // Group activities by catalogGroupId or by individual activity if no grouping
+    const groupMap = new Map<string, any[]>();
+
+    for (const activity of activities) {
+      const groupKey = activity.catalogGroupId || activity.id;
+      if (!groupMap.has(groupKey)) {
+        groupMap.set(groupKey, []);
+      }
+      groupMap.get(groupKey)!.push(activity);
+    }
+
+    // Build grouped cards
+    const groups: GroupedCardDto[] = [];
+
+    for (const [groupKey, groupActivities] of groupMap.entries()) {
+      // Sort by priceFrom (nulls last) and then by updatedAt
+      groupActivities.sort((a, b) => {
+        if (a.priceFrom === null) return 1;
+        if (b.priceFrom === null) return -1;
+        const priceDiff = Number(a.priceFrom) - Number(b.priceFrom);
+        if (priceDiff !== 0) return priceDiff;
+        return b.updatedAt.getTime() - a.updatedAt.getTime();
+      });
+
+      const representativeActivity = groupActivities[0];
+      const businessName = representativeActivity.business?.name || "Unknown Business";
+      const city = representativeActivity.city || "Unknown";
+
+      // Calculate group-level fields
+      const priceFrom = groupActivities.reduce((min, act) => {
+        if (act.priceFrom === null) return min;
+        const price = Number(act.priceFrom);
+        return min === null || price < min ? price : min;
+      }, null as number | null) || 0;
+
+      const maxUpdatedAt = groupActivities.reduce((max, act) => {
+        return act.updatedAt > max ? act.updatedAt : max;
+      }, groupActivities[0].updatedAt);
+
+      // Collect sample durations from availability templates
+      const durations = groupActivities
+        .map((act) => act.availabilityTemplate?.slotDurationMinutes)
+        .filter((d): d is number => d !== null && d !== undefined);
+      const uniqueDurations = Array.from(new Set(durations)).slice(0, 3);
+
+      // Get thumbnail
+      const thumbnailUrl = representativeActivity.images[0]?.imageUrl || null;
+
+      // Extract tags (for now, just use category if available)
+      const tags: string[] = [];
+      if (representativeActivity.category) {
+        tags.push(representativeActivity.category);
+      }
+
+      // Use catalogGroupTitle or fallback to typeId + location
+      const catalogGroupTitle = representativeActivity.catalogGroupTitle;
+      const typeLabel = catalogGroupTitle || `${representativeActivity.typeId} at ${businessName}`;
+
+      groups.push({
+        catalogGroupId: groupKey,
+        businessId: representativeActivity.businessId,
+        businessName,
+        typeId: representativeActivity.typeId,
+        typeLabel,
+        city,
+        locationSummary: `${city}${representativeActivity.address ? ", " + representativeActivity.address : ""}`,
+        thumbnailUrl: thumbnailUrl || undefined,
+        priceFrom,
+        tags,
+        activityCount: groupActivities.length,
+        sampleDurations: uniqueDurations,
+        updatedAt: maxUpdatedAt,
+        representativeActivityId: representativeActivity.id,
+      });
+    }
+
+    // Sort groups by updatedAt descending
+    groups.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+
+    // Apply cursor-based pagination
+    let paginatedGroups = groups;
+    if (filters?.cursor) {
+      const cursorIndex = groups.findIndex((g) => g.catalogGroupId === filters.cursor);
+      if (cursorIndex !== -1) {
+        paginatedGroups = groups.slice(cursorIndex + 1);
+      }
+    }
+
+    // Take limit + 1 to determine if there's a next page
+    const hasMore = paginatedGroups.length > limit;
+    const resultGroups = paginatedGroups.slice(0, limit);
+    const nextCursor = hasMore ? resultGroups[resultGroups.length - 1].catalogGroupId : null;
+
+    return {
+      groups: resultGroups,
+      nextCursor,
+    };
   }
 
   async updateActivity(activityId: string, userId: string, dto: UpdateActivityDto) {
@@ -608,5 +749,20 @@ export class ActivitiesService {
         packages[i].sort_order = i;
       }
     }
+  }
+
+  async recordSwipe(userId: string, dto: RecordSwipeDto) {
+    await this.prisma.userSwipe.create({
+      data: {
+        userId,
+        direction: dto.direction,
+        catalogGroupId: dto.catalogGroupId ?? null,
+        activityId: dto.activityId ?? null,
+        city: dto.city ?? null,
+        typeId: dto.typeId ?? null,
+      },
+    });
+
+    return { success: true };
   }
 }

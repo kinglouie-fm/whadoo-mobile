@@ -14,6 +14,7 @@ import { AppUserGuard } from "../auth/app-user.guard";
 import { AuthedRequest, FirebaseAuthGuard } from "../auth/firebase-auth.guard";
 import { ActivitiesService } from "./activities.service";
 import { CreateActivityDto } from "./dto/create-activity.dto";
+import { RecordSwipeDto } from "./dto/record-swipe.dto";
 import { UpdateActivityDto } from "./dto/update-activity.dto";
 
 @Controller("activities")
@@ -41,6 +42,21 @@ export class ActivitiesController {
   @Get("published")
   async listPublishedActivities(@Query("city") city?: string, @Query("typeId") typeId?: string) {
     return this.service.listPublishedActivities({ city, typeId });
+  }
+
+  @Get("grouped-cards")
+  async getGroupedCards(
+    @Query("city") city?: string,
+    @Query("typeId") typeId?: string,
+    @Query("limit") limit?: string,
+    @Query("cursor") cursor?: string
+  ) {
+    return this.service.getGroupedCards({
+      city,
+      typeId,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      cursor,
+    });
   }
 
   @Get(":id")
@@ -85,5 +101,12 @@ export class ActivitiesController {
   async deactivateActivity(@Req() req: AuthedRequest, @Param("id") id: string) {
     const userId = req.appUser!.id;
     return this.service.deactivateActivity(id, userId);
+  }
+
+  @Post("swipe")
+  @UseGuards(FirebaseAuthGuard, AppUserGuard)
+  async recordSwipe(@Req() req: AuthedRequest, @Body() dto: RecordSwipeDto) {
+    const userId = req.appUser!.id;
+    return this.service.recordSwipe(userId, dto);
   }
 }
