@@ -1,6 +1,6 @@
 // apps/mobile/app/(business)/(tabs)/profile.tsx
-import { useBusiness } from "@/src/lib/use-business";
 import { useAuth } from "@/src/providers/auth-context";
+import { useBusiness } from "@/src/providers/business-context";
 import { theme } from "@/src/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";

@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsArray, IsOptional, IsString } from "class-validator";
 
 export class UpdateBusinessDto {
   @IsOptional()
@@ -27,5 +27,14 @@ export class UpdateBusinessDto {
 
   @IsOptional()
   @IsString()
+  location?: string; // Maps to address field
+
+  @IsOptional()
+  @IsString()
   city?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 }

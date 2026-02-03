@@ -1,6 +1,6 @@
 // apps/mobile/app/(business)/settings/profile/index.tsx
 import { TopBar } from "@/src/components/TopBar";
-import { useBusiness } from "@/src/lib/use-business";
+import { useBusiness } from "@/src/providers/business-context";
 import { theme } from "@/src/theme/theme";
 import { useRouter } from "expo-router";
 import React from "react";

@@ -23,8 +23,7 @@ export default function OtherScreen() {
                     onPress: async () => {
                         setBusy(true);
                         try {
-                            // ✅ adjust endpoint/DTO to your backend
-                            await apiPatch("/business/me", { status: "inactive" });
+                            await apiPatch("/businesses/me", { status: "inactive" });
                             Alert.alert("Deactivated", "Your business account has been deactivated.");
                             await signOut();
                         } catch (e: any) {

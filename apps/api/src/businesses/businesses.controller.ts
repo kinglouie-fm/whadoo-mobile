@@ -35,6 +35,13 @@ export class BusinessesController {
     return { business };
   }
 
+  @Patch("me")
+  async updateMy(@Req() req: AuthedRequest, @Body() dto: UpdateBusinessDto) {
+    const user = await this.currentDbUser(req);
+    const business = await this.businessesService.updateMyBusiness(user.id, dto);
+    return { business };
+  }
+
   @Patch(":id")
   async update(@Req() req: AuthedRequest, @Param("id") id: string, @Body() dto: UpdateBusinessDto) {
     const user = await this.currentDbUser(req);

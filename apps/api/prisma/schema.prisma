@@ -66,6 +66,7 @@ model Business {
   city         String?
   lat          Decimal?
   lng          Decimal?
+  images       String[]       @default([])
   status       BusinessStatus @default(active)
 
   availabilityTemplates AvailabilityTemplate[]

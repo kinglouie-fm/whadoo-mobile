@@ -17,6 +17,7 @@ export class BusinessesService {
     contactEmail: true,
     address: true,
     city: true,
+    images: true,
     status: true,
     createdAt: true,
     updatedAt: true,
@@ -70,6 +71,35 @@ export class BusinessesService {
     });
   }
 
+  async updateMyBusiness(ownerUserId: string, dto: UpdateBusinessDto) {
+    const existing = await this.prisma.business.findFirst({
+      where: { ownerUserId },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw new ForbiddenException("Business not found. Create a business first.");
+    }
+
+    // Map 'location' to 'address' if provided
+    const addressValue = dto.location !== undefined ? dto.location : dto.address;
+
+    return this.prisma.business.update({
+      where: { id: existing.id },
+      data: {
+        name: dto.name ?? undefined,
+        description: dto.description ?? undefined,
+        category: dto.category ?? undefined,
+        contactPhone: dto.contactPhone ?? undefined,
+        contactEmail: dto.contactEmail ?? undefined,
+        address: addressValue ?? undefined,
+        city: dto.city ?? undefined,
+        images: dto.images ?? undefined,
+      },
+      select: this.businessSelect,
+    });
+  }
+
   async updateBusiness(ownerUserId: string, businessId: string, dto: UpdateBusinessDto) {
     const existing = await this.prisma.business.findUnique({
       where: { id: businessId },
@@ -85,6 +115,9 @@ export class BusinessesService {
       throw new ForbiddenException("You do not own this business.");
     }
 
+    // Map 'location' to 'address' if provided
+    const addressValue = dto.location !== undefined ? dto.location : dto.address;
+
     return this.prisma.business.update({
       where: { id: businessId },
       data: {
@@ -93,8 +126,9 @@ export class BusinessesService {
         category: dto.category ?? undefined,
         contactPhone: dto.contactPhone ?? undefined,
         contactEmail: dto.contactEmail ?? undefined,
-        address: dto.address ?? undefined,
+        address: addressValue ?? undefined,
         city: dto.city ?? undefined,
+        images: dto.images ?? undefined,
       },
       select: this.businessSelect,
     });

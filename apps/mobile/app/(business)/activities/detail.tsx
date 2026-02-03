@@ -1,7 +1,7 @@
 import { ConfigSchemaRenderer } from "@/src/components/ConfigSchemaRenderer";
 import { PackagesEditor } from "@/src/components/PackagesEditor";
 import { PricingSchemaRenderer } from "@/src/components/PricingSchemaRenderer";
-import { useBusiness } from "@/src/lib/use-business";
+import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
     clearCurrentActivity,

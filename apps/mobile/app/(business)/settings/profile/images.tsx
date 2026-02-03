@@ -1,14 +1,14 @@
 // apps/mobile/app/(business)/settings/profile/images.tsx
 import { TopBar } from "@/src/components/TopBar";
 import { apiPatch } from "@/src/lib/api";
-import { useBusiness } from "@/src/lib/use-business";
+import { useBusiness } from "@/src/providers/business-context";
 import { theme } from "@/src/theme/theme";
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Button, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BusinessImagesScreen() {
-    const { business } = useBusiness();
+    const { business, refetch } = useBusiness();
     const initial = useMemo(() => (Array.isArray((business as any)?.images) ? (business as any).images : []), [business]);
     const [images, setImages] = useState<string[]>([]);
     const [busy, setBusy] = useState(false);
@@ -23,7 +23,8 @@ export default function BusinessImagesScreen() {
         const cleaned = images.map((x) => x.trim()).filter(Boolean);
         setBusy(true);
         try {
-            await apiPatch("/business/me", { images: cleaned });
+            await apiPatch("/businesses/me", { images: cleaned });
+            await refetch();
             Alert.alert("Saved");
         } catch (e: any) {
             Alert.alert("Failed", e?.message ?? String(e));

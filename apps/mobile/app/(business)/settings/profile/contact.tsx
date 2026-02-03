@@ -1,14 +1,14 @@
 // apps/mobile/app/(business)/settings/profile/contact.tsx
 import { TopBar } from "@/src/components/TopBar";
 import { apiPatch } from "@/src/lib/api";
-import { useBusiness } from "@/src/lib/use-business";
+import { useBusiness } from "@/src/providers/business-context";
 import { theme } from "@/src/theme/theme";
 import React, { useEffect, useState } from "react";
 import { Alert, Button, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BusinessContactScreen() {
-    const { business } = useBusiness();
+    const { business, refetch } = useBusiness();
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [busy, setBusy] = useState(false);
@@ -21,10 +21,11 @@ export default function BusinessContactScreen() {
     const save = async () => {
         setBusy(true);
         try {
-            await apiPatch("/business/me", {
+            await apiPatch("/businesses/me", {
                 contactEmail: email.trim() || null,
                 contactPhone: phone.trim() || null,
             });
+            await refetch();
             Alert.alert("Saved");
         } catch (e: any) {
             Alert.alert("Failed", e?.message ?? String(e));
