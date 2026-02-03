@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import activityReducer from "./slices/activity-slice";
 import activityTypeReducer from "./slices/activity-type-slice";
 import availabilityTemplateReducer from "./slices/availability-template-slice";
+import consumerActivityReducer from "./slices/consumer-activity-slice";
 import groupedCardsReducer from "./slices/grouped-card-slice";
 
 export const store = configureStore({
@@ -10,6 +11,7 @@ export const store = configureStore({
     activities: activityReducer,
     activityTypes: activityTypeReducer,
     groupedCards: groupedCardsReducer,
+    consumerActivity: consumerActivityReducer,
   },
 });
 

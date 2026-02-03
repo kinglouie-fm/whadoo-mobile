@@ -59,6 +59,17 @@ export class ActivitiesController {
     });
   }
 
+  @Get("debug/karting")
+  async debugKarting() {
+    const activities = await this.service.debugKartingActivities();
+    return activities;
+  }
+
+  @Get("group/:catalogGroupId")
+  async getActivitiesByGroup(@Param("catalogGroupId") catalogGroupId: string) {
+    return this.service.getActivitiesByGroup(catalogGroupId);
+  }
+
   @Get(":id")
   @UseGuards(FirebaseAuthGuard, AppUserGuard)
   async getActivity(@Req() req: AuthedRequest, @Param("id") id: string) {
@@ -66,7 +77,7 @@ export class ActivitiesController {
     return this.service.getActivity(id, userId, "business");
   }
 
-  @Get(":id/consumer")
+  @Get("consumer/:id")
   async getActivityConsumer(@Param("id") id: string) {
     return this.service.getActivity(id, undefined, "consumer");
   }

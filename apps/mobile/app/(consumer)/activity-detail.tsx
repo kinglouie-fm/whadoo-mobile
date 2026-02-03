@@ -1,11 +1,12 @@
 import { TopBar } from "@/src/components/TopBar";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { fetchActivity } from "@/src/store/slices/activity-slice";
+import { clearCurrentActivity, clearCurrentGroup, fetchActivityGroup, fetchConsumerActivity } from "@/src/store/slices/consumer-activity-slice";
 import { theme } from "@/src/theme/theme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
+    Dimensions,
     Image,
     ScrollView,
     StyleSheet,
@@ -15,19 +16,27 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+const { width } = Dimensions.get("window");
+
 export default function ActivityDetailScreen() {
     const router = useRouter();
-    const { activityId } = useLocalSearchParams<{ activityId: string }>();
+    const { activityId, catalogGroupId } = useLocalSearchParams<{ activityId?: string; catalogGroupId?: string }>();
     const dispatch = useAppDispatch();
-    const { currentActivity, loading } = useAppSelector((state) => state.activities);
+    const { currentActivity, currentGroup, loading } = useAppSelector((state) => state.consumerActivity);
     const [showPackages, setShowPackages] = useState(false);
+    const [selectedActivityIndex, setSelectedActivityIndex] = useState(0);
 
     useEffect(() => {
-        if (activityId) {
-            // TODO: This should use consumer endpoint instead
-            dispatch(fetchActivity(activityId));
+        if (catalogGroupId) {
+            dispatch(fetchActivityGroup(catalogGroupId));
+        } else if (activityId) {
+            dispatch(fetchConsumerActivity(activityId));
         }
-    }, [activityId]);
+        return () => {
+            dispatch(clearCurrentActivity());
+            dispatch(clearCurrentGroup());
+        };
+    }, [activityId, catalogGroupId]);
 
     if (loading) {
         return (
@@ -40,7 +49,17 @@ export default function ActivityDetailScreen() {
         );
     }
 
-    if (!currentActivity) {
+    // Use group data if available, otherwise fall back to single activity
+    const displayData = currentGroup || (currentActivity ? {
+        catalogGroupTitle: currentActivity.title,
+        businessName: null,
+        businessCity: currentActivity.city,
+        businessAddress: currentActivity.address,
+        businessImages: [],
+        activities: [currentActivity]
+    } : null);
+
+    if (!displayData) {
         return (
             <SafeAreaView style={styles.container} edges={["top"]}>
                 <TopBar title="Activity Details" />
@@ -51,7 +70,8 @@ export default function ActivityDetailScreen() {
         );
     }
 
-    const packages = currentActivity.config?.packages || [];
+    const selectedActivity = displayData.activities[selectedActivityIndex];
+    const packages = selectedActivity?.config?.packages || [];
     const hasPackages = Array.isArray(packages) && packages.length > 0;
 
     return (
@@ -59,9 +79,9 @@ export default function ActivityDetailScreen() {
             <TopBar title="Activity Details" />
             <ScrollView style={styles.scrollView}>
                 {/* Images */}
-                {currentActivity.images && currentActivity.images.length > 0 && (
+                {selectedActivity.images && selectedActivity.images.length > 0 ? (
                     <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-                        {currentActivity.images.map((img) => (
+                        {selectedActivity.images.map((img: any) => (
                             <Image
                                 key={img.id}
                                 source={{ uri: img.imageUrl }}
@@ -70,29 +90,77 @@ export default function ActivityDetailScreen() {
                             />
                         ))}
                     </ScrollView>
+                ) : displayData.businessImages && displayData.businessImages.length > 0 ? (
+                    <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+                        {displayData.businessImages.map((url: string, idx: number) => (
+                            <Image
+                                key={idx}
+                                source={{ uri: url }}
+                                style={styles.image}
+                                resizeMode="cover"
+                            />
+                        ))}
+                    </ScrollView>
+                ) : (
+                    <View style={styles.placeholderImage}>
+                        <Text style={styles.placeholderText}>📸</Text>
+                    </View>
                 )}
 
                 <View style={styles.content}>
                     {/* Title and Location */}
-                    <Text style={styles.title}>{currentActivity.title}</Text>
-                    {currentActivity.city && (
-                        <Text style={styles.location}>📍 {currentActivity.city}{currentActivity.address ? `, ${currentActivity.address}` : ""}</Text>
+                    <Text style={styles.title}>{displayData.catalogGroupTitle || selectedActivity.title}</Text>
+                    <Text style={styles.subtitle}>{displayData.businessName}</Text>
+                    {displayData.businessCity && (
+                        <Text style={styles.location}>📍 {displayData.businessCity}{displayData.businessAddress ? `, ${displayData.businessAddress}` : ""}</Text>
+                    )}
+
+                    {/* Duration Selector (if multiple activities in group) */}
+                    {displayData.activities.length > 1 && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Select Duration</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.durationSelector}>
+                                {displayData.activities.map((activity: any, index: number) => (
+                                    <TouchableOpacity
+                                        key={activity.id}
+                                        style={[
+                                            styles.durationChip,
+                                            selectedActivityIndex === index && styles.durationChipSelected
+                                        ]}
+                                        onPress={() => setSelectedActivityIndex(index)}
+                                    >
+                                        <Text style={[
+                                            styles.durationChipText,
+                                            selectedActivityIndex === index && styles.durationChipTextSelected
+                                        ]}>
+                                            {activity.duration} min
+                                        </Text>
+                                        <Text style={[
+                                            styles.durationChipPrice,
+                                            selectedActivityIndex === index && styles.durationChipPriceSelected
+                                        ]}>
+                                            €{activity.priceFrom}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
                     )}
 
                     {/* Price */}
-                    {currentActivity.priceFrom && (
+                    {selectedActivity.priceFrom && (
                         <View style={styles.priceContainer}>
                             <Text style={styles.priceLabel}>From</Text>
-                            <Text style={styles.priceValue}>€{Number(currentActivity.priceFrom).toFixed(2)}</Text>
+                            <Text style={styles.priceValue}>€{Number(selectedActivity.priceFrom).toFixed(2)}</Text>
                             <Text style={styles.priceLabel}>/ person</Text>
                         </View>
                     )}
 
                     {/* Description */}
-                    {currentActivity.description && (
+                    {selectedActivity.description && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>About</Text>
-                            <Text style={styles.description}>{currentActivity.description}</Text>
+                            <Text style={styles.description}>{selectedActivity.description}</Text>
                         </View>
                     )}
 
@@ -173,9 +241,19 @@ const styles = StyleSheet.create({
         height: 300,
     },
     image: {
-        width: 400,
+        width: width,
         height: 300,
         backgroundColor: theme.colors.surface,
+    },
+    placeholderImage: {
+        width: "100%",
+        height: 300,
+        backgroundColor: theme.colors.surface,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    placeholderText: {
+        fontSize: 64,
     },
     content: {
         padding: 20,
@@ -184,12 +262,53 @@ const styles = StyleSheet.create({
         fontSize: 28,
         fontWeight: "800",
         color: theme.colors.text,
+        marginBottom: 4,
+    },
+    subtitle: {
+        fontSize: 18,
+        fontWeight: "600",
+        color: theme.colors.muted,
         marginBottom: 8,
     },
     location: {
         fontSize: 16,
         color: theme.colors.muted,
         marginBottom: 20,
+    },
+    durationSelector: {
+        marginTop: 8,
+    },
+    durationChip: {
+        backgroundColor: theme.colors.surface,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 12,
+        marginRight: 12,
+        borderWidth: 2,
+        borderColor: theme.colors.divider,
+        minWidth: 100,
+        alignItems: "center",
+    },
+    durationChipSelected: {
+        backgroundColor: theme.colors.accent,
+        borderColor: theme.colors.accent,
+    },
+    durationChipText: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: theme.colors.text,
+        marginBottom: 4,
+    },
+    durationChipTextSelected: {
+        color: "#fff",
+    },
+    durationChipPrice: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: theme.colors.muted,
+    },
+    durationChipPriceSelected: {
+        color: "#fff",
     },
     priceContainer: {
         flexDirection: "row",

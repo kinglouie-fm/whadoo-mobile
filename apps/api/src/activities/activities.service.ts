@@ -294,7 +294,7 @@ export class ActivitiesService {
       const durations = groupActivities
         .map((act) => act.availabilityTemplate?.slotDurationMinutes)
         .filter((d): d is number => d !== null && d !== undefined);
-      const uniqueDurations = Array.from(new Set(durations)).slice(0, 3);
+      const uniqueDurations = Array.from(new Set(durations)).sort((a, b) => a - b).slice(0, 3);
 
       // Get thumbnail
       const thumbnailUrl = representativeActivity.images[0]?.imageUrl || null;
@@ -764,5 +764,118 @@ export class ActivitiesService {
     });
 
     return { success: true };
+  }
+
+  async debugKartingActivities() {
+    const activities = await this.prisma.activity.findMany({
+      where: {
+        typeId: "karting",
+      },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        catalogGroupId: true,
+        catalogGroupTitle: true,
+        availabilityTemplateId: true,
+        priceFrom: true,
+        business: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+        availabilityTemplate: {
+          select: {
+            slotDurationMinutes: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      total: activities.length,
+      published: activities.filter((a) => a.status === "published").length,
+      withGroupId: activities.filter((a) => a.catalogGroupId).length,
+      activities: activities.map((a) => ({
+        id: a.id,
+        title: a.title,
+        status: a.status,
+        catalogGroupId: a.catalogGroupId,
+        catalogGroupTitle: a.catalogGroupTitle,
+        duration: a.availabilityTemplate?.slotDurationMinutes,
+        priceFrom: a.priceFrom,
+        businessStatus: a.business?.status,
+      })),
+    };
+  }
+
+  async getActivitiesByGroup(catalogGroupId: string) {
+    const activities = await this.prisma.activity.findMany({
+      where: {
+        catalogGroupId,
+        status: "published",
+        business: {
+          status: "active",
+        },
+      },
+      include: {
+        images: {
+          orderBy: { sortOrder: "asc" },
+        },
+        business: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            address: true,
+            images: true,
+          },
+        },
+        availabilityTemplate: {
+          select: {
+            id: true,
+            name: true,
+            slotDurationMinutes: true,
+            capacity: true,
+            daysOfWeek: true,
+            startTime: true,
+            endTime: true,
+          },
+        },
+      },
+      orderBy: [
+        { priceFrom: "asc" },
+        { updatedAt: "desc" },
+      ],
+    });
+
+    if (activities.length === 0) {
+      throw new NotFoundException("No activities found in this group");
+    }
+
+    return {
+      catalogGroupId,
+      catalogGroupTitle: activities[0].catalogGroupTitle,
+      businessName: activities[0].business?.name,
+      businessCity: activities[0].business?.city,
+      businessAddress: activities[0].business?.address,
+      businessImages: activities[0].business?.images || [],
+      activities: activities.map((activity) => ({
+        id: activity.id,
+        title: activity.title,
+        description: activity.description,
+        typeId: activity.typeId,
+        priceFrom: activity.priceFrom,
+        config: activity.config,
+        pricing: activity.pricing,
+        images: activity.images,
+        duration: activity.availabilityTemplate?.slotDurationMinutes,
+        capacity: activity.availabilityTemplate?.capacity,
+        availabilityTemplate: activity.availabilityTemplate,
+      })),
+    };
   }
 }

@@ -98,7 +98,7 @@ export default function DiscoverySwipeScreen() {
             // Navigate to detail screen
             router.push({
                 pathname: "/(consumer)/activity-detail",
-                params: { activityId: card.representativeActivityId },
+                params: { catalogGroupId: card.catalogGroupId },
             });
         }
         dispatch(advanceCard());
@@ -118,7 +118,7 @@ export default function DiscoverySwipeScreen() {
             // Navigate to detail screen
             router.push({
                 pathname: "/(consumer)/activity-detail",
-                params: { activityId: card.representativeActivityId },
+                params: { catalogGroupId: card.catalogGroupId },
             });
         }
         dispatch(advanceCard());
