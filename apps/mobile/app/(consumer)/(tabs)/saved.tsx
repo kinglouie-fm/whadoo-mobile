@@ -21,26 +21,39 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+type SortMode = "recent" | "title" | "price";
+const SORTS: { key: SortMode; label: string }[] = [
+  { key: "recent", label: "Recently saved" },
+  { key: "title", label: "Title (A–Z)" },
+  { key: "price", label: "Price (low → high)" },
+];
+
+type SavedItem = {
+  activityId: string;
+  snapshot: {
+    title?: string;
+    thumbnailUrl?: string | null;
+    city?: string | null;
+    address?: string | null;
+    priceFrom?: any;
+    catalogGroupId?: string | null;
+  };
+};
+
 export default function SavedActivitiesScreen() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const navigation = useNavigation();
+
   const { items, loading, error, nextCursor, multiSelectMode, selectedIds } = useAppSelector(
     (state) => state.savedActivities
   );
-  type SortMode = "recent" | "title" | "price";
-  const SORTS: { key: SortMode; label: string }[] = [
-    { key: "recent", label: "Recently saved" },
-    { key: "title", label: "Title (A–Z)" },
-    { key: "price", label: "Price (low → high)" },
-  ];
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("recent");
@@ -54,24 +67,6 @@ export default function SavedActivitiesScreen() {
       openSwipeIdRef.current = null;
     }
   };
-
-  const sortedItems = useMemo(() => {
-    const arr = [...items];
-    if (sortMode === "title") {
-      return arr.sort((a, b) =>
-        String(a.snapshot?.title ?? "").localeCompare(String(b.snapshot?.title ?? ""))
-      );
-    }
-    if (sortMode === "price") {
-      return arr.sort((a, b) => {
-        const pa = a.snapshot?.priceFrom != null ? Number(a.snapshot.priceFrom) : Number.POSITIVE_INFINITY;
-        const pb = b.snapshot?.priceFrom != null ? Number(b.snapshot.priceFrom) : Number.POSITIVE_INFINITY;
-        return pa - pb;
-      });
-    }
-    // "recent" -> keep backend ordering
-    return arr;
-  }, [items, sortMode]);
 
   const exitSelectMode = () => {
     dispatch(toggleMultiSelectMode());
@@ -88,15 +83,7 @@ export default function SavedActivitiesScreen() {
       headerLeft: () => null,
       headerRight: () => (
         <Pressable
-          style={{
-            marginRight: 16,
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: theme.colors.surface,
-          }}
+          style={styles.headerIconBtn}
           onPress={multiSelectMode ? exitSelectMode : () => setMenuVisible(true)}
         >
           <Ionicons
@@ -127,29 +114,66 @@ export default function SavedActivitiesScreen() {
     dispatch(unsaveActivity(activityId));
   };
 
-  const handleCardPress = (activityId: string, catalogGroupId: string | null) => {
+  const handleCardPress = (activityId: string, catalogGroupId: string | null | undefined) => {
     if (multiSelectMode) {
       dispatch(toggleSelectActivity(activityId));
+      return;
+    }
+
+    if (catalogGroupId) {
+      router.push({
+        pathname: "/(consumer)/activity-detail",
+        params: { catalogGroupId },
+      });
     } else {
-      // Navigate to activity detail
-      if (catalogGroupId) {
-        router.push({
-          pathname: "/(consumer)/activity-detail",
-          params: { catalogGroupId },
-        });
-      } else {
-        router.push({
-          pathname: "/(consumer)/activity-detail",
-          params: { activityId },
-        });
-      }
+      router.push({
+        pathname: "/(consumer)/activity-detail",
+        params: { activityId },
+      });
     }
   };
 
-  const handleBulkDelete = () => {
-    if (selectedIds.length > 0) {
-      dispatch(bulkDeleteSavedActivities(selectedIds));
+  const sortedItems = useMemo(() => {
+    const arr = [...(items as SavedItem[])];
+
+    if (sortMode === "title") {
+      return arr.sort((a, b) =>
+        String(a.snapshot?.title ?? "").localeCompare(String(b.snapshot?.title ?? ""))
+      );
     }
+
+    if (sortMode === "price") {
+      return arr.sort((a, b) => {
+        const pa =
+          a.snapshot?.priceFrom != null ? Number(a.snapshot.priceFrom) : Number.POSITIVE_INFINITY;
+        const pb =
+          b.snapshot?.priceFrom != null ? Number(b.snapshot.priceFrom) : Number.POSITIVE_INFINITY;
+        return pa - pb;
+      });
+    }
+
+    // recent = keep backend order
+    return arr;
+  }, [items, sortMode]);
+
+  const confirmUnsave = (activityId: string, title?: string) => {
+    Alert.alert("Remove saved", `Remove "${title || "this activity"}" from saved?`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => handleUnsave(activityId) },
+    ]);
+  };
+
+  const confirmBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+
+    Alert.alert("Remove selected", `Remove ${selectedIds.length} saved activities?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => dispatch(bulkDeleteSavedActivities(selectedIds)),
+      },
+    ]);
   };
 
   const renderRightActions = (activityId: string, title?: string) => {
@@ -159,10 +183,7 @@ export default function SavedActivitiesScreen() {
           style={styles.deleteAction}
           onPress={() => {
             closeOpenSwipeRow();
-            Alert.alert("Remove saved", `Remove "${title || "this activity"}" from saved?`, [
-              { text: "Cancel", style: "cancel" },
-              { text: "Remove", style: "destructive", onPress: () => handleUnsave(activityId) },
-            ]);
+            confirmUnsave(activityId, title);
           }}
         >
           <Ionicons name="trash" size={20} color="#fff" />
@@ -171,7 +192,7 @@ export default function SavedActivitiesScreen() {
     );
   };
 
-  const renderItem = ({ item }: any) => {
+  const renderItem = ({ item }: { item: SavedItem }) => {
     const isSelected = selectedIds.includes(item.activityId);
 
     return (
@@ -191,91 +212,53 @@ export default function SavedActivitiesScreen() {
         }
       >
         <Pressable
-          style={[styles.card, multiSelectMode && { gap: 12, padding: 12 }, isSelected && styles.cardSelected]}
-          onPress={() => handleCardPress(item.activityId, item.snapshot.catalogGroupId)}
+          style={[styles.card, isSelected && styles.cardSelected]}
+          onPress={() => handleCardPress(item.activityId, item.snapshot?.catalogGroupId)}
+          onLongPress={() => {
+            if (!multiSelectMode) {
+              dispatch(toggleMultiSelectMode());
+              dispatch(clearSelection());
+              dispatch(toggleSelectActivity(item.activityId));
+            }
+          }}
         >
-          <Modal
-            visible={menuVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setMenuVisible(false)}
-          >
-            <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
-              <View style={styles.menuSheet}>
-                <Text style={styles.menuTitle}>Manage saved</Text>
-
-                <Pressable
-                  style={styles.menuItem}
-                  onPress={() => {
-                    setMenuVisible(false);
-                    if (!multiSelectMode) dispatch(toggleMultiSelectMode());
-                    dispatch(clearSelection());
-                  }}
-                >
-                  <Ionicons name="checkbox-outline" size={18} color={theme.colors.text} />
-                  <Text style={styles.menuItemText}>Select</Text>
-                </Pressable>
-
-                <View style={styles.menuDivider} />
-
-                <Text style={styles.menuSectionTitle}>Sort</Text>
-
-                {SORTS.map((s) => {
-                  const active = sortMode === s.key;
-                  return (
-                    <Pressable
-                      key={s.key}
-                      style={[styles.menuItem, active && styles.menuItemActive]}
-                      onPress={() => {
-                        setSortMode(s.key);
-                        setMenuVisible(false);
-                      }}
-                    >
-                      <Ionicons
-                        name={active ? "radio-button-on" : "radio-button-off"}
-                        size={18}
-                        color={theme.colors.text}
-                      />
-                      <Text style={styles.menuItemText}>{s.label}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </Pressable>
-          </Modal>
-
           {multiSelectMode && (
             <Pressable
               onPress={() => dispatch(toggleSelectActivity(item.activityId))}
               style={[styles.checkbox, isSelected && styles.checkboxChecked]}
               hitSlop={10}
             >
-              {isSelected ? (
-                <Ionicons name="checkmark" size={16} color={theme.colors.bg} />
-              ) : null}
+              {isSelected ? <Ionicons name="checkmark" size={16} color={theme.colors.bg} /> : null}
             </Pressable>
           )}
-          {item.snapshot.thumbnailUrl ? (
-            <Image
-              source={{ uri: item.snapshot.thumbnailUrl }}
-              style={styles.thumbnail}
-              resizeMode="cover"
-            />
+
+          {item.snapshot?.thumbnailUrl ? (
+            <Image source={{ uri: item.snapshot.thumbnailUrl }} style={styles.thumbnail} />
           ) : (
             <View style={[styles.thumbnail, styles.placeholderThumbnail]}>
               <Text style={styles.placeholderText}>📸</Text>
             </View>
           )}
+
           <View style={styles.cardContent}>
             <Text style={styles.title} numberOfLines={2}>
-              {item.snapshot.title}
+              {item.snapshot?.title || "Untitled"}
             </Text>
-            {item.snapshot.city && (
-              <Text style={styles.location}>📍 {item.snapshot.city}</Text>
-            )}
-            {item.snapshot.priceFrom && (
-              <Text style={styles.price}>From €{Number(item.snapshot.priceFrom).toFixed(2)}</Text>
-            )}
+
+            {(item.snapshot?.address || item.snapshot?.city) ? (
+              <View style={styles.metaRow}>
+                <Ionicons name="location-outline" size={14} color={theme.colors.muted} />
+                <Text style={styles.metaText} numberOfLines={1}>
+                  {item.snapshot?.address || item.snapshot?.city}
+                </Text>
+              </View>
+            ) : null}
+
+            {item.snapshot?.priceFrom != null ? (
+              <Text style={styles.price}>
+                From €{Number(item.snapshot.priceFrom).toFixed(2)}
+              </Text>
+            ) : null}
           </View>
         </Pressable>
       </Swipeable>
@@ -297,9 +280,9 @@ export default function SavedActivitiesScreen() {
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Failed to load saved activities</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+          <Pressable style={styles.retryButton} onPress={handleRefresh}>
             <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -332,6 +315,56 @@ export default function SavedActivitiesScreen() {
           onScrollBeginDrag={closeOpenSwipeRow}
         />
 
+        <Modal
+          visible={menuVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
+            <View style={styles.menuSheet}>
+              <Text style={styles.menuTitle}>Manage saved</Text>
+
+              <Pressable
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  if (!multiSelectMode) dispatch(toggleMultiSelectMode());
+                  dispatch(clearSelection());
+                }}
+              >
+                <Ionicons name="checkbox-outline" size={18} color={theme.colors.text} />
+                <Text style={styles.menuItemText}>Select</Text>
+              </Pressable>
+
+              <View style={styles.menuDivider} />
+
+              <Text style={styles.menuSectionTitle}>Sort</Text>
+
+              {SORTS.map((s) => {
+                const active = sortMode === s.key;
+                return (
+                  <Pressable
+                    key={s.key}
+                    style={[styles.menuItem, active && styles.menuItemActive]}
+                    onPress={() => {
+                      setSortMode(s.key);
+                      setMenuVisible(false);
+                    }}
+                  >
+                    <Ionicons
+                      name={active ? "radio-button-on" : "radio-button-off"}
+                      size={18}
+                      color={theme.colors.text}
+                    />
+                    <Text style={styles.menuItemText}>{s.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Pressable>
+        </Modal>
+
         {multiSelectMode && (
           <View style={styles.bottomBar}>
             <Pressable
@@ -341,17 +374,7 @@ export default function SavedActivitiesScreen() {
                 selectedIds.length === 0 && styles.actionDisabled,
               ]}
               disabled={selectedIds.length === 0}
-              onPress={() => {
-                if (selectedIds.length === 0) return;
-                Alert.alert("Remove selected", `Remove ${selectedIds.length} saved activities?`, [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Remove",
-                    style: "destructive",
-                    onPress: () => dispatch(bulkDeleteSavedActivities(selectedIds)),
-                  },
-                ]);
-              }}
+              onPress={confirmBulkDelete}
             >
               <Ionicons name="trash" size={18} color="#fff" />
             </Pressable>
@@ -367,21 +390,26 @@ export default function SavedActivitiesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-  },
-  loadingContainer: {
-    flex: 1,
+  container: { flex: 1, backgroundColor: theme.colors.bg },
+
+  headerIconBtn: {
+    marginRight: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: theme.colors.surface,
   },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
+
+  listContent: {
+    padding: 16,
+    paddingBottom: 130, // space for floating action bar
   },
+
+  loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
+
+  errorContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
   errorText: {
     fontSize: 18,
     fontWeight: "700",
@@ -394,45 +422,32 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
   },
-  retryButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: theme.colors.text,
-    marginTop: 16,
-  },
+  retryButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+
+  emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
+  emptyTitle: { fontSize: 20, fontWeight: "700", color: theme.colors.text, marginTop: 16 },
   emptySubtitle: {
     fontSize: 15,
     color: theme.colors.muted,
     marginTop: 8,
     textAlign: "center",
   },
-  listContent: {
-    padding: 16,
-    paddingBottom: 130,
-  },
+
   card: {
     flexDirection: "row",
+    alignItems: "center",
     backgroundColor: theme.colors.card,
     borderRadius: 12,
+    padding: 12,
     marginBottom: 12,
-    overflow: "hidden",
+    gap: 12,
   },
   cardSelected: {
-    backgroundColor: theme.colors.surface,
     borderWidth: 2,
     borderColor: theme.colors.accent,
+    backgroundColor: theme.colors.surface,
   },
+
   checkbox: {
     width: 22,
     height: 22,
@@ -447,46 +462,42 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.accent,
     borderColor: theme.colors.accent,
   },
+
   thumbnail: {
-    width: 100,
-    height: 100,
+    width: 64,
+    height: 64,
+    borderRadius: 12,
   },
   placeholderThumbnail: {
     backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
-  placeholderText: {
-    fontSize: 32,
-  },
-  cardContent: {
-    flex: 1,
-    padding: 12,
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  location: {
-    fontSize: 13,
-    color: theme.colors.muted,
-    marginBottom: 4,
-  },
-  price: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: theme.colors.accent,
-  },
-  deleteButton: {
-    backgroundColor: theme.colors.danger,
+  placeholderText: { fontSize: 28 },
+
+  cardContent: { flex: 1 },
+  title: { fontSize: 16, fontWeight: "800", color: theme.colors.text },
+
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
+  metaText: { color: theme.colors.muted, fontSize: 13, flex: 1 },
+
+  price: { marginTop: 6, fontSize: 14, fontWeight: "700", color: theme.colors.accent },
+
+  rightActionsWrap: {
     justifyContent: "center",
     alignItems: "center",
-    width: 80,
-    height: "100%",
+    marginBottom: 12,
   },
+  deleteAction: {
+    width: 64,
+    height: "100%",
+    backgroundColor: theme.colors.danger,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 12,
+  },
+
   bottomBar: {
     position: "absolute",
     bottom: 22,
@@ -508,26 +519,7 @@ const styles = StyleSheet.create({
   actionCancel: { backgroundColor: "#2A2A2A" },
   actionDisabled: { opacity: 0.35 },
 
-  rightActionsWrap: {
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  deleteAction: {
-    width: 64,
-    height: "100%",
-    backgroundColor: theme.colors.danger,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 12,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   menuSheet: {
     backgroundColor: theme.colors.card,
     padding: 16,
