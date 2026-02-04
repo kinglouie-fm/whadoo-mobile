@@ -1,6 +1,7 @@
 import { SwipeCard } from "@/src/components/SwipeCard";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { advanceCard, fetchGroupedCards, recordSwipe, resetFeed } from "@/src/store/slices/grouped-card-slice";
+import { saveActivity } from "@/src/store/slices/saved-activity-slice";
 import { theme } from "@/src/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -16,6 +17,7 @@ import {
 } from "react-native";
 import Swiper from "react-native-deck-swiper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 const { height } = Dimensions.get("window");
 
@@ -125,7 +127,7 @@ export default function DiscoverySwipeScreen() {
         checkLoadMore(cardIndex);
     };
 
-    const handleSwipeBottom = (cardIndex: number) => {
+    const handleSwipeBottom = async (cardIndex: number) => {
         const card = groups[cardIndex];
         if (card) {
             dispatch(recordSwipe({
@@ -135,8 +137,23 @@ export default function DiscoverySwipeScreen() {
                 city: card.city,
                 typeId: card.typeId,
             }));
-            // TODO: Add to saved list
-            alert("Saved to favorites!");
+            // Save activity
+            try {
+                await dispatch(saveActivity(card.representativeActivityId)).unwrap();
+                Toast.show({
+                    type: "success",
+                    text1: "Saved!",
+                    text2: "Activity added to your favorites",
+                    position: "bottom",
+                });
+            } catch (error) {
+                Toast.show({
+                    type: "error",
+                    text1: "Failed to save",
+                    text2: "Please try again",
+                    position: "bottom",
+                });
+            }
         }
         dispatch(advanceCard());
         checkLoadMore(cardIndex);

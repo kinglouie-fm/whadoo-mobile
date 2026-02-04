@@ -1,6 +1,7 @@
 import { TopBar } from "@/src/components/TopBar";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { clearCurrentActivity, clearCurrentGroup, fetchActivityGroup, fetchConsumerActivity } from "@/src/store/slices/consumer-activity-slice";
+import { saveActivity, unsaveActivity } from "@/src/store/slices/saved-activity-slice";
 import { theme } from "@/src/theme/theme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
 
@@ -23,8 +25,15 @@ export default function ActivityDetailScreen() {
     const { activityId, catalogGroupId } = useLocalSearchParams<{ activityId?: string; catalogGroupId?: string }>();
     const dispatch = useAppDispatch();
     const { currentActivity, currentGroup, loading } = useAppSelector((state) => state.consumerActivity);
+    const savedItems = useAppSelector((state) => state.savedActivities.items);
     const [showPackages, setShowPackages] = useState(false);
     const [selectedActivityIndex, setSelectedActivityIndex] = useState(0);
+    const [isSaved, setIsSaved] = useState(false);
+
+    // Get the representative activity ID to check if saved
+    const representativeActivityId = currentGroup?.activities[selectedActivityIndex]?.id ||
+        currentActivity?.id ||
+        activityId;
 
     useEffect(() => {
         if (catalogGroupId) {
@@ -38,10 +47,52 @@ export default function ActivityDetailScreen() {
         };
     }, [activityId, catalogGroupId]);
 
+    // Check if activity is saved
+    useEffect(() => {
+        if (representativeActivityId) {
+            const saved = savedItems.some(item => item.activityId === representativeActivityId);
+            setIsSaved(saved);
+        }
+    }, [representativeActivityId, savedItems]);
+
+    const handleToggleSave = async () => {
+        if (!representativeActivityId) return;
+
+        try {
+            if (isSaved) {
+                await dispatch(unsaveActivity(representativeActivityId)).unwrap();
+                Toast.show({
+                    type: "success",
+                    text1: "Removed from saved",
+                    position: "bottom",
+                });
+            } else {
+                await dispatch(saveActivity(representativeActivityId)).unwrap();
+                Toast.show({
+                    type: "success",
+                    text1: "Saved!",
+                    text2: "Activity added to your favorites",
+                    position: "bottom",
+                });
+            }
+        } catch (error) {
+            Toast.show({
+                type: "error",
+                text1: "Failed",
+                text2: "Please try again",
+                position: "bottom",
+            });
+        }
+    };
+
     if (loading) {
         return (
             <SafeAreaView style={styles.container} edges={["top"]}>
-                <TopBar title="Activity Details" />
+                <TopBar
+                    title="Activity Details"
+                    rightIcon={isSaved ? "heart" : "heart-outline"}
+                    onRightPress={handleToggleSave}
+                />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.accent} />
                 </View>
@@ -62,7 +113,11 @@ export default function ActivityDetailScreen() {
     if (!displayData) {
         return (
             <SafeAreaView style={styles.container} edges={["top"]}>
-                <TopBar title="Activity Details" />
+                <TopBar
+                    title="Activity Details"
+                    rightIcon={isSaved ? "heart" : "heart-outline"}
+                    onRightPress={handleToggleSave}
+                />
                 <View style={styles.errorContainer}>
                     <Text style={styles.errorText}>Activity not found</Text>
                 </View>
@@ -76,7 +131,11 @@ export default function ActivityDetailScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["top"]}>
-            <TopBar title="Activity Details" />
+            <TopBar
+                title="Activity Details"
+                rightIcon={isSaved ? "heart" : "heart-outline"}
+                onRightPress={handleToggleSave}
+            />
             <ScrollView style={styles.scrollView}>
                 {/* Images */}
                 {selectedActivity.images && selectedActivity.images.length > 0 ? (

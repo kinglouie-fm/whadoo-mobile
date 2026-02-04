@@ -46,8 +46,9 @@ model User {
 
   deletedAt   DateTime?
 
-  businesses  Business[]
-  swipes      UserSwipe[]
+  businesses      Business[]
+  swipes          UserSwipe[]
+  savedActivities SavedActivity[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -147,6 +148,8 @@ model Activity {
   availabilityTemplate   AvailabilityTemplate?    @relation(fields: [availabilityTemplateId], references: [id], onDelete: SetNull)
 
   images                 ActivityImage[]
+  savedBy                SavedActivity[]
+  slotCapacities         SlotCapacity[]
 
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
@@ -206,4 +209,43 @@ model UserSwipe {
   @@index([userId, createdAt(sort: Desc)])
   @@index([catalogGroupId])
   @@index([activityId])
+}
+
+model SavedActivity {
+  userId           String   @map("user_id") @db.Uuid
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  activityId       String   @map("activity_id") @db.Uuid
+  activity         Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  
+  savedAt          DateTime @default(now()) @map("saved_at")
+  activitySnapshot Json?    @map("activity_snapshot")
+
+  @@id([userId, activityId])
+  @@map("saved_activities")
+  @@index([userId, savedAt(sort: Desc)])
+}
+
+enum SlotCapacityStatus {
+  active
+  inactive
+}
+
+model SlotCapacity {
+  id           String              @id
+  activityId   String              @map("activity_id") @db.Uuid
+  activity     Activity            @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  
+  slotStart    DateTime            @map("slot_start")
+  capacity     Int
+  bookedSeats  Int                 @default(0) @map("booked_seats")
+  status       SlotCapacityStatus  @default(active)
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([activityId, slotStart])
+  @@map("slot_capacity")
+  @@index([activityId, slotStart])
+  @@index([activityId, slotStart, status])
 }

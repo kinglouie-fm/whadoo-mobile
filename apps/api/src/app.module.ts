@@ -10,6 +10,8 @@ import { FirebaseModule } from "./firebase/firebase.module";
 import { HealthModule } from "./health/health.module";
 import { MeModule } from "./me/me.module";
 import { PrismaModule } from "./prisma/prisma.module";
+import { SavedActivitiesModule } from "./saved-activities/saved-activities.module";
+import { AvailabilityResolutionModule } from "./availability-resolution/availability-resolution.module";
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { PrismaModule } from "./prisma/prisma.module";
     AvailabilityTemplatesModule,
     ActivitiesModule,
     ActivityTypeDefinitionsModule,
+    SavedActivitiesModule,
+    AvailabilityResolutionModule,
   ],
 })
 export class AppModule {}
