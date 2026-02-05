@@ -8,7 +8,7 @@ import {
   unsaveActivity,
 } from "@/src/store/slices/saved-activity-slice";
 import { theme } from "@/src/theme/theme";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -86,9 +86,9 @@ export default function SavedActivitiesScreen() {
           style={styles.headerIconBtn}
           onPress={multiSelectMode ? exitSelectMode : () => setMenuVisible(true)}
         >
-          <Ionicons
-            name={multiSelectMode ? "close" : "ellipsis-horizontal"}
-            size={22}
+          <MaterialIcons
+            name={multiSelectMode ? "close" : "more-horiz"}
+            size={24}
             color={theme.colors.text}
           />
         </Pressable>
@@ -152,7 +152,6 @@ export default function SavedActivitiesScreen() {
       });
     }
 
-    // recent = keep backend order
     return arr;
   }, [items, sortMode]);
 
@@ -186,7 +185,7 @@ export default function SavedActivitiesScreen() {
             confirmUnsave(activityId, title);
           }}
         >
-          <Ionicons name="trash" size={20} color="#fff" />
+          <MaterialIcons name="delete" size={20} color="#fff" />
         </Pressable>
       </View>
     );
@@ -194,6 +193,10 @@ export default function SavedActivitiesScreen() {
 
   const renderItem = ({ item }: { item: SavedItem }) => {
     const isSelected = selectedIds.includes(item.activityId);
+
+    const locationText = item.snapshot?.address || item.snapshot?.city || "—";
+    const priceText =
+      item.snapshot?.priceFrom != null ? `From €${Number(item.snapshot.priceFrom).toFixed(2)}` : "";
 
     return (
       <Swipeable
@@ -222,13 +225,16 @@ export default function SavedActivitiesScreen() {
             }
           }}
         >
+
           {multiSelectMode && (
             <Pressable
               onPress={() => dispatch(toggleSelectActivity(item.activityId))}
               style={[styles.checkbox, isSelected && styles.checkboxChecked]}
               hitSlop={10}
             >
-              {isSelected ? <Ionicons name="checkmark" size={16} color={theme.colors.bg} /> : null}
+              {isSelected ? (
+                <MaterialIcons name="check" size={16} color={theme.colors.bg} />
+              ) : null}
             </Pressable>
           )}
 
@@ -241,24 +247,29 @@ export default function SavedActivitiesScreen() {
           )}
 
           <View style={styles.cardContent}>
-            <Text style={styles.title} numberOfLines={2}>
+            <Text style={styles.title} numberOfLines={1}>
               {item.snapshot?.title || "Untitled"}
             </Text>
 
-            {(item.snapshot?.address || item.snapshot?.city) ? (
-              <View style={styles.metaRow}>
-                <Ionicons name="location-outline" size={14} color={theme.colors.muted} />
-                <Text style={styles.metaText} numberOfLines={1}>
-                  {item.snapshot?.address || item.snapshot?.city}
+            <View style={styles.infoRow}>
+              <MaterialIcons name="place" size={16} color={stylesVars.subText} />
+              <Text style={styles.subText} numberOfLines={1}>
+                {locationText}
+              </Text>
+            </View>
+
+            {priceText ? (
+              <View style={[styles.infoRow, { marginTop: 6 }]}>
+                <MaterialIcons name="local-offer" size={16} color={stylesVars.subText} />
+                <Text style={styles.subText} numberOfLines={1}>
+                  {priceText}
                 </Text>
               </View>
             ) : null}
+          </View>
 
-            {item.snapshot?.priceFrom != null ? (
-              <Text style={styles.price}>
-                From €{Number(item.snapshot.priceFrom).toFixed(2)}
-              </Text>
-            ) : null}
+          <View style={styles.chevronWrap}>
+            <MaterialIcons name="chevron-right" size={24} color={stylesVars.subText} />
           </View>
         </Pressable>
       </Swipeable>
@@ -292,7 +303,7 @@ export default function SavedActivitiesScreen() {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.emptyContainer}>
-          <Ionicons name="heart-outline" size={64} color={theme.colors.muted} />
+          <MaterialIcons name="favorite-border" size={64} color={theme.colors.muted} />
           <Text style={styles.emptyTitle}>No saved activities yet</Text>
           <Text style={styles.emptySubtitle}>Swipe down on activities to save them</Text>
         </View>
@@ -333,7 +344,7 @@ export default function SavedActivitiesScreen() {
                   dispatch(clearSelection());
                 }}
               >
-                <Ionicons name="checkbox-outline" size={18} color={theme.colors.text} />
+                <MaterialIcons name="check-box" size={18} color={theme.colors.text} />
                 <Text style={styles.menuItemText}>Select</Text>
               </Pressable>
 
@@ -352,8 +363,8 @@ export default function SavedActivitiesScreen() {
                       setMenuVisible(false);
                     }}
                   >
-                    <Ionicons
-                      name={active ? "radio-button-on" : "radio-button-off"}
+                    <MaterialIcons
+                      name={active ? "radio-button-checked" : "radio-button-unchecked"}
                       size={18}
                       color={theme.colors.text}
                     />
@@ -376,11 +387,11 @@ export default function SavedActivitiesScreen() {
               disabled={selectedIds.length === 0}
               onPress={confirmBulkDelete}
             >
-              <Ionicons name="trash" size={18} color="#fff" />
+              <MaterialIcons name="delete" size={18} color="#fff" />
             </Pressable>
 
             <Pressable style={[styles.bottomAction, styles.actionCancel]} onPress={exitSelectMode}>
-              <Ionicons name="close" size={18} color="#fff" />
+              <MaterialIcons name="close" size={18} color="#fff" />
             </Pressable>
           </View>
         )}
@@ -388,6 +399,13 @@ export default function SavedActivitiesScreen() {
     </GestureHandlerRootView>
   );
 }
+
+const stylesVars = {
+  cardBg: "rgba(255,255,255,0.08)",
+  opacity: 0.08,
+  text: "#FFFFFF",
+  subText: "rgba(255,255,255,0.78)",
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.bg },
@@ -404,7 +422,7 @@ const styles = StyleSheet.create({
 
   listContent: {
     padding: 16,
-    paddingBottom: 130, // space for floating action bar
+    paddingBottom: 130,
   },
 
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
@@ -433,19 +451,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
+  // --- card (match screenshot vibe) ---
   card: {
+    position: "relative",
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: theme.colors.card,
-    borderRadius: 12,
+    backgroundColor: stylesVars.cardBg,
+    borderRadius: 18,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 14,
     gap: 12,
+
+    // iOS shadow
+    shadowColor: "#000",
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 10 },
+
+    // Android shadow
+    elevation: 6,
   },
   cardSelected: {
     borderWidth: 2,
     borderColor: theme.colors.accent,
-    backgroundColor: theme.colors.surface,
   },
 
   checkbox: {
@@ -453,7 +481,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: theme.colors.muted,
+    borderColor: "rgba(255,255,255,0.75)",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
@@ -466,38 +494,45 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: 64,
     height: 64,
-    borderRadius: 12,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.25)",
   },
   placeholderThumbnail: {
-    backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
   placeholderText: { fontSize: 28 },
 
-  cardContent: { flex: 1 },
-  title: { fontSize: 16, fontWeight: "800", color: theme.colors.text },
+  cardContent: { flex: 1, minHeight: 64, justifyContent: "center" },
+  title: { fontSize: 16, fontWeight: "800", color: stylesVars.text },
 
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
-  metaText: { color: theme.colors.muted, fontSize: 13, flex: 1 },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
+  subText: { color: stylesVars.subText, fontSize: 13, fontWeight: "600", flex: 1 },
 
-  price: { marginTop: 6, fontSize: 14, fontWeight: "700", color: theme.colors.accent },
+  chevronWrap: {
+    width: 28,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    marginLeft: 4,
+  },
 
+  // swipe delete action (same as activities.tsx style)
   rightActionsWrap: {
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   deleteAction: {
     width: 64,
     height: "100%",
     backgroundColor: theme.colors.danger,
-    borderRadius: 12,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 12,
   },
 
+  // floating multiselect bar
   bottomBar: {
     position: "absolute",
     bottom: 22,
@@ -519,6 +554,7 @@ const styles = StyleSheet.create({
   actionCancel: { backgroundColor: "#2A2A2A" },
   actionDisabled: { opacity: 0.35 },
 
+  // menu sheet
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   menuSheet: {
     backgroundColor: theme.colors.card,
