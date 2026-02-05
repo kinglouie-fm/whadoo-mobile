@@ -349,8 +349,6 @@ const styles = StyleSheet.create({
     header: {
         paddingHorizontal: 20,
         paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.divider,
     },
     headerTitle: {
         fontSize: 28,

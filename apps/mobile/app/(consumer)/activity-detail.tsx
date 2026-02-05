@@ -29,6 +29,8 @@ export default function ActivityDetailScreen() {
     const [showPackages, setShowPackages] = useState(false);
     const [selectedActivityIndex, setSelectedActivityIndex] = useState(0);
     const [isSaved, setIsSaved] = useState(false);
+    const [participantsCount, setParticipantsCount] = useState<number>(2);
+    const [selectedPackageIndex, setSelectedPackageIndex] = useState<number>(0);
 
     // Get the representative activity ID to check if saved
     const representativeActivityId = currentGroup?.activities[selectedActivityIndex]?.id ||
@@ -47,6 +49,20 @@ export default function ActivityDetailScreen() {
         };
     }, [activityId, catalogGroupId]);
 
+    // Derive display data before any conditional returns
+    const displayData = currentGroup || (currentActivity ? {
+        catalogGroupTitle: currentActivity.title,
+        businessName: null,
+        businessCity: currentActivity.city,
+        businessAddress: currentActivity.address,
+        businessImages: [],
+        activities: [currentActivity]
+    } : null);
+
+    const selectedActivity = displayData?.activities[selectedActivityIndex];
+    const packages = selectedActivity?.config?.packages || [];
+    const hasPackages = Array.isArray(packages) && packages.length > 0;
+
     // Check if activity is saved
     useEffect(() => {
         if (representativeActivityId) {
@@ -54,6 +70,14 @@ export default function ActivityDetailScreen() {
             setIsSaved(saved);
         }
     }, [representativeActivityId, savedItems]);
+
+    // Reset selected package when activity changes or find default package
+    useEffect(() => {
+        if (hasPackages) {
+            const defaultIndex = packages.findIndex((pkg: any) => pkg.is_default);
+            setSelectedPackageIndex(defaultIndex >= 0 ? defaultIndex : 0);
+        }
+    }, [selectedActivityIndex, hasPackages, packages]);
 
     const handleToggleSave = async () => {
         if (!representativeActivityId) return;
@@ -100,17 +124,7 @@ export default function ActivityDetailScreen() {
         );
     }
 
-    // Use group data if available, otherwise fall back to single activity
-    const displayData = currentGroup || (currentActivity ? {
-        catalogGroupTitle: currentActivity.title,
-        businessName: null,
-        businessCity: currentActivity.city,
-        businessAddress: currentActivity.address,
-        businessImages: [],
-        activities: [currentActivity]
-    } : null);
-
-    if (!displayData) {
+    if (!displayData || !selectedActivity) {
         return (
             <SafeAreaView style={styles.container} edges={["top"]}>
                 <TopBar
@@ -124,10 +138,6 @@ export default function ActivityDetailScreen() {
             </SafeAreaView>
         );
     }
-
-    const selectedActivity = displayData.activities[selectedActivityIndex];
-    const packages = selectedActivity?.config?.packages || [];
-    const hasPackages = Array.isArray(packages) && packages.length > 0;
 
     return (
         <SafeAreaView style={styles.container} edges={["top"]}>
@@ -226,18 +236,19 @@ export default function ActivityDetailScreen() {
                     {/* Packages / Variants */}
                     {hasPackages && (
                         <View style={styles.section}>
-                            <TouchableOpacity
-                                style={styles.packageHeader}
-                                onPress={() => setShowPackages(!showPackages)}
-                            >
-                                <Text style={styles.sectionTitle}>Packages Available ({packages.length})</Text>
-                                <Text style={styles.expandIcon}>{showPackages ? "▼" : "▶"}</Text>
-                            </TouchableOpacity>
-
-                            {showPackages && (
-                                <View style={styles.packagesList}>
-                                    {packages.map((pkg: any, index: number) => (
-                                        <View key={index} style={styles.packageCard}>
+                            <Text style={styles.sectionTitle}>Select Package</Text>
+                            <View style={styles.packagesList}>
+                                {packages.map((pkg: any, index: number) => {
+                                    const isSelected = selectedPackageIndex === index;
+                                    return (
+                                        <TouchableOpacity
+                                            key={index}
+                                            style={[
+                                                styles.packageCard,
+                                                isSelected && styles.packageCardSelected,
+                                            ]}
+                                            onPress={() => setSelectedPackageIndex(index)}
+                                        >
                                             <View style={styles.packageHeader}>
                                                 <Text style={styles.packageTitle}>{pkg.title || "Package"}</Text>
                                                 {pkg.is_default && (
@@ -265,22 +276,65 @@ export default function ActivityDetailScreen() {
                                                     Age: {pkg.age_min || "Any"} - {pkg.age_max || "Any"}
                                                 </Text>
                                             )}
-                                        </View>
-                                    ))}
-                                </View>
-                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
                         </View>
                     )}
+
+                    {/* Participants Selector */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Participants</Text>
+                        <View style={styles.participantsContainer}>
+                            <TouchableOpacity
+                                style={styles.participantButton}
+                                onPress={() => setParticipantsCount(Math.max(1, participantsCount - 1))}
+                            >
+                                <Text style={styles.participantButtonText}>−</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.participantsCount}>{participantsCount}</Text>
+                            <TouchableOpacity
+                                style={styles.participantButton}
+                                onPress={() => setParticipantsCount(participantsCount + 1)}
+                            >
+                                <Text style={styles.participantButtonText}>+</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
 
                     {/* Book Button */}
                     <TouchableOpacity
                         style={styles.bookButton}
                         onPress={() => {
-                            // TODO: Navigate to booking flow
-                            alert("Booking flow coming soon!");
+                            if (!selectedActivity.id) {
+                                Toast.show({
+                                    type: "error",
+                                    text1: "Activity not found",
+                                    position: "bottom",
+                                });
+                                return;
+                            }
+
+                            // Get selected package name if packages exist
+                            let packageName = selectedActivity.title || "";
+                            if (hasPackages && packages[selectedPackageIndex]) {
+                                packageName = packages[selectedPackageIndex].title || packageName;
+                            }
+
+                            // Navigate to date/time selection
+                            router.push({
+                                pathname: "/(consumer)/booking-select-datetime",
+                                params: {
+                                    activityId: selectedActivity.id,
+                                    participantsCount: participantsCount.toString(),
+                                    packageName,
+                                    packageCode: hasPackages && packages[selectedPackageIndex]?.code || "",
+                                },
+                            });
                         }}
                     >
-                        <Text style={styles.bookButtonText}>Book Now</Text>
+                        <Text style={styles.bookButtonText}>Select Date & Time</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -419,8 +473,12 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.card,
         padding: 16,
         borderRadius: 12,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: theme.colors.divider,
+    },
+    packageCardSelected: {
+        borderColor: theme.colors.accent,
+        backgroundColor: theme.colors.surface,
     },
     packageTitle: {
         fontSize: 18,
@@ -454,6 +512,35 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: theme.colors.text,
         marginTop: 4,
+    },
+    participantsContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: theme.colors.surface,
+        padding: 16,
+        borderRadius: 12,
+    },
+    participantButton: {
+        backgroundColor: theme.colors.accent,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    participantButtonText: {
+        fontSize: 24,
+        fontWeight: "800",
+        color: theme.colors.bg,
+    },
+    participantsCount: {
+        fontSize: 32,
+        fontWeight: "800",
+        color: theme.colors.text,
+        marginHorizontal: 32,
+        minWidth: 60,
+        textAlign: "center",
     },
     bookButton: {
         backgroundColor: theme.colors.accent,

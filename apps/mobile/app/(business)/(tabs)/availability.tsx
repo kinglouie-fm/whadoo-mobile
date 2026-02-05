@@ -29,11 +29,16 @@ const DAY_NAMES = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function formatTime(timeStr: string) {
     try {
+        // Extract HH:mm from time string without timezone conversion
+        // timeStr is typically "1970-01-01T16:00:00.000Z" from DB
         const date = new Date(timeStr);
+
+        // Use Luxembourg timezone for display
         return date.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
             hour12: false,
+            timeZone: "Europe/Luxembourg",
         });
     } catch {
         return timeStr;

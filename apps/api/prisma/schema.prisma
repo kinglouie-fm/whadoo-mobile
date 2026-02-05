@@ -49,6 +49,7 @@ model User {
   businesses      Business[]
   swipes          UserSwipe[]
   savedActivities SavedActivity[]
+  bookings        Booking[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -73,6 +74,7 @@ model Business {
 
   availabilityTemplates AvailabilityTemplate[]
   activities            Activity[]
+  bookings              Booking[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -150,6 +152,7 @@ model Activity {
   images                 ActivityImage[]
   savedBy                SavedActivity[]
   slotCapacities         SlotCapacity[]
+  bookings               Booking[]
 
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
@@ -231,6 +234,12 @@ enum SlotCapacityStatus {
   inactive
 }
 
+enum BookingStatus {
+  active
+  cancelled
+  completed
+}
+
 model SlotCapacity {
   id           String              @id
   activityId   String              @map("activity_id") @db.Uuid
@@ -248,4 +257,36 @@ model SlotCapacity {
   @@map("slot_capacity")
   @@index([activityId, slotStart])
   @@index([activityId, slotStart, status])
+}
+
+model Booking {
+  id                  String        @id @default(uuid()) @db.Uuid
+  userId              String        @map("user_id") @db.Uuid
+  user                User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  
+  businessId          String        @map("business_id") @db.Uuid
+  business            Business      @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  
+  activityId          String        @map("activity_id") @db.Uuid
+  activity            Activity      @relation(fields: [activityId], references: [id], onDelete: Restrict)
+  
+  slotStart           DateTime      @map("slot_start")
+  participantsCount   Int           @map("participants_count")
+  status              BookingStatus @default(active)
+  
+  activitySnapshot    Json          @map("activity_snapshot")
+  businessSnapshot    Json?         @map("business_snapshot")
+  selectionSnapshot   Json          @map("selection_snapshot")
+  priceSnapshot       Json          @map("price_snapshot")
+  
+  paymentAmount       Decimal?      @map("payment_amount") @db.Decimal(10, 2)
+  paymentCurrency     String?       @map("payment_currency")
+  
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("bookings")
+  @@index([userId, slotStart(sort: Desc)])
+  @@index([activityId, slotStart])
+  @@index([businessId, slotStart])
 }

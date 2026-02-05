@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { apiGet, apiPost, apiDelete } from "../../lib/api";
+import { apiDelete, apiGet, apiPost } from "../../lib/api";
 
 export interface SavedActivitySnapshot {
   title: string;

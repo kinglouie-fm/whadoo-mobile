@@ -12,6 +12,7 @@ import { MeModule } from "./me/me.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { SavedActivitiesModule } from "./saved-activities/saved-activities.module";
 import { AvailabilityResolutionModule } from "./availability-resolution/availability-resolution.module";
+import { BookingsModule } from "./bookings/bookings.module";
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AvailabilityResolutionModule } from "./availability-resolution/availabi
     ActivityTypeDefinitionsModule,
     SavedActivitiesModule,
     AvailabilityResolutionModule,
+    BookingsModule,
   ],
 })
 export class AppModule {}

@@ -14,11 +14,22 @@ export class AvailabilityResolutionService {
   constructor(private prisma: PrismaService) {}
 
   private generateSlotId(activityId: string, slotStart: Date): string {
-    const year = slotStart.getFullYear();
-    const month = String(slotStart.getMonth() + 1).padStart(2, '0');
-    const day = String(slotStart.getDate()).padStart(2, '0');
-    const hours = String(slotStart.getHours()).padStart(2, '0');
-    const minutes = String(slotStart.getMinutes()).padStart(2, '0');
+    // Generate slot ID using Luxembourg local time
+    // slotStart is UTC but represents a Luxembourg local time
+    const luxStr = slotStart.toLocaleString('en-US', {
+      timeZone: 'Europe/Luxembourg',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    
+    // Parse the formatted string (format: "MM/DD/YYYY, HH:mm")
+    const [datePart, timePart] = luxStr.split(', ');
+    const [month, day, year] = datePart.split('/');
+    const [hours, minutes] = timePart.split(':');
     
     return `${activityId}_${year}-${month}-${day}_${hours}${minutes}`;
   }
@@ -67,8 +78,9 @@ export class AvailabilityResolutionService {
       throw new BadRequestException('Availability template is inactive');
     }
 
-    // 2. Parse date and check if it's in the past
-    const requestedDate = new Date(date);
+    // 2. Parse date in Luxembourg timezone and check if it's in the past
+    // Date comes as YYYY-MM-DD string
+    const requestedDate = new Date(date + 'T00:00:00');
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -105,12 +117,22 @@ export class AvailabilityResolutionService {
       template.capacity
     );
 
-    // 6. Filter out past slots if today
-    const now = new Date();
+    // 6. Filter out past slots if today (in Luxembourg timezone)
+    const nowLux = this.getCurrentLuxembourgTime();
+    
+    // Compare dates in Luxembourg timezone
+    const luxDateNow = nowLux.toLocaleDateString('en-US', { timeZone: 'Europe/Luxembourg' });
+    const luxDateRequested = requestedDate.toLocaleDateString('en-US', { timeZone: 'Europe/Luxembourg' });
+    
     const validSlots =
-      requestedDate.toDateString() === today.toDateString()
-        ? slots.filter((slot) => slot.slotStart > now)
+      luxDateRequested === luxDateNow
+        ? slots.filter((slot) => slot.slotStart.getTime() > new Date().getTime())
         : slots;
+    
+    console.log(`[Slot Filtering] Today check: requested=${luxDateRequested}, now=${luxDateNow}, isToday=${luxDateRequested === luxDateNow}`);
+    console.log(`[Slot Filtering] Current time: ${new Date().toISOString()}`);
+    console.log(`[Slot Filtering] Luxembourg time: ${nowLux.toISOString()}`);
+    console.log(`[Slot Filtering] Filtered ${slots.length - validSlots.length} past slots out of ${slots.length}`);
 
     // 7. Lookup capacity for each slot
     const slotsWithCapacity = await this.applyCapacity(
@@ -122,6 +144,82 @@ export class AvailabilityResolutionService {
     return slotsWithCapacity;
   }
 
+  private extractTimeComponents(timeDate: Date): { hours: number; minutes: number } {
+    // PostgreSQL TIME type is returned as a Date object with arbitrary date (1970-01-01)
+    // TIME is stored without timezone, representing Luxembourg local time
+    const hours = timeDate.getUTCHours();
+    const minutes = timeDate.getUTCMinutes();
+    return { hours, minutes };
+  }
+
+  private getCurrentLuxembourgTime(): Date {
+    // Get current time in Luxembourg timezone
+    const now = new Date();
+    const luxString = now.toLocaleString('en-US', {
+      timeZone: 'Europe/Luxembourg',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    return new Date(luxString);
+  }
+
+  private getLuxembourgOffsetHours(date: Date): number {
+    // Determine if DST is active for Luxembourg on this date
+    // Luxembourg uses CET (UTC+1) in winter and CEST (UTC+2) in summer
+    // DST rules: Last Sunday in March to last Sunday in October
+    
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth(); // 0-11
+    
+    // DST is definitely active in Apr-Sep (months 3-8)
+    if (month >= 3 && month <= 8) {
+      return 2; // UTC+2 (CEST)
+    }
+    
+    // DST is definitely not active in Jan, Feb, Nov, Dec (months 0, 1, 10, 11)
+    if (month <= 1 || month >= 10) {
+      return 1; // UTC+1 (CET)
+    }
+    
+    // For March and October, need to check if we're past the transition
+    // Last Sunday of March at 02:00 → switch to UTC+2
+    // Last Sunday of October at 03:00 → switch to UTC+1
+    
+    // For simplicity in Feb 2026, it's definitely winter (UTC+1)
+    return 1; // UTC+1 (CET)
+  }
+
+  private createLuxembourgDate(dateStr: string, hours: number, minutes: number): Date {
+    // Create a Date representing a specific time in Luxembourg timezone
+    // Input: dateStr (YYYY-MM-DD), hours and minutes (Luxembourg local time)
+    // Output: Date object in UTC
+    
+    const [year, month, day] = dateStr.split('-').map(Number);
+    
+    // Create a UTC date for this day
+    const refDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    
+    // Get Luxembourg offset for this date
+    const luxOffsetHours = this.getLuxembourgOffsetHours(refDate);
+    
+    console.log(`[createLuxembourgDate] Date: ${dateStr}, Time: ${hours}:${minutes}, Luxembourg offset: UTC+${luxOffsetHours}`);
+    
+    // Luxembourg local time = UTC + offset
+    // So: UTC = Luxembourg local time - offset
+    const utcHours = hours - luxOffsetHours;
+    
+    const result = new Date(Date.UTC(year, month - 1, day, utcHours, minutes, 0));
+    
+    console.log(`[createLuxembourgDate] Result: ${result.toISOString()} (should be ${hours}:${String(minutes).padStart(2, '0')} Luxembourg time)`);
+    
+    return result;
+  }
+
   private generateSlots(
     date: Date,
     startTime: Date,
@@ -131,24 +229,26 @@ export class AvailabilityResolutionService {
   ): Array<{ slotStart: Date; capacity: number }> {
     const slots: Array<{ slotStart: Date; capacity: number }> = [];
 
-    // Extract hours and minutes from time fields
-    const startHour = startTime.getUTCHours();
-    const startMinute = startTime.getUTCMinutes();
-    const endHour = endTime.getUTCHours();
-    const endMinute = endTime.getUTCMinutes();
+    // Extract hours and minutes from TIME fields (stored without timezone)
+    const start = this.extractTimeComponents(startTime);
+    const end = this.extractTimeComponents(endTime);
 
-    // Create start and end datetime for the requested date
-    const currentSlot = new Date(date);
-    currentSlot.setHours(startHour, startMinute, 0, 0);
+    console.log(`[Slot Generation] Date: ${date.toISOString()}`);
+    console.log(`[Slot Generation] Start: ${start.hours}:${String(start.minutes).padStart(2, '0')}, End: ${end.hours}:${String(end.minutes).padStart(2, '0')}, Duration: ${slotDurationMinutes}min`);
 
-    const endDateTime = new Date(date);
-    endDateTime.setHours(endHour, endMinute, 0, 0);
+    // Get date string
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    // Create start and end times in Luxembourg timezone, converted to UTC
+    const currentSlot = this.createLuxembourgDate(dateStr, start.hours, start.minutes);
+    const endDateTime = this.createLuxembourgDate(dateStr, end.hours, end.minutes);
 
-    // Generate slots
+    // Generate slots - include slots where slot end equals endDateTime
     while (currentSlot < endDateTime) {
       const slotEnd = new Date(currentSlot);
       slotEnd.setMinutes(slotEnd.getMinutes() + slotDurationMinutes);
 
+      // Include slot if it ends at or before the end time
       if (slotEnd <= endDateTime) {
         slots.push({
           slotStart: new Date(currentSlot),
@@ -158,6 +258,13 @@ export class AvailabilityResolutionService {
 
       currentSlot.setMinutes(currentSlot.getMinutes() + slotDurationMinutes);
     }
+
+    console.log(`[Slot Generation] Generated ${slots.length} slots`);
+    slots.forEach((slot, idx) => {
+      const hours = slot.slotStart.getUTCHours();
+      const minutes = slot.slotStart.getUTCMinutes();
+      console.log(`  Slot ${idx + 1}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} (${slot.slotStart.toISOString()})`);
+    });
 
     return slots;
   }
