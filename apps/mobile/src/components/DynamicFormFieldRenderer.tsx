@@ -1,11 +1,11 @@
 import React from "react";
 import {
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { FieldDefinition } from "../store/slices/activity-type-slice";
 
@@ -93,7 +93,11 @@ export function DynamicFormFieldRenderer({
         );
 
       default:
-        return <Text style={styles.unsupported}>Unsupported field type: {field.type}</Text>;
+        return (
+          <Text style={styles.unsupported}>
+            Unsupported field type: {field.type}
+          </Text>
+        );
     }
   };
 
@@ -108,11 +112,13 @@ export function DynamicFormFieldRenderer({
       </View>
       {renderField()}
       {error && <Text style={styles.errorText}>{error}</Text>}
-      {field.min !== undefined && field.max !== undefined && field.type === "number" && (
-        <Text style={styles.hint}>
-          Range: {field.min} - {field.max}
-        </Text>
-      )}
+      {field.min !== undefined &&
+        field.max !== undefined &&
+        field.type === "number" && (
+          <Text style={styles.hint}>
+            Range: {field.min} - {field.max}
+          </Text>
+        )}
     </View>
   );
 }
