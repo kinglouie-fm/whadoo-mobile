@@ -1,5 +1,5 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { apiDelete, apiGet, apiPost } from "../../lib/api";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { apiGet, apiPost } from "../../lib/api";
 
 export interface BookingSnapshot {
   title: string;
@@ -41,7 +41,7 @@ export interface Booking {
   activityId: string;
   slotStart: string;
   participantsCount: number;
-  status: 'active' | 'cancelled' | 'completed';
+  status: "active" | "cancelled" | "completed";
   activitySnapshot: BookingSnapshot;
   businessSnapshot?: BusinessSnapshot;
   selectionSnapshot: SelectionSnapshot;
@@ -99,7 +99,7 @@ export const createBooking = createAsyncThunk(
   }) => {
     const result = await apiPost<Booking>("/bookings", data);
     return result;
-  }
+  },
 );
 
 // Cancel booking
@@ -108,27 +108,28 @@ export const cancelBooking = createAsyncThunk(
   async (data: { bookingId: string; reason?: string }) => {
     const result = await apiPost<Booking>(
       `/bookings/${data.bookingId}/cancel`,
-      { reason: data.reason }
+      { reason: data.reason },
     );
     return result;
-  }
+  },
 );
 
 // Fetch bookings list
 export const fetchBookings = createAsyncThunk(
   "bookings/fetchList",
-  async (params: { kind: 'upcoming' | 'past'; cursor?: string }) => {
+  async (params: { kind: "upcoming" | "past"; cursor?: string }) => {
     const queryParams = new URLSearchParams();
-    queryParams.append('kind', params.kind);
+    queryParams.append("kind", params.kind);
     if (params.cursor) {
-      queryParams.append('cursor', params.cursor);
+      queryParams.append("cursor", params.cursor);
     }
-    
-    const result = await apiGet<{ items: Booking[]; nextCursor: string | null }>(
-      `/bookings?${queryParams.toString()}`
-    );
+
+    const result = await apiGet<{
+      items: Booking[];
+      nextCursor: string | null;
+    }>(`/bookings?${queryParams.toString()}`);
     return { ...result, kind: params.kind };
-  }
+  },
 );
 
 // Fetch single booking
@@ -137,7 +138,7 @@ export const fetchBooking = createAsyncThunk(
   async (bookingId: string) => {
     const result = await apiGet<Booking>(`/bookings/${bookingId}`);
     return result;
-  }
+  },
 );
 
 const bookingsSlice = createSlice({
@@ -175,12 +176,12 @@ const bookingsSlice = createSlice({
     builder.addCase(cancelBooking.fulfilled, (state, action) => {
       state.bookingLoading = false;
       // Update in lists
-      const updateInList = (items: Booking[]) => 
-        items.map(b => b.id === action.payload.id ? action.payload : b);
-      
+      const updateInList = (items: Booking[]) =>
+        items.map((b) => (b.id === action.payload.id ? action.payload : b));
+
       state.upcoming.items = updateInList(state.upcoming.items);
       state.past.items = updateInList(state.past.items);
-      
+
       if (state.currentBooking?.id === action.payload.id) {
         state.currentBooking = action.payload;
       }
@@ -199,7 +200,7 @@ const bookingsSlice = createSlice({
     builder.addCase(fetchBookings.fulfilled, (state, action) => {
       const kind = action.payload.kind;
       state[kind].loading = false;
-      
+
       if (action.meta.arg.cursor) {
         // Append for pagination
         state[kind].items.push(...action.payload.items);
@@ -207,7 +208,7 @@ const bookingsSlice = createSlice({
         // Replace for initial fetch
         state[kind].items = action.payload.items;
       }
-      
+
       state[kind].nextCursor = action.payload.nextCursor;
     });
     builder.addCase(fetchBookings.rejected, (state, action) => {

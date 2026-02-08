@@ -14,6 +14,8 @@ export interface ActivityGroup {
     title: string;
     description: string | null;
     typeId: string;
+    city: string | null;
+    address: string | null;
     priceFrom: string | null;
     config: any;
     pricing: any;
@@ -42,17 +44,21 @@ const initialState: ConsumerActivityState = {
 export const fetchConsumerActivity = createAsyncThunk(
   "consumerActivity/fetchActivity",
   async (activityId: string) => {
-    const activity = await apiGet<Activity>(`/activities/consumer/${activityId}`);
+    const activity = await apiGet<Activity>(
+      `/activities/consumer/${activityId}`,
+    );
     return activity;
-  }
+  },
 );
 
 export const fetchActivityGroup = createAsyncThunk(
   "consumerActivity/fetchGroup",
   async (catalogGroupId: string) => {
-    const group = await apiGet<ActivityGroup>(`/activities/group/${catalogGroupId}`);
+    const group = await apiGet<ActivityGroup>(
+      `/activities/group/${catalogGroupId}`,
+    );
     return group;
-  }
+  },
 );
 
 const consumerActivitySlice = createSlice({
@@ -75,10 +81,13 @@ const consumerActivitySlice = createSlice({
       state.loading = true;
       state.error = null;
     });
-    builder.addCase(fetchConsumerActivity.fulfilled, (state, action: PayloadAction<Activity>) => {
-      state.loading = false;
-      state.currentActivity = action.payload;
-    });
+    builder.addCase(
+      fetchConsumerActivity.fulfilled,
+      (state, action: PayloadAction<Activity>) => {
+        state.loading = false;
+        state.currentActivity = action.payload;
+      },
+    );
     builder.addCase(fetchConsumerActivity.rejected, (state, action) => {
       state.loading = false;
       state.error = action.error.message || "Failed to fetch activity";
@@ -89,10 +98,13 @@ const consumerActivitySlice = createSlice({
       state.loading = true;
       state.error = null;
     });
-    builder.addCase(fetchActivityGroup.fulfilled, (state, action: PayloadAction<ActivityGroup>) => {
-      state.loading = false;
-      state.currentGroup = action.payload;
-    });
+    builder.addCase(
+      fetchActivityGroup.fulfilled,
+      (state, action: PayloadAction<ActivityGroup>) => {
+        state.loading = false;
+        state.currentGroup = action.payload;
+      },
+    );
     builder.addCase(fetchActivityGroup.rejected, (state, action) => {
       state.loading = false;
       state.error = action.error.message || "Failed to fetch activity group";
@@ -100,5 +112,6 @@ const consumerActivitySlice = createSlice({
   },
 });
 
-export const { clearError, clearCurrentActivity, clearCurrentGroup } = consumerActivitySlice.actions;
+export const { clearError, clearCurrentActivity, clearCurrentGroup } =
+  consumerActivitySlice.actions;
 export default consumerActivitySlice.reducer;
