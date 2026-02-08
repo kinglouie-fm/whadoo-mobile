@@ -26,27 +26,39 @@ export function PricingSchemaRenderer({
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Pricing</Text>
-      {typeDefinition.pricingSchema.fields.map((field) => (
-        <DynamicFormFieldRenderer
-          key={field.name}
-          field={field}
-          value={currentPricing[field.name]}
-          onChange={(value) => handleFieldChange(field.name, value)}
-          error={errors[`pricing.${field.name}`]}
-        />
-      ))}
+
+      <View style={styles.sectionCard}>
+        {typeDefinition.pricingSchema.fields.map((field) => (
+          <DynamicFormFieldRenderer
+            key={field.name}
+            field={field}
+            value={currentPricing[field.name]}
+            onChange={(value) => handleFieldChange(field.name, value)}
+            error={errors[`pricing.${field.name}`]}
+          />
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 24,
-  },
+  container: { marginBottom: 24 },
+
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 16,
+    fontSize: 12,
+    fontWeight: "900",
+    color: "rgba(255,255,255,0.62)",
+    marginBottom: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+
+  sectionCard: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 18,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
   },
 });

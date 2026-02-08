@@ -4,32 +4,40 @@ import { PricingSchemaRenderer } from "@/src/components/PricingSchemaRenderer";
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
-    clearCurrentActivity,
-    createActivity,
-    CreateActivityData,
-    fetchActivity,
-    updateActivity,
-    UpdateActivityData,
+  clearCurrentActivity,
+  createActivity,
+  CreateActivityData,
+  fetchActivity,
+  updateActivity,
+  UpdateActivityData,
 } from "@/src/store/slices/activity-slice";
 import {
-    fetchTypeDefinition,
-    fetchTypeDefinitions,
+  fetchTypeDefinition,
+  fetchTypeDefinitions,
 } from "@/src/store/slices/activity-type-slice";
 import { fetchTemplates } from "@/src/store/slices/availability-template-slice";
 import { theme } from "@/src/theme/theme";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const stylesVars = {
+  cardBg: "rgba(255,255,255,0.08)", // like saved.tsx
+  inputBg: "rgba(255,255,255,0.06)",
+  border: "rgba(255,255,255,0.12)",
+  subText: "rgba(255,255,255,0.78)",
+  subText2: "rgba(255,255,255,0.62)",
+};
 
 export default function ActivityDetailScreen() {
   const router = useRouter();
@@ -46,7 +54,6 @@ export default function ActivityDetailScreen() {
 
   const isEditMode = !!id;
 
-  // Form state
   const [title, setTitle] = useState("");
   const [typeId, setTypeId] = useState("");
   const [description, setDescription] = useState("");
@@ -59,35 +66,25 @@ export default function ActivityDetailScreen() {
   const [catalogGroupTitle, setCatalogGroupTitle] = useState("");
   const [catalogGroupKind, setCatalogGroupKind] = useState("");
 
-  // Dynamic config and pricing
   const [config, setConfig] = useState<Record<string, any>>({});
   const [pricing, setPricing] = useState<Record<string, any>>({});
-
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Load type definitions
   useEffect(() => {
     dispatch(fetchTypeDefinitions());
-  }, []);
+  }, [dispatch]);
 
-  // Load activity if editing
   useEffect(() => {
-    if (isEditMode && id) {
-      dispatch(fetchActivity(id));
-    }
+    if (isEditMode && id) dispatch(fetchActivity(id));
     return () => {
       dispatch(clearCurrentActivity());
     };
-  }, [id, isEditMode]);
+  }, [dispatch, id, isEditMode]);
 
-  // Load templates for picker
   useEffect(() => {
-    if (business?.id) {
-      dispatch(fetchTemplates(business.id));
-    }
-  }, [business?.id]);
+    if (business?.id) dispatch(fetchTemplates(business.id));
+  }, [dispatch, business?.id]);
 
-  // Populate form when activity loads
   useEffect(() => {
     if (currentActivity && isEditMode) {
       setTitle(currentActivity.title);
@@ -104,21 +101,16 @@ export default function ActivityDetailScreen() {
       setConfig(currentActivity.config || {});
       setPricing(currentActivity.pricing || {});
 
-      // Fetch type definition for this activity
-      if (currentActivity.typeId) {
+      if (currentActivity.typeId)
         dispatch(fetchTypeDefinition(currentActivity.typeId));
-      }
     }
-  }, [currentActivity, isEditMode]);
+  }, [dispatch, currentActivity, isEditMode]);
 
-  // Fetch type definition when type changes
   useEffect(() => {
     if (typeId && !isEditMode) {
       dispatch(fetchTypeDefinition(typeId));
-      // Reset config and pricing when type changes
-      const newConfig: Record<string, any> = {};
 
-      // Auto-create first package for karting
+      const newConfig: Record<string, any> = {};
       if (typeId === "karting") {
         newConfig.packages = [
           {
@@ -134,19 +126,23 @@ export default function ActivityDetailScreen() {
       setConfig(newConfig);
       setPricing({});
     }
-  }, [typeId, isEditMode]);
+  }, [dispatch, typeId, isEditMode]);
+
+  const textInputCommonProps = useMemo(
+    () => ({
+      placeholderTextColor: stylesVars.subText2,
+      selectionColor: theme.colors.accent,
+      cursorColor: theme.colors.accent,
+      underlineColorAndroid: "transparent" as const, // ✅ kills Android blue underline
+      keyboardAppearance: "dark" as const,
+    }),
+    [],
+  );
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    if (!title.trim()) {
-      newErrors.title = "Title is required";
-    }
-
-    if (!typeId.trim()) {
-      newErrors.typeId = "Type is required";
-    }
-
+    if (!title.trim()) newErrors.title = "Title is required";
+    if (!typeId.trim()) newErrors.typeId = "Type is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -156,7 +152,6 @@ export default function ActivityDetailScreen() {
       Alert.alert("Validation Error", "Please fix the errors before saving");
       return;
     }
-
     if (!business?.id) {
       Alert.alert("Error", "Business not found");
       return;
@@ -221,14 +216,19 @@ export default function ActivityDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <ScrollView style={styles.container}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={styles.cancelButton}>Cancel</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>
+
+          <Text style={styles.headerTitle}>
             {isEditMode ? "Edit" : "Create"} Activity
           </Text>
+
           <TouchableOpacity onPress={handleSave}>
             <Text style={styles.saveButton}>Save</Text>
           </TouchableOpacity>
@@ -239,6 +239,7 @@ export default function ActivityDetailScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Title *</Text>
             <TextInput
+              {...textInputCommonProps}
               style={[styles.input, errors.title && styles.inputError]}
               value={title}
               onChangeText={setTitle}
@@ -261,7 +262,7 @@ export default function ActivityDetailScreen() {
                     typeId === type.typeId && styles.typeOptionSelected,
                   ]}
                   onPress={() => setTypeId(type.typeId)}
-                  disabled={isEditMode} // Don't allow changing type in edit mode
+                  disabled={isEditMode}
                 >
                   <Text
                     style={[
@@ -274,6 +275,7 @@ export default function ActivityDetailScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+
             {errors.typeId && (
               <Text style={styles.errorText}>{errors.typeId}</Text>
             )}
@@ -288,6 +290,7 @@ export default function ActivityDetailScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Description</Text>
             <TextInput
+              {...textInputCommonProps}
               style={[styles.input, styles.textArea]}
               value={description}
               onChangeText={setDescription}
@@ -301,6 +304,7 @@ export default function ActivityDetailScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>City</Text>
             <TextInput
+              {...textInputCommonProps}
               style={styles.input}
               value={city}
               onChangeText={setCity}
@@ -312,6 +316,7 @@ export default function ActivityDetailScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Address</Text>
             <TextInput
+              {...textInputCommonProps}
               style={styles.input}
               value={address}
               onChangeText={setAddress}
@@ -323,6 +328,7 @@ export default function ActivityDetailScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Category</Text>
             <TextInput
+              {...textInputCommonProps}
               style={styles.input}
               value={category}
               onChangeText={setCategory}
@@ -332,8 +338,9 @@ export default function ActivityDetailScreen() {
 
           {/* Price From */}
           <View style={styles.field}>
-            <Text style={styles.label}>Price From ($)</Text>
+            <Text style={styles.label}>Price From (€)</Text>
             <TextInput
+              {...textInputCommonProps}
               style={styles.input}
               value={priceFrom}
               onChangeText={setPriceFrom}
@@ -347,12 +354,13 @@ export default function ActivityDetailScreen() {
             </Text>
           </View>
 
-          {/* Catalog Group Fields (for grouping multiple activities) */}
+          {/* Catalog Group Fields */}
           {typeId === "karting" && (
             <>
               <View style={styles.field}>
                 <Text style={styles.label}>Catalog Group ID</Text>
                 <TextInput
+                  {...textInputCommonProps}
                   style={styles.input}
                   value={catalogGroupId}
                   onChangeText={setCatalogGroupId}
@@ -366,6 +374,7 @@ export default function ActivityDetailScreen() {
               <View style={styles.field}>
                 <Text style={styles.label}>Catalog Group Title</Text>
                 <TextInput
+                  {...textInputCommonProps}
                   style={styles.input}
                   value={catalogGroupTitle}
                   onChangeText={setCatalogGroupTitle}
@@ -376,6 +385,7 @@ export default function ActivityDetailScreen() {
               <View style={styles.field}>
                 <Text style={styles.label}>Catalog Group Kind</Text>
                 <TextInput
+                  {...textInputCommonProps}
                   style={styles.input}
                   value={catalogGroupKind}
                   onChangeText={setCatalogGroupKind}
@@ -385,7 +395,7 @@ export default function ActivityDetailScreen() {
             </>
           )}
 
-          {/* Dynamic Config Fields or Packages Editor */}
+          {/* Dynamic Config / Packages */}
           {currentTypeDefinition && (
             <>
               {typeId === "karting" ? (
@@ -393,13 +403,11 @@ export default function ActivityDetailScreen() {
                   packages={config.packages || []}
                   onChange={(packages) => {
                     setConfig({ ...config, packages });
-                    // Auto-calculate price_from
                     const prices = packages
                       .map((pkg) => pkg.base_price)
                       .filter((p) => p !== undefined && p !== null);
-                    if (prices.length > 0) {
+                    if (prices.length > 0)
                       setPriceFrom(Math.min(...prices).toString());
-                    }
                   }}
                 />
               ) : (
@@ -432,6 +440,7 @@ export default function ActivityDetailScreen() {
                 </View>
               )}
             </View>
+
             {templates.length > 0 ? (
               <View style={styles.templatePicker}>
                 {templates
@@ -464,6 +473,7 @@ export default function ActivityDetailScreen() {
                       </Text>
                     </TouchableOpacity>
                   ))}
+
                 {availabilityTemplateId &&
                   currentActivity?.status !== "published" && (
                     <TouchableOpacity
@@ -484,6 +494,7 @@ export default function ActivityDetailScreen() {
                 </Text>
               </View>
             )}
+
             {isEditMode && currentActivity?.status === "published" && (
               <View style={styles.infoBox}>
                 <Text style={styles.infoText}>
@@ -499,10 +510,10 @@ export default function ActivityDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-  },
+  container: { flex: 1, backgroundColor: theme.colors.bg },
+  scroll: { flex: 1, backgroundColor: theme.colors.bg },
+  scrollContent: { paddingBottom: 40 },
+
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -518,82 +529,70 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.md,
     backgroundColor: theme.colors.bg,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.divider,
+    borderBottomColor: stylesVars.border,
   },
-  title: {
+  headerTitle: {
     fontSize: 16,
     fontWeight: "800",
     color: theme.colors.text,
   },
   cancelButton: {
     fontSize: 14,
-    fontWeight: "700",
-    color: theme.colors.muted,
+    fontWeight: "800",
+    color: stylesVars.subText,
   },
   saveButton: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "900",
     color: theme.colors.accent,
   },
 
-  form: {
-    padding: theme.spacing.lg,
-  },
-  field: {
-    marginBottom: theme.spacing.lg,
-  },
+  form: { padding: theme.spacing.lg },
+  field: { marginBottom: theme.spacing.lg },
 
   label: {
     fontSize: 12,
-    fontWeight: "800",
-    color: theme.colors.muted,
+    fontWeight: "900",
+    color: stylesVars.subText2,
     marginBottom: 8,
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
   helperText: {
     fontSize: 12,
-    color: theme.colors.muted,
+    color: stylesVars.subText2,
     marginTop: 6,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 
   input: {
     borderWidth: 1,
-    borderColor: theme.colors.divider,
+    borderColor: stylesVars.border,
     borderRadius: theme.radius.lg,
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 15,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: stylesVars.inputBg,
     color: theme.colors.text,
   },
-  textArea: {
-    height: 110,
-    textAlignVertical: "top",
-  },
-  inputError: {
-    borderColor: theme.colors.danger,
-  },
+  textArea: { height: 110, textAlignVertical: "top" },
+
+  inputError: { borderColor: theme.colors.danger },
   errorText: {
     color: theme.colors.danger,
     fontSize: 12,
     marginTop: 6,
-    fontWeight: "700",
+    fontWeight: "800",
   },
 
-  typeDropdown: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
+  typeDropdown: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   typeOption: {
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: theme.colors.divider,
-    backgroundColor: theme.colors.surface,
+    borderColor: stylesVars.border,
+    backgroundColor: stylesVars.cardBg,
   },
   typeOptionSelected: {
     backgroundColor: theme.colors.accent,
@@ -601,56 +600,51 @@ const styles = StyleSheet.create({
   },
   typeOptionText: {
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "900",
     color: theme.colors.text,
   },
   typeOptionTextSelected: {
-    color: theme.colors.bg,
+    color: "#0B0B0B", // ✅ always readable (no “blue on blue” issues)
   },
 
-  templatePicker: {
-    marginTop: 8,
-    gap: 10,
-  },
+  templatePicker: { marginTop: 8, gap: 10 },
   templateOption: {
     padding: theme.spacing.md,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.divider,
-    backgroundColor: theme.colors.card,
+    borderColor: stylesVars.border,
+    backgroundColor: stylesVars.cardBg,
   },
   templateOptionSelected: {
     borderColor: theme.colors.accent,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: "rgba(255,255,255,0.10)",
   },
   templateOptionText: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "900",
     color: theme.colors.text,
   },
-  templateOptionTextSelected: {
-    color: theme.colors.text,
-  },
+  templateOptionTextSelected: { color: theme.colors.text },
   templateDetails: {
     fontSize: 12,
-    color: theme.colors.muted,
+    color: stylesVars.subText2,
     marginTop: 6,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 
   templateClearButton: {
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: stylesVars.cardBg,
     borderWidth: 1,
-    borderColor: theme.colors.divider,
+    borderColor: stylesVars.border,
     alignItems: "center",
     justifyContent: "center",
   },
   templateClearText: {
     fontSize: 13,
-    fontWeight: "800",
-    color: theme.colors.muted,
+    fontWeight: "900",
+    color: stylesVars.subText,
   },
 
   labelRow: {
@@ -667,11 +661,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
   },
-  requiredText: {
-    fontSize: 12,
-    color: theme.colors.danger,
-    fontWeight: "800",
-  },
+  requiredText: { fontSize: 12, color: theme.colors.danger, fontWeight: "900" },
 
   warningBox: {
     backgroundColor: "rgba(245,158,11,0.14)",
@@ -681,11 +671,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.lg,
     marginTop: 8,
   },
-  warningText: {
-    fontSize: 13,
-    color: "#F59E0B",
-    fontWeight: "700",
-  },
+  warningText: { fontSize: 13, color: "#F59E0B", fontWeight: "800" },
 
   infoBox: {
     backgroundColor: "rgba(34,197,94,0.12)",
@@ -695,9 +681,5 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.lg,
     marginTop: 8,
   },
-  infoText: {
-    fontSize: 13,
-    color: "#22C55E",
-    fontWeight: "700",
-  },
+  infoText: { fontSize: 13, color: "#22C55E", fontWeight: "800" },
 });

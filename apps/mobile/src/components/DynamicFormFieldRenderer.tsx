@@ -1,4 +1,5 @@
-import React from "react";
+import { theme } from "@/src/theme/theme";
+import React, { useMemo } from "react";
 import {
   StyleSheet,
   Switch,
@@ -16,18 +17,38 @@ interface DynamicFormFieldRendererProps {
   error?: string;
 }
 
+const stylesVars = {
+  cardBg: "rgba(255,255,255,0.08)",
+  inputBg: "rgba(255,255,255,0.06)",
+  border: "rgba(255,255,255,0.12)",
+  label: "rgba(255,255,255,0.62)",
+  subText: "rgba(255,255,255,0.78)",
+};
+
 export function DynamicFormFieldRenderer({
   field,
   value,
   onChange,
   error,
 }: DynamicFormFieldRendererProps) {
+  const inputProps = useMemo(
+    () => ({
+      underlineColorAndroid: "transparent" as const, // ✅ kills blue underline on Android
+      selectionColor: theme.colors.accent,
+      cursorColor: theme.colors.accent,
+      placeholderTextColor: stylesVars.label,
+      keyboardAppearance: "dark" as const,
+    }),
+    [],
+  );
+
   const renderField = () => {
     switch (field.type) {
       case "text":
       case "textarea":
         return (
           <TextInput
+            {...inputProps}
             style={[
               styles.input,
               field.type === "textarea" && styles.textArea,
@@ -44,11 +65,14 @@ export function DynamicFormFieldRenderer({
       case "number":
         return (
           <TextInput
+            {...inputProps}
             style={[styles.input, error && styles.inputError]}
             value={value?.toString() || ""}
             onChangeText={(text) => {
-              const num = parseFloat(text);
-              onChange(isNaN(num) ? text : num);
+              // allow empty while typing
+              if (text.trim() === "") return onChange("");
+              const num = Number(text);
+              onChange(Number.isFinite(num) ? num : text);
             }}
             placeholder={field.placeholder || field.label}
             keyboardType="numeric"
@@ -58,25 +82,29 @@ export function DynamicFormFieldRenderer({
       case "select":
         return (
           <View style={styles.selectContainer}>
-            {field.options?.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.selectOption,
-                  value === option.value && styles.selectOptionSelected,
-                ]}
-                onPress={() => onChange(option.value)}
-              >
-                <Text
+            {field.options?.map((option) => {
+              const selected = value === option.value;
+              return (
+                <TouchableOpacity
+                  key={option.value}
                   style={[
-                    styles.selectOptionText,
-                    value === option.value && styles.selectOptionTextSelected,
+                    styles.selectOption,
+                    selected && styles.selectOptionSelected,
                   ]}
+                  onPress={() => onChange(option.value)}
+                  activeOpacity={0.85}
                 >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.selectOptionText,
+                      selected && styles.selectOptionTextSelected,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         );
 
@@ -86,8 +114,11 @@ export function DynamicFormFieldRenderer({
             <Switch
               value={value === true}
               onValueChange={onChange}
-              trackColor={{ false: "#ccc", true: "#007AFF" }}
-              thumbColor="#fff"
+              trackColor={{
+                false: "rgba(255,255,255,0.18)",
+                true: theme.colors.accent,
+              }}
+              thumbColor={"#fff"}
             />
           </View>
         );
@@ -106,99 +137,132 @@ export function DynamicFormFieldRenderer({
       <View style={styles.labelRow}>
         <Text style={styles.label}>
           {field.label}
-          {field.required && <Text style={styles.required}> *</Text>}
+          {field.required ? <Text style={styles.required}> *</Text> : null}
         </Text>
-        {field.help && <Text style={styles.help}>{field.help}</Text>}
+
+        {field.help ? <Text style={styles.help}>{field.help}</Text> : null}
       </View>
+
       {renderField()}
-      {error && <Text style={styles.errorText}>{error}</Text>}
-      {field.min !== undefined &&
-        field.max !== undefined &&
-        field.type === "number" && (
-          <Text style={styles.hint}>
-            Range: {field.min} - {field.max}
-          </Text>
-        )}
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+      {field.type === "number" &&
+      field.min !== undefined &&
+      field.max !== undefined ? (
+        <Text style={styles.hint}>
+          Range: {field.min} - {field.max}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   fieldContainer: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
+
   labelRow: {
     marginBottom: 8,
   },
+
+  // match the "admin dark UI" label style you used elsewhere
   label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  required: {
-    color: "#FF3B30",
-  },
-  help: {
     fontSize: 12,
-    color: "#666",
-    marginTop: 4,
+    fontWeight: "900",
+    color: stylesVars.label,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
+
+  required: {
+    color: theme.colors.danger,
+    fontWeight: "900",
+  },
+
+  help: {
+    marginTop: 6,
+    fontSize: 12,
+    color: stylesVars.subText,
+    fontWeight: "700",
+    lineHeight: 16,
+  },
+
   hint: {
     fontSize: 12,
-    color: "#666",
-    marginTop: 4,
+    color: stylesVars.label,
+    marginTop: 6,
+    fontWeight: "700",
   },
+
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#fff",
+    borderColor: stylesVars.border,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 15,
+    backgroundColor: stylesVars.inputBg,
+    color: theme.colors.text,
   },
+
   textArea: {
-    height: 100,
+    minHeight: 110,
     textAlignVertical: "top",
   },
+
   inputError: {
-    borderColor: "#FF3B30",
+    borderColor: theme.colors.danger,
   },
+
   errorText: {
-    color: "#FF3B30",
+    color: theme.colors.danger,
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 6,
+    fontWeight: "800",
   },
+
   selectContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
   },
+
   selectOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#ccc",
-    backgroundColor: "#fff",
+    borderColor: stylesVars.border,
+    backgroundColor: stylesVars.inputBg,
   },
+
   selectOptionSelected: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accent,
   },
+
   selectOptionText: {
-    fontSize: 14,
-    color: "#333",
+    fontSize: 13,
+    fontWeight: "900",
+    color: theme.colors.text,
   },
+
+  // ✅ readable on accent
   selectOptionTextSelected: {
-    color: "#fff",
-    fontWeight: "600",
+    color: "#0B0B0B",
   },
+
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
+    paddingVertical: 2,
   },
+
   unsupported: {
-    color: "#FF3B30",
-    fontSize: 14,
+    color: theme.colors.danger,
+    fontSize: 13,
+    fontWeight: "800",
   },
 });

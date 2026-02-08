@@ -1,5 +1,5 @@
 import { theme } from "@/src/theme/theme";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
     Alert,
     Modal,
@@ -34,6 +34,14 @@ interface PackagesEditorProps {
   onChange: (packages: Package[]) => void;
 }
 
+const stylesVars = {
+  cardBg: "rgba(255,255,255,0.08)",
+  inputBg: "rgba(255,255,255,0.06)",
+  border: "rgba(255,255,255,0.12)",
+  subText: "rgba(255,255,255,0.78)",
+  subText2: "rgba(255,255,255,0.62)",
+};
+
 export const PackagesEditor: React.FC<PackagesEditorProps> = ({
   packages,
   onChange,
@@ -41,6 +49,17 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
+
+  const inputProps = useMemo(
+    () => ({
+      underlineColorAndroid: "transparent" as const, // ✅ remove Android blue underline
+      selectionColor: theme.colors.accent,
+      cursorColor: theme.colors.accent,
+      placeholderTextColor: stylesVars.subText2,
+      keyboardAppearance: "dark" as const,
+    }),
+    [],
+  );
 
   const handleAdd = () => {
     const newPackage: Package = {
@@ -63,7 +82,6 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
   const handleSave = () => {
     if (!editingPackage) return;
 
-    // Validate required fields
     if (!editingPackage.code?.trim()) {
       Alert.alert("Validation Error", "Package code is required");
       return;
@@ -77,14 +95,12 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
       return;
     }
 
-    // Check for duplicate codes
     const normalizedCode = editingPackage.code.toLowerCase().trim();
     const isDuplicate = packages.some(
       (pkg, idx) =>
         idx !== editingIndex &&
         pkg.code.toLowerCase().trim() === normalizedCode,
     );
-
     if (isDuplicate) {
       Alert.alert("Validation Error", "Package code must be unique");
       return;
@@ -92,15 +108,12 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
 
     let updatedPackages: Package[];
     if (editingIndex !== null) {
-      // Update existing
       updatedPackages = [...packages];
       updatedPackages[editingIndex] = editingPackage;
     } else {
-      // Add new
       updatedPackages = [...packages, editingPackage];
     }
 
-    // If this package is set as default, unset others
     if (editingPackage.is_default) {
       updatedPackages = updatedPackages.map((pkg, idx) => ({
         ...pkg,
@@ -139,10 +152,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
       updatedPackages[index],
       updatedPackages[index - 1],
     ];
-    // Update sort_order
-    updatedPackages.forEach((pkg, idx) => {
-      pkg.sort_order = idx;
-    });
+    updatedPackages.forEach((pkg, idx) => (pkg.sort_order = idx));
     onChange(updatedPackages);
   };
 
@@ -153,10 +163,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
       updatedPackages[index + 1],
       updatedPackages[index],
     ];
-    // Update sort_order
-    updatedPackages.forEach((pkg, idx) => {
-      pkg.sort_order = idx;
-    });
+    updatedPackages.forEach((pkg, idx) => (pkg.sort_order = idx));
     onChange(updatedPackages);
   };
 
@@ -179,19 +186,20 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
             <View key={index} style={styles.packageCard}>
               <View style={styles.packageHeader}>
                 <View style={styles.packageInfo}>
-                  <Text style={styles.packageTitle}>
+                  <Text style={styles.packageTitle} numberOfLines={1}>
                     {pkg.title}
-                    {pkg.is_default && (
+                    {pkg.is_default ? (
                       <Text style={styles.defaultBadge}> (Default)</Text>
-                    )}
+                    ) : null}
                   </Text>
                   <Text style={styles.packageCode}>Code: {pkg.code}</Text>
-                  {pkg.track_type && (
+                  {pkg.track_type ? (
                     <Text style={styles.packageTrackType}>
                       {pkg.track_type === "indoor" ? "🏢 Indoor" : "🌳 Outdoor"}
                     </Text>
-                  )}
+                  ) : null}
                 </View>
+
                 <View style={styles.packageActions}>
                   <TouchableOpacity
                     onPress={() => handleMoveUp(index)}
@@ -203,6 +211,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                   >
                     <Text style={styles.actionButtonText}>↑</Text>
                   </TouchableOpacity>
+
                   <TouchableOpacity
                     onPress={() => handleMoveDown(index)}
                     disabled={index === packages.length - 1}
@@ -214,12 +223,14 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                   >
                     <Text style={styles.actionButtonText}>↓</Text>
                   </TouchableOpacity>
+
                   <TouchableOpacity
                     onPress={() => handleEdit(index)}
                     style={styles.actionButton}
                   >
                     <Text style={styles.actionButtonText}>Edit</Text>
                   </TouchableOpacity>
+
                   <TouchableOpacity
                     onPress={() => handleRemove(index)}
                     style={[styles.actionButton, styles.removeButton]}
@@ -228,26 +239,29 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                   </TouchableOpacity>
                 </View>
               </View>
-              {pkg.description && (
+
+              {pkg.description ? (
                 <Text style={styles.packageDescription}>{pkg.description}</Text>
-              )}
-              {pkg.base_price && (
+              ) : null}
+              {pkg.base_price != null ? (
                 <Text style={styles.packagePrice}>
                   Price: {pkg.currency || "EUR"} {pkg.base_price}
                 </Text>
-              )}
+              ) : null}
             </View>
           ))}
         </ScrollView>
       )}
 
-      {/* Edit/Add Modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <ScrollView style={styles.modalContainer}>
+        <ScrollView
+          style={styles.modalContainer}
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
               {editingIndex !== null ? "Edit Package" : "Add Package"}
@@ -262,13 +276,13 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               Package Code <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
+              {...inputProps}
               style={styles.input}
               value={editingPackage?.code || ""}
               onChangeText={(text) =>
                 setEditingPackage((prev) => ({ ...prev!, code: text }))
               }
               placeholder="e.g., standard, mini-gp, grand-gp"
-              placeholderTextColor={theme.colors.muted}
             />
           </View>
 
@@ -277,13 +291,13 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               Package Title <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
+              {...inputProps}
               style={styles.input}
               value={editingPackage?.title || ""}
               onChangeText={(text) =>
                 setEditingPackage((prev) => ({ ...prev!, title: text }))
               }
               placeholder="e.g., Standard Session, Mini GP"
-              placeholderTextColor={theme.colors.muted}
             />
           </View>
 
@@ -315,6 +329,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                   Indoor
                 </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[
                   styles.trackTypeOption,
@@ -344,13 +359,13 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
           <View style={styles.formGroup}>
             <Text style={styles.label}>Description</Text>
             <TextInput
+              {...inputProps}
               style={[styles.input, styles.textArea]}
               value={editingPackage?.description || ""}
               onChangeText={(text) =>
                 setEditingPackage((prev) => ({ ...prev!, description: text }))
               }
               placeholder="Describe this package..."
-              placeholderTextColor={theme.colors.muted}
               multiline
               numberOfLines={3}
             />
@@ -359,13 +374,13 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
           <View style={styles.formGroup}>
             <Text style={styles.label}>Format Details (one per line)</Text>
             <TextInput
+              {...inputProps}
               style={[styles.input, styles.textArea]}
               value={editingPackage?.format_lines || ""}
               onChangeText={(text) =>
                 setEditingPackage((prev) => ({ ...prev!, format_lines: text }))
               }
-              placeholder="e.g., 8 min qualifying&#10;16 min race"
-              placeholderTextColor={theme.colors.muted}
+              placeholder={"e.g., 8 min qualifying\n16 min race"}
               multiline
               numberOfLines={4}
             />
@@ -375,6 +390,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
             <View style={[styles.formGroup, styles.formGroupHalf]}>
               <Text style={styles.label}>Base Price</Text>
               <TextInput
+                {...inputProps}
                 style={styles.input}
                 value={editingPackage?.base_price?.toString() || ""}
                 onChangeText={(text) =>
@@ -384,20 +400,20 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                   }))
                 }
                 placeholder="0.00"
-                placeholderTextColor={theme.colors.muted}
                 keyboardType="decimal-pad"
               />
             </View>
+
             <View style={[styles.formGroup, styles.formGroupHalf]}>
               <Text style={styles.label}>Currency</Text>
               <TextInput
+                {...inputProps}
                 style={styles.input}
                 value={editingPackage?.currency || ""}
                 onChangeText={(text) =>
                   setEditingPackage((prev) => ({ ...prev!, currency: text }))
                 }
                 placeholder="EUR"
-                placeholderTextColor={theme.colors.muted}
               />
             </View>
           </View>
@@ -405,6 +421,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
           <View style={styles.formGroup}>
             <Text style={styles.label}>Minimum Participants</Text>
             <TextInput
+              {...inputProps}
               style={styles.input}
               value={editingPackage?.min_participants?.toString() || ""}
               onChangeText={(text) =>
@@ -413,8 +430,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                   min_participants: text ? parseInt(text) : undefined,
                 }))
               }
-              placeholder="e.g., 5 karts minimum"
-              placeholderTextColor={theme.colors.muted}
+              placeholder="e.g., 5"
               keyboardType="number-pad"
             />
           </View>
@@ -423,6 +439,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
             <View style={[styles.formGroup, styles.formGroupHalf]}>
               <Text style={styles.label}>Minimum Age</Text>
               <TextInput
+                {...inputProps}
                 style={styles.input}
                 value={editingPackage?.age_min?.toString() || ""}
                 onChangeText={(text) =>
@@ -432,13 +449,14 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                   }))
                 }
                 placeholder="e.g., 8"
-                placeholderTextColor={theme.colors.muted}
                 keyboardType="number-pad"
               />
             </View>
+
             <View style={[styles.formGroup, styles.formGroupHalf]}>
               <Text style={styles.label}>Maximum Age</Text>
               <TextInput
+                {...inputProps}
                 style={styles.input}
                 value={editingPackage?.age_max?.toString() || ""}
                 onChangeText={(text) =>
@@ -448,7 +466,6 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                   }))
                 }
                 placeholder="e.g., 12"
-                placeholderTextColor={theme.colors.muted}
                 keyboardType="number-pad"
               />
             </View>
@@ -457,13 +474,13 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
           <View style={styles.formGroup}>
             <Text style={styles.label}>Schedule Note</Text>
             <TextInput
+              {...inputProps}
               style={styles.input}
               value={editingPackage?.schedule_note || ""}
               onChangeText={(text) =>
                 setEditingPackage((prev) => ({ ...prev!, schedule_note: text }))
               }
               placeholder="e.g., First Wednesday of month at 17:15"
-              placeholderTextColor={theme.colors.muted}
             />
           </View>
 
@@ -475,6 +492,11 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                 onValueChange={(value) =>
                   setEditingPackage((prev) => ({ ...prev!, is_default: value }))
                 }
+                trackColor={{
+                  false: "rgba(255,255,255,0.18)",
+                  true: theme.colors.accent,
+                }}
+                thumbColor={"#fff"}
               />
             </View>
           </View>
@@ -492,6 +514,11 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                     request_only: value,
                   }))
                 }
+                trackColor={{
+                  false: "rgba(255,255,255,0.18)",
+                  true: theme.colors.accent,
+                }}
+                thumbColor={"#fff"}
               />
             </View>
           </View>
@@ -517,9 +544,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginVertical: theme.spacing.lg,
-  },
+  container: { marginVertical: theme.spacing.lg },
 
   header: {
     flexDirection: "row",
@@ -528,89 +553,77 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   headerText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: theme.colors.text,
+    fontSize: 12,
+    fontWeight: "900",
+    color: stylesVars.subText2,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 
   addButton: {
     height: 34,
     paddingHorizontal: 12,
     borderRadius: 17,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: stylesVars.cardBg,
     borderWidth: 1,
-    borderColor: theme.colors.divider,
+    borderColor: stylesVars.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  addButtonText: {
-    color: theme.colors.text,
-    fontWeight: "800",
-    fontSize: 13,
-  },
+  addButtonText: { color: theme.colors.text, fontWeight: "900", fontSize: 13 },
 
   emptyText: {
-    color: theme.colors.muted,
+    color: stylesVars.subText2,
     textAlign: "center",
     paddingVertical: 18,
-    fontWeight: "600",
+    fontWeight: "700",
   },
-
-  packagesList: {
-    maxHeight: 420,
-  },
+  packagesList: { maxHeight: 420 },
 
   packageCard: {
-    backgroundColor: theme.colors.card,
+    backgroundColor: stylesVars.cardBg,
     padding: theme.spacing.md,
-    borderRadius: theme.radius.lg,
+    borderRadius: 18,
     marginBottom: theme.spacing.md,
     borderWidth: 1,
-    borderColor: theme.colors.divider,
+    borderColor: stylesVars.border,
   },
+
   packageHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
     gap: 12,
   },
-  packageInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
+  packageInfo: { flex: 1, minWidth: 0 },
+
   packageTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "900",
     color: theme.colors.text,
     marginBottom: 4,
   },
-  defaultBadge: {
-    color: theme.colors.accent,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  packageCode: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    fontWeight: "600",
-  },
+  defaultBadge: { color: theme.colors.accent, fontSize: 12, fontWeight: "900" },
+
+  packageCode: { fontSize: 12, color: stylesVars.subText2, fontWeight: "700" },
   packageTrackType: {
     fontSize: 12,
-    color: theme.colors.muted,
+    color: stylesVars.subText,
     marginTop: 4,
-    fontWeight: "700",
+    fontWeight: "800",
   },
+
   packageDescription: {
     fontSize: 13,
     color: theme.colors.text,
     marginTop: 10,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   packagePrice: {
     fontSize: 13,
     color: theme.colors.text,
     marginTop: 8,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 
   packageActions: {
@@ -625,32 +638,25 @@ const styles = StyleSheet.create({
     height: 30,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
-    borderColor: theme.colors.divider,
+    borderColor: stylesVars.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  actionButtonDisabled: {
-    opacity: 0.4,
-  },
+  actionButtonDisabled: { opacity: 0.4 },
   actionButtonText: {
     color: theme.colors.text,
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 
   removeButton: {
     backgroundColor: theme.colors.danger,
     borderColor: theme.colors.danger,
   },
-  removeButtonText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "800",
-  },
+  removeButtonText: { color: "#fff", fontSize: 12, fontWeight: "900" },
 
-  // Modal
   modalContainer: {
     flex: 1,
     backgroundColor: theme.colors.bg,
@@ -663,55 +669,34 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingTop: theme.spacing.lg,
   },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: theme.colors.text,
-  },
-  closeButton: {
-    fontSize: 22,
-    color: theme.colors.muted,
-    fontWeight: "800",
-  },
+  modalTitle: { fontSize: 16, fontWeight: "900", color: theme.colors.text },
+  closeButton: { fontSize: 22, color: stylesVars.subText2, fontWeight: "900" },
 
-  formGroup: {
-    marginBottom: 14,
-  },
-  formRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  formGroupHalf: {
-    flex: 1,
-  },
+  formGroup: { marginBottom: 14 },
+  formRow: { flexDirection: "row", gap: 10 },
+  formGroupHalf: { flex: 1 },
 
   label: {
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "900",
     marginBottom: 8,
-    color: theme.colors.muted,
+    color: stylesVars.subText2,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
-  required: {
-    color: theme.colors.danger,
-    fontWeight: "900",
-  },
+  required: { color: theme.colors.danger, fontWeight: "900" },
 
   input: {
     borderWidth: 1,
-    borderColor: theme.colors.divider,
-    borderRadius: theme.radius.lg,
+    borderColor: stylesVars.border,
+    borderRadius: 18,
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 15,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: stylesVars.inputBg,
     color: theme.colors.text,
   },
-  textArea: {
-    minHeight: 90,
-    textAlignVertical: "top",
-  },
+  textArea: { minHeight: 90, textAlignVertical: "top" },
 
   switchRow: {
     flexDirection: "row",
@@ -733,41 +718,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cancelButton: {
-    backgroundColor: "#2A2A2A",
-  },
-  saveButton: {
-    backgroundColor: theme.colors.accent,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "900",
-  },
+  cancelButton: { backgroundColor: "#2A2A2A" },
+  saveButton: { backgroundColor: theme.colors.accent },
+  buttonText: { color: "#fff", fontSize: 13, fontWeight: "900" },
 
-  trackTypeRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
+  trackTypeRow: { flexDirection: "row", gap: 10 },
   trackTypeOption: {
     flex: 1,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: theme.colors.divider,
+    borderColor: stylesVars.border,
     borderRadius: 999,
     alignItems: "center",
-    backgroundColor: theme.colors.surface,
+    backgroundColor: stylesVars.inputBg,
   },
   trackTypeOptionSelected: {
     backgroundColor: theme.colors.accent,
     borderColor: theme.colors.accent,
   },
-  trackTypeText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: theme.colors.text,
-  },
-  trackTypeTextSelected: {
-    color: theme.colors.bg,
-  },
+  trackTypeText: { fontSize: 13, fontWeight: "900", color: theme.colors.text },
+  trackTypeTextSelected: { color: "#0B0B0B" }, // ✅ readable on accent
 });
