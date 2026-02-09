@@ -159,6 +159,8 @@ const styles = StyleSheet.create({
     height: 600,
     backgroundColor: theme.colors.card,
     borderRadius: 24,
+    borderWidth: 1,
+    borderColor: theme.colors.divider,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },

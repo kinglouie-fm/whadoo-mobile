@@ -117,8 +117,38 @@ export default function ActivityDetailScreen() {
             code: "standard",
             title: "Standard Session",
             track_type: "indoor",
+            pricing_type: "per_person",
             is_default: true,
             sort_order: 0,
+          },
+        ];
+      } else if (typeId === "cooking_class") {
+        newConfig.packages = [
+          {
+            code: "standard",
+            title: "Standard Seat",
+            description: "Individual seat with all materials included",
+            base_price: 79,
+            currency: "EUR",
+            pricing_type: "per_person",
+            is_default: true,
+            sort_order: 0,
+          },
+        ];
+      } else if (typeId === "escape_room") {
+        newConfig.packages = [
+          {
+            code: "3-4-players",
+            title: "3-4 Players",
+            description: "Most popular option for small groups",
+            base_price: 22,
+            currency: "EUR",
+            pricing_type: "per_person",
+            is_default: true,
+            sort_order: 0,
+            min_participants: 3,
+            max_participants: 4,
+            player_count: "3-4",
           },
         ];
       }
@@ -396,7 +426,8 @@ export default function ActivityDetailScreen() {
               <Text style={styles.errorText}>{errors.priceFrom}</Text>
             )}
             <Text style={styles.helperText}>
-              {typeId === "karting" && config.packages?.length > 0
+              {["karting", "cooking_class", "escape_room"].includes(typeId) &&
+              config.packages?.length > 0
                 ? "Auto-calculated from packages"
                 : "Display price for discovery feed"}
             </Text>
@@ -462,7 +493,7 @@ export default function ActivityDetailScreen() {
           {/* Dynamic Config / Packages */}
           {currentTypeDefinition && (
             <>
-              {typeId === "karting" ? (
+              {["karting", "cooking_class", "escape_room"].includes(typeId) ? (
                 <PackagesEditor
                   packages={config.packages || []}
                   onChange={(packages) => {

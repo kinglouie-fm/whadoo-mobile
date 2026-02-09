@@ -42,6 +42,14 @@ export default function BookingOptionsScreen() {
     const selectedActivity = displayData?.activities[selectedActivityIndex];
     const packages = selectedActivity?.config?.packages || [];
     const hasPackages = Array.isArray(packages) && packages.length > 0;
+    const selectedPackage = hasPackages ? packages[selectedPackageIndex] : null;
+
+    // Get min/max participant constraints from selected package
+    const minParticipants = selectedPackage?.min_participants || 1;
+    const maxParticipants = selectedPackage?.max_participants || 20;
+
+    // Get pricing type (default to per_person for backward compatibility)
+    const pricingType = selectedPackage?.pricing_type || 'per_person';
 
     useEffect(() => {
         if (hasPackages) {
@@ -49,6 +57,20 @@ export default function BookingOptionsScreen() {
             setSelectedPackageIndex(defaultIndex >= 0 ? defaultIndex : 0);
         }
     }, [selectedActivityIndex, hasPackages, packages]);
+
+    // Update participants to meet new package constraints when package changes
+    useEffect(() => {
+        if (selectedPackage) {
+            const min = selectedPackage.min_participants || 1;
+            const max = selectedPackage.max_participants || 20;
+            
+            if (participantsCount < min) {
+                setParticipantsCount(min);
+            } else if (participantsCount > max) {
+                setParticipantsCount(max);
+            }
+        }
+    }, [selectedPackageIndex, selectedPackage]);
 
     const handleContinue = () => {
         if (!selectedActivity) {
@@ -58,6 +80,28 @@ export default function BookingOptionsScreen() {
                 position: "bottom",
             });
             return;
+        }
+
+        // Validate participant count against package constraints
+        if (selectedPackage) {
+            if (selectedPackage.min_participants && participantsCount < selectedPackage.min_participants) {
+                Toast.show({
+                    type: "error",
+                    text1: "Not enough participants",
+                    text2: `This package requires at least ${selectedPackage.min_participants} participants`,
+                    position: "bottom",
+                });
+                return;
+            }
+            if (selectedPackage.max_participants && participantsCount > selectedPackage.max_participants) {
+                Toast.show({
+                    type: "error",
+                    text1: "Too many participants",
+                    text2: `This package allows maximum ${selectedPackage.max_participants} participants`,
+                    position: "bottom",
+                });
+                return;
+            }
         }
 
         let packageName = selectedActivity.title || "";
@@ -172,14 +216,28 @@ export default function BookingOptionsScreen() {
                                         {pkg.base_price && (
                                             <Text style={styles.packagePrice}>
                                                 €{pkg.base_price} {pkg.currency || "EUR"}
+                                                {(pkg.pricing_type || "per_person") === "per_person"
+                                                    ? " per person"
+                                                    : " (group rate)"}
                                             </Text>
                                         )}
                                         {pkg.track_type && (
                                             <Text style={styles.packageDetail}>Track: {pkg.track_type}</Text>
                                         )}
-                                        {pkg.min_participants && (
+                                        {pkg.player_count && (
+                                            <Text style={styles.packageDetail}>Players: {pkg.player_count}</Text>
+                                        )}
+                                        {pkg.includes_wine && (
+                                            <Text style={styles.packageDetail}>✓ Wine pairing included</Text>
+                                        )}
+                                        {pkg.includes_extras && (
+                                            <Text style={styles.packageDetail}>✓ Extra decorations included</Text>
+                                        )}
+                                        {(pkg.min_participants || pkg.max_participants) && (
                                             <Text style={styles.packageDetail}>
-                                                Min: {pkg.min_participants} participants
+                                                {pkg.min_participants === pkg.max_participants
+                                                    ? `${pkg.min_participants} participants`
+                                                    : `${pkg.min_participants || 1}-${pkg.max_participants || "Any"} participants`}
                                             </Text>
                                         )}
                                         {(pkg.age_min || pkg.age_max) && (
@@ -197,19 +255,48 @@ export default function BookingOptionsScreen() {
                 {/* Participants Selector */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Participants</Text>
+                    {selectedPackage && (minParticipants > 1 || maxParticipants < 20) && (
+                        <Text style={styles.participantHint}>
+                            {minParticipants === maxParticipants
+                                ? `This package is for ${minParticipants} participants`
+                                : `This package requires ${minParticipants}-${maxParticipants} participants`}
+                        </Text>
+                    )}
                     <View style={styles.participantsContainer}>
                         <TouchableOpacity
-                            style={styles.participantButton}
-                            onPress={() => setParticipantsCount(Math.max(1, participantsCount - 1))}
+                            style={[
+                                styles.participantButton,
+                                participantsCount <= minParticipants && styles.participantButtonDisabled,
+                            ]}
+                            onPress={() => setParticipantsCount(Math.max(minParticipants, participantsCount - 1))}
+                            disabled={participantsCount <= minParticipants}
                         >
-                            <Text style={styles.participantButtonText}>−</Text>
+                            <Text
+                                style={[
+                                    styles.participantButtonText,
+                                    participantsCount <= minParticipants && styles.participantButtonTextDisabled,
+                                ]}
+                            >
+                                −
+                            </Text>
                         </TouchableOpacity>
                         <Text style={styles.participantsCount}>{participantsCount}</Text>
                         <TouchableOpacity
-                            style={styles.participantButton}
-                            onPress={() => setParticipantsCount(participantsCount + 1)}
+                            style={[
+                                styles.participantButton,
+                                participantsCount >= maxParticipants && styles.participantButtonDisabled,
+                            ]}
+                            onPress={() => setParticipantsCount(Math.min(maxParticipants, participantsCount + 1))}
+                            disabled={participantsCount >= maxParticipants}
                         >
-                            <Text style={styles.participantButtonText}>+</Text>
+                            <Text
+                                style={[
+                                    styles.participantButtonText,
+                                    participantsCount >= maxParticipants && styles.participantButtonTextDisabled,
+                                ]}
+                            >
+                                +
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -219,30 +306,61 @@ export default function BookingOptionsScreen() {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Price Summary</Text>
                         <View style={styles.priceCard}>
-                            <View style={styles.priceRow}>
-                                <Text style={styles.priceLabel}>Per person:</Text>
-                                <Text style={styles.priceValue}>
-                                    €
-                                    {hasPackages && packages[selectedPackageIndex]?.base_price
-                                        ? packages[selectedPackageIndex].base_price
-                                        : selectedActivity.priceFrom}
-                                </Text>
-                            </View>
-                            <View style={styles.priceRow}>
-                                <Text style={styles.priceLabel}>Participants:</Text>
-                                <Text style={styles.priceValue}>× {participantsCount}</Text>
-                            </View>
-                            <View style={[styles.priceRow, styles.totalRow]}>
-                                <Text style={styles.totalLabel}>Total:</Text>
-                                <Text style={styles.totalValue}>
-                                    €
-                                    {(
-                                        (hasPackages && packages[selectedPackageIndex]?.base_price
-                                            ? Number(packages[selectedPackageIndex].base_price)
-                                            : Number(selectedActivity.priceFrom)) * participantsCount
-                                    ).toFixed(2)}
-                                </Text>
-                            </View>
+                            {pricingType === 'fixed' ? (
+                                <>
+                                    <View style={styles.priceRow}>
+                                        <Text style={styles.priceLabel}>Group rate:</Text>
+                                        <Text style={styles.priceValue}>
+                                            €
+                                            {hasPackages && packages[selectedPackageIndex]?.base_price
+                                                ? packages[selectedPackageIndex].base_price
+                                                : selectedActivity.priceFrom}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.priceRow}>
+                                        <Text style={styles.priceLabel}>Participants:</Text>
+                                        <Text style={styles.priceValue}>
+                                            {participantsCount} {participantsCount === 1 ? "person" : "people"}
+                                        </Text>
+                                    </View>
+                                    <View style={[styles.priceRow, styles.totalRow]}>
+                                        <Text style={styles.totalLabel}>Total:</Text>
+                                        <Text style={styles.totalValue}>
+                                            €
+                                            {hasPackages && packages[selectedPackageIndex]?.base_price
+                                                ? Number(packages[selectedPackageIndex].base_price).toFixed(2)
+                                                : Number(selectedActivity.priceFrom).toFixed(2)}
+                                        </Text>
+                                    </View>
+                                </>
+                            ) : (
+                                <>
+                                    <View style={styles.priceRow}>
+                                        <Text style={styles.priceLabel}>Per person:</Text>
+                                        <Text style={styles.priceValue}>
+                                            €
+                                            {hasPackages && packages[selectedPackageIndex]?.base_price
+                                                ? packages[selectedPackageIndex].base_price
+                                                : selectedActivity.priceFrom}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.priceRow}>
+                                        <Text style={styles.priceLabel}>Participants:</Text>
+                                        <Text style={styles.priceValue}>× {participantsCount}</Text>
+                                    </View>
+                                    <View style={[styles.priceRow, styles.totalRow]}>
+                                        <Text style={styles.totalLabel}>Total:</Text>
+                                        <Text style={styles.totalValue}>
+                                            €
+                                            {(
+                                                (hasPackages && packages[selectedPackageIndex]?.base_price
+                                                    ? Number(packages[selectedPackageIndex].base_price)
+                                                    : Number(selectedActivity.priceFrom)) * participantsCount
+                                            ).toFixed(2)}
+                                        </Text>
+                                    </View>
+                                </>
+                            )}
                         </View>
                     </View>
                 )}
@@ -377,6 +495,12 @@ const styles = StyleSheet.create({
         color: theme.colors.text,
         marginTop: 4,
     },
+    participantHint: {
+        fontSize: 14,
+        color: theme.colors.muted,
+        marginBottom: 12,
+        textAlign: "center",
+    },
     participantsContainer: {
         flexDirection: "row",
         alignItems: "center",
@@ -393,10 +517,17 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
+    participantButtonDisabled: {
+        backgroundColor: theme.colors.muted,
+        opacity: 0.3,
+    },
     participantButtonText: {
         fontSize: 24,
         fontWeight: "800",
         color: theme.colors.bg,
+    },
+    participantButtonTextDisabled: {
+        opacity: 0.5,
     },
     participantsCount: {
         fontSize: 32,

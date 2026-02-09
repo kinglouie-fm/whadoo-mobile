@@ -20,13 +20,19 @@ interface Package {
   format_lines?: string;
   base_price?: number;
   currency?: string;
+  pricing_type?: "per_person" | "fixed";
   min_participants?: number;
+  max_participants?: number;
   age_min?: number;
   age_max?: number;
   is_default?: boolean;
   sort_order?: number;
   schedule_note?: string;
   request_only?: boolean;
+  player_count?: string;
+  includes_wine?: boolean;
+  includes_extras?: boolean;
+  difficulty_level?: string;
 }
 
 interface PackagesEditorProps {
@@ -88,10 +94,6 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
     }
     if (!editingPackage.title?.trim()) {
       Alert.alert("Validation Error", "Package title is required");
-      return;
-    }
-    if (!editingPackage.track_type) {
-      Alert.alert("Validation Error", "Track type is required");
       return;
     }
 
@@ -419,6 +421,66 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
           </View>
 
           <View style={styles.formGroup}>
+            <Text style={styles.label}>
+              Pricing Model <Text style={styles.required}>*</Text>
+            </Text>
+            <View style={styles.trackTypeRow}>
+              <TouchableOpacity
+                style={[
+                  styles.trackTypeOption,
+                  (editingPackage?.pricing_type || "per_person") === "per_person" &&
+                    styles.trackTypeOptionSelected,
+                ]}
+                onPress={() =>
+                  setEditingPackage((prev) => ({
+                    ...prev!,
+                    pricing_type: "per_person",
+                  }))
+                }
+              >
+                <Text
+                  style={[
+                    styles.trackTypeText,
+                    (editingPackage?.pricing_type || "per_person") === "per_person" &&
+                      styles.trackTypeTextSelected,
+                  ]}
+                >
+                  Per Person
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.trackTypeOption,
+                  editingPackage?.pricing_type === "fixed" &&
+                    styles.trackTypeOptionSelected,
+                ]}
+                onPress={() =>
+                  setEditingPackage((prev) => ({
+                    ...prev!,
+                    pricing_type: "fixed",
+                  }))
+                }
+              >
+                <Text
+                  style={[
+                    styles.trackTypeText,
+                    editingPackage?.pricing_type === "fixed" &&
+                      styles.trackTypeTextSelected,
+                  ]}
+                >
+                  Fixed (Group Rate)
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.fieldHint}>
+              {(editingPackage?.pricing_type || "per_person") === "per_person"
+                ? "Price multiplied by number of participants"
+                : "Fixed price regardless of participant count"}
+            </Text>
+          </View>
+
+          <View style={styles.formGroup}>
             <Text style={styles.label}>Minimum Participants</Text>
             <TextInput
               {...inputProps}
@@ -738,4 +800,9 @@ const styles = StyleSheet.create({
   },
   trackTypeText: { fontSize: 13, fontWeight: "900", color: theme.colors.text },
   trackTypeTextSelected: { color: "#0B0B0B" }, // ✅ readable on accent
+  fieldHint: {
+    fontSize: 12,
+    color: stylesVars.subText2,
+    marginTop: 8,
+  },
 });

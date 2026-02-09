@@ -46,8 +46,8 @@ export class BookingsService {
     // Extract pricing from activity config/pricing
     const { config, pricing } = activity;
     
-    // For karting with packages
-    if (activity.typeId === 'karting' && config.packages && Array.isArray(config.packages)) {
+    // For activities with packages (karting, cooking_class, escape_room)
+    if (config.packages && Array.isArray(config.packages)) {
       // Find the selected package
       const packageId = selectionData.packageId || selectionData.packageCode;
       const selectedPackage = config.packages.find((pkg: any) => 
@@ -56,15 +56,24 @@ export class BookingsService {
       
       if (selectedPackage && selectedPackage.base_price) {
         const basePrice = Number(selectedPackage.base_price);
-        const total = basePrice * participantsCount;
+        const pricingType = selectedPackage.pricing_type || 'per_person';
+        
+        // Calculate total based on pricing model
+        const total = pricingType === 'fixed' 
+          ? basePrice 
+          : basePrice * participantsCount;
         
         return {
           total: total.toFixed(2),
           currency: selectedPackage.currency || 'EUR',
           breakdown: {
-            basePricePerPerson: basePrice.toFixed(2),
+            basePrice: basePrice.toFixed(2),
+            pricingType,
             participantsCount,
             packageName: selectedPackage.title,
+            ...(pricingType === 'per_person' && {
+              basePricePerPerson: basePrice.toFixed(2),
+            }),
           },
         };
       }
@@ -162,7 +171,36 @@ export class BookingsService {
         throw new BadRequestException('Activity availability is inactive');
       }
 
-      // 2. Generate slot ID
+      // 2. Validate participant count against package constraints
+      const config = activity.config as any;
+      if (config?.packages && Array.isArray(config.packages)) {
+        const packageId = selectionData?.packageCode || selectionData?.packageId;
+        const selectedPackage = config.packages.find((pkg: any) => 
+          pkg.code === packageId || pkg.title === selectionData?.packageName
+        );
+
+        if (selectedPackage) {
+          if (selectedPackage.min_participants && participantsCount < selectedPackage.min_participants) {
+            throw new BadRequestException({
+              code: 'MIN_PARTICIPANTS_NOT_MET',
+              message: `This package requires at least ${selectedPackage.min_participants} participants. You selected ${participantsCount}.`,
+              minParticipants: selectedPackage.min_participants,
+              selectedParticipants: participantsCount,
+            });
+          }
+
+          if (selectedPackage.max_participants && participantsCount > selectedPackage.max_participants) {
+            throw new BadRequestException({
+              code: 'MAX_PARTICIPANTS_EXCEEDED',
+              message: `This package allows maximum ${selectedPackage.max_participants} participants. You selected ${participantsCount}.`,
+              maxParticipants: selectedPackage.max_participants,
+              selectedParticipants: participantsCount,
+            });
+          }
+        }
+      }
+
+      // 3. Generate slot ID
       const slotId = this.generateSlotId(activityId, slotStartDate);
 
       // 3. Lock / initialize slot capacity row
@@ -184,7 +222,7 @@ export class BookingsService {
         });
       }
 
-      // 4. Capacity check
+      // 5. Capacity check
       const availableSeats = slotCapacity.capacity - slotCapacity.bookedSeats;
       
       if (availableSeats < participantsCount) {
@@ -195,7 +233,7 @@ export class BookingsService {
         });
       }
 
-      // 5. Update booked seats
+      // 6. Update booked seats
       await tx.slotCapacity.update({
         where: { id: slotId },
         data: {
@@ -205,7 +243,7 @@ export class BookingsService {
         },
       });
 
-      // 6. Compute price & snapshots
+      // 7. Compute price & snapshots
       const priceSnapshot = this.calculatePrice(activity, participantsCount, selectionData);
       
       const activitySnapshot = {
@@ -235,7 +273,7 @@ export class BookingsService {
         data: selectionData,
       };
 
-      // 7. Insert booking record
+      // 8. Insert booking record
       const booking = await tx.booking.create({
         data: {
           userId,

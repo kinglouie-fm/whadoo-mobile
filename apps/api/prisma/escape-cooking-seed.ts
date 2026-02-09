@@ -42,147 +42,156 @@ const COOKING_GROUP = {
 /**
  * Helpers
  */
-function computePriceFromFromPricing(pricing: any): number | undefined {
-  const v = pricing?.base_price;
-  return typeof v === "number" && !Number.isNaN(v) ? v : undefined;
+function computePriceFromFromPackages(packages: any[]): number | undefined {
+  const prices = packages
+    .map((pkg) => pkg.base_price)
+    .filter((p) => typeof p === "number" && !Number.isNaN(p));
+  return prices.length > 0 ? Math.min(...prices) : undefined;
 }
 
-type SeedItem = {
+type SeedActivity = {
   durationMin: number; // MUST match availabilityTemplate.slotDurationMinutes
   title: string;
   description?: string;
   category?: string;
-  config: Record<string, any>;
-  pricing: Record<string, any>;
+  packages: any[]; // Now using packages instead of individual config/pricing
 };
 
 /**
- * Escape Room seeds
- * - configSchema requires: difficulty_level, theme, min_participants, max_participants, duration_minutes
- * - pricingSchema requires: base_price (per group), per_person_price optional
+ * Escape Room activity with packages
+ * - ONE activity per group with multiple package options
  */
-const escapeRoomSeeds: SeedItem[] = [
-  {
-    durationMin: 60,
-    title: "Escape Room — The Heist (60 min)",
-    description: "Steal the artifact before time runs out. Team-based puzzle experience.",
-    category: "Escape Room",
-    config: {
+const escapeRoomActivity: SeedActivity = {
+  durationMin: 60, // Default/most common duration
+  title: "Escape Room at ActionFunCenter",
+  description: "Immersive puzzle experiences with various themes and difficulty levels. Choose your perfect challenge!",
+  category: "Entertainment",
+  packages: [
+    {
+      code: "2-players",
+      title: "2 Players",
+      description: "Perfect for couples or close friends",
+      base_price: 50,
+      currency: "EUR",
+      is_default: false,
+      sort_order: 0,
+      player_count: "2",
       difficulty_level: "medium",
-      theme: "Heist / Mystery",
-      min_participants: 2,
-      max_participants: 6,
-      duration_minutes: 60,
-      age_restriction: 12,
     },
-    pricing: {
-      base_price: 110, // per group
-      per_person_price: 0, // optional
-    },
-  },
-  {
-    durationMin: 75,
-    title: "Escape Room — Haunted Manor (75 min)",
-    description: "Atmospheric horror theme with harder puzzles and more story.",
-    category: "Escape Room",
-    config: {
-      difficulty_level: "hard",
-      theme: "Horror / Mystery",
-      min_participants: 2,
-      max_participants: 6,
-      duration_minutes: 75,
-      age_restriction: 16,
-    },
-    pricing: {
-      base_price: 135, // per group
-      per_person_price: 0,
-    },
-  },
-  {
-    durationMin: 90,
-    title: "Escape Room — Space Station (90 min)",
-    description: "Sci-Fi adventure with multi-room tasks and timed challenges.",
-    category: "Escape Room",
-    config: {
-      difficulty_level: "expert",
-      theme: "Sci-Fi",
+    {
+      code: "3-4-players",
+      title: "3-4 Players",
+      description: "Most popular option for small groups",
+      base_price: 22,
+      currency: "EUR",
+      pricing_type: "per_person",
+      is_default: true,
+      sort_order: 1,
       min_participants: 3,
+      max_participants: 4,
+      player_count: "3-4",
+      difficulty_level: "medium",
+    },
+    {
+      code: "5-6-players",
+      title: "5-6 Players",
+      description: "Great for larger groups and teams",
+      base_price: 20,
+      currency: "EUR",
+      pricing_type: "per_person",
+      is_default: false,
+      sort_order: 2,
+      min_participants: 5,
+      max_participants: 6,
+      player_count: "5-6",
+      difficulty_level: "medium",
+    },
+    {
+      code: "birthday",
+      title: "Birthday Package (up to 8)",
+      description: "Includes decorations, cake, and special celebration. Fixed price for your group.",
+      base_price: 200,
+      currency: "EUR",
+      pricing_type: "fixed",
+      is_default: false,
+      sort_order: 3,
+      min_participants: 4,
       max_participants: 8,
-      duration_minutes: 90,
-      age_restriction: 12,
+      player_count: "up to 8",
+      difficulty_level: "medium",
+      includes_extras: true,
     },
-    pricing: {
-      base_price: 160, // per group
-      per_person_price: 0,
-    },
-  },
-];
+  ],
+};
 
 /**
- * Cooking Class seeds
- * - configSchema requires: cuisine_type, skill_level, max_participants, duration_minutes
- * - pricingSchema requires: base_price (per person), group_discount optional
+ * Cooking Class activity with packages
+ * - ONE activity per group with multiple package options
  */
-const cookingClassSeeds: SeedItem[] = [
-  {
-    durationMin: 120,
-    title: "Cooking Class — Italian Pasta Workshop (120 min)",
-    description: "Learn fresh pasta basics + sauce pairing. Beginner-friendly.",
-    category: "Cooking Class",
-    config: {
-      cuisine_type: "italian",
-      skill_level: "beginner",
-      max_participants: 12,
-      duration_minutes: 120,
-      dietary_restrictions_accommodated: true,
+const cookingClassActivity: SeedActivity = {
+  durationMin: 120, // Default/most common duration
+  title: "Cooking Class at ActionFunCenter",
+  description: "Learn culinary skills in a fun, hands-on environment. Choose from individual seats to private group experiences.",
+  category: "Food & Dining",
+  packages: [
+    {
+      code: "standard",
+      title: "Standard Seat",
+      description: "Individual seat with all materials and ingredients included",
+      base_price: 79,
+      currency: "EUR",
+      pricing_type: "per_person",
+      is_default: true,
+      sort_order: 0,
+      min_participants: 1,
+      max_participants: 1,
     },
-    pricing: {
-      base_price: 79, // per person
-      group_discount: 0,
-    },
-  },
-  {
-    durationMin: 150,
-    title: "Cooking Class — Thai Street Food (150 min)",
-    description: "Pad Thai + curry fundamentals. Build flavor profiles from scratch.",
-    category: "Cooking Class",
-    config: {
-      cuisine_type: "thai",
-      skill_level: "intermediate",
-      max_participants: 10,
-      duration_minutes: 150,
-      dietary_restrictions_accommodated: true,
-    },
-    pricing: {
-      base_price: 89,
-      group_discount: 10,
-    },
-  },
-  {
-    durationMin: 180,
-    title: "Cooking Class — Sushi Basics (180 min)",
-    description: "Rice technique, nigiri + maki practice, and knife safety tips.",
-    category: "Cooking Class",
-    config: {
-      cuisine_type: "japanese",
-      skill_level: "beginner",
-      max_participants: 8,
-      duration_minutes: 180,
-      dietary_restrictions_accommodated: false,
-    },
-    pricing: {
+    {
+      code: "premium",
+      title: "Premium with Wine Pairing",
+      description: "Includes curated wine pairing for each dish",
       base_price: 99,
-      group_discount: 0,
+      currency: "EUR",
+      pricing_type: "per_person",
+      is_default: false,
+      sort_order: 1,
+      min_participants: 1,
+      max_participants: 1,
+      includes_wine: true,
     },
-  },
-];
+    {
+      code: "couples",
+      title: "Couples Package (2 seats)",
+      description: "Special package for two with shared cooking station",
+      base_price: 149,
+      currency: "EUR",
+      pricing_type: "fixed",
+      is_default: false,
+      sort_order: 2,
+      min_participants: 2,
+      max_participants: 2,
+    },
+    {
+      code: "private-group",
+      title: "Private Group (6-10 people)",
+      description: "Exclusive session for your group with dedicated instructor. Fixed price regardless of group size.",
+      base_price: 650,
+      currency: "EUR",
+      pricing_type: "fixed",
+      is_default: false,
+      sort_order: 3,
+      min_participants: 6,
+      max_participants: 10,
+    },
+  ],
+};
 
-async function seedType(params: {
+async function seedActivity(params: {
   typeId: "escape_room" | "cooking_class";
   group: { catalogGroupId: string; catalogGroupTitle: string; catalogGroupKind: string };
-  seeds: SeedItem[];
+  activity: SeedActivity;
 }) {
-  const { typeId, group, seeds } = params;
+  const { typeId, group, activity } = params;
 
   // Load active templates for this business
   const templates = await prisma.availabilityTemplate.findMany({
@@ -193,59 +202,79 @@ async function seedType(params: {
   const templateByDuration = new Map<number, string>();
   for (const t of templates) templateByDuration.set(t.slotDurationMinutes, t.id);
 
-  // Validate durations exist
-  const missingDurations = Array.from(new Set(seeds.map((s) => s.durationMin))).filter(
-    (d) => !templateByDuration.has(d)
-  );
-
-  if (missingDurations.length > 0) {
+  // Validate duration exists
+  if (!templateByDuration.has(activity.durationMin)) {
     console.log(`\nAvailable templates for business ${BUSINESS_ID}:`);
     templates
       .sort((a, b) => a.slotDurationMinutes - b.slotDurationMinutes)
       .forEach((t) => console.log(`- ${t.slotDurationMinutes} min: ${t.name} (${t.id})`));
 
     throw new Error(
-      `Missing active availability templates for durations: ${missingDurations.join(
-        ", "
-      )}. Create templates with those slotDurationMinutes first.`
+      `Missing active availability template for ${activity.durationMin} minutes. Create a template with that slotDurationMinutes first.`
     );
   }
 
   await prisma.$transaction(async (tx) => {
-    // idempotent: remove previous runs for this group+type
-    await tx.activity.deleteMany({
+    // Check for existing activities with bookings
+    const existingActivities = await tx.activity.findMany({
       where: {
         businessId: BUSINESS_ID,
         typeId,
         catalogGroupId: group.catalogGroupId,
       },
+      include: {
+        _count: {
+          select: { bookings: true },
+        },
+      },
     });
 
-    // insert all
-    for (const s of seeds) {
-      await tx.activity.create({
-        data: {
+    const activitiesWithBookings = existingActivities.filter((a) => a._count.bookings > 0);
+    
+    if (activitiesWithBookings.length > 0) {
+      console.log(`\n⚠️  Warning: Found ${activitiesWithBookings.length} existing activities with bookings.`);
+      console.log(`These activities will NOT be deleted to preserve booking data:`);
+      activitiesWithBookings.forEach((a) => {
+        console.log(`  - ${a.title} (${a._count.bookings} bookings)`);
+      });
+      console.log(`\nThe new activity will be created alongside these old ones.`);
+      console.log(`You can manually archive or delete old activities from the business dashboard.\n`);
+    } else {
+      // Safe to delete - no bookings
+      await tx.activity.deleteMany({
+        where: {
           businessId: BUSINESS_ID,
-          status: DEFAULT_STATUS,
           typeId,
-          title: s.title,
-          description: s.description,
-          category: s.category,
-          city: CITY || undefined,
-          address: ADDRESS || undefined,
-          priceFrom: computePriceFromFromPricing(s.pricing),
           catalogGroupId: group.catalogGroupId,
-          catalogGroupTitle: group.catalogGroupTitle,
-          catalogGroupKind: group.catalogGroupKind,
-          availabilityTemplateId: templateByDuration.get(s.durationMin)!,
-          config: s.config,
-          pricing: s.pricing,
         },
       });
     }
+
+    // Create ONE activity with packages
+    await tx.activity.create({
+      data: {
+        businessId: BUSINESS_ID,
+        status: DEFAULT_STATUS,
+        typeId,
+        title: activity.title,
+        description: activity.description,
+        category: activity.category,
+        city: CITY || undefined,
+        address: ADDRESS || undefined,
+        priceFrom: computePriceFromFromPackages(activity.packages),
+        catalogGroupId: group.catalogGroupId,
+        catalogGroupTitle: group.catalogGroupTitle,
+        catalogGroupKind: group.catalogGroupKind,
+        availabilityTemplateId: templateByDuration.get(activity.durationMin)!,
+        config: { packages: activity.packages },
+        pricing: {},
+      },
+    });
   });
 
-  console.log(`✓ Seeded ${seeds.length} '${typeId}' activities into group '${group.catalogGroupId}'.`);
+  console.log(
+    `✓ Seeded '${typeId}' activity '${activity.title}' with ${activity.packages.length} packages into group '${group.catalogGroupId}'.`
+  );
 }
 
 async function main() {
@@ -256,18 +285,18 @@ async function main() {
     throw new Error("Set BUSINESS_ID in prisma/escape-cooking-seed.ts before running.");
   }
 
-  console.log("Starting seed: Escape Room + Cooking Class...");
+  console.log("Starting seed: Escape Room + Cooking Class (with packages)...");
 
-  await seedType({
+  await seedActivity({
     typeId: "escape_room",
     group: ESCAPE_GROUP,
-    seeds: escapeRoomSeeds,
+    activity: escapeRoomActivity,
   });
 
-  await seedType({
+  await seedActivity({
     typeId: "cooking_class",
     group: COOKING_GROUP,
-    seeds: cookingClassSeeds,
+    activity: cookingClassActivity,
   });
 
   console.log("Seed completed!");

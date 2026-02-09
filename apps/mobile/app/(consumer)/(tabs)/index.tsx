@@ -271,6 +271,8 @@ export default function DiscoverySwipeScreen() {
           horizontalSwipe
           disableBottomSwipe={false}
           disableTopSwipe={false}
+          cardVerticalMargin={0}
+          containerStyle={{ transform: [{ translateY: -40 }] }}
         />
       </View>
     </SafeAreaView>
