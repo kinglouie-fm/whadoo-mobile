@@ -220,7 +220,7 @@ export default function MyBookingsScreen() {
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={theme.colors.accent} />
-      </View>
+        </View>
     );
   };
 

@@ -619,9 +619,9 @@ export default function ActivitiesScreen() {
       <View style={styles.screen}>
         <ActivityIndicator size="large" color={theme.colors.accent} />
         <Text style={styles.emptySubtext}>Loading business information…</Text>
-      </View>
+        </View>
     );
-  }
+}
 
   return (
     <View style={styles.screen}>

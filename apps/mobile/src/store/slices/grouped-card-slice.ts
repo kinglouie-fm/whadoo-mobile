@@ -98,7 +98,7 @@ const groupedCardSlice = createSlice({
       state.loading = true;
       state.error = null;
     });
-    builder.addCase(fetchGroupedCards.fulfilled, (state, action: PayloadAction<GroupedCardsResponse>) => {
+    builder.addCase(fetchGroupedCards.fulfilled, (state, action) => {
       state.loading = false;
       // If cursor was provided, append; otherwise, replace
       if (action.meta.arg?.cursor) {

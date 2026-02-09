@@ -1,26 +1,26 @@
 import { SwipeCard } from "@/src/components/SwipeCard";
+import { useAuth } from "@/src/providers/auth-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
-    advanceCard,
-    fetchGroupedCards,
-    recordSwipe,
-    resetFeed,
+  advanceCard,
+  fetchGroupedCards,
+  recordSwipe,
+  resetFeed,
 } from "@/src/store/slices/grouped-card-slice";
 import { saveActivity } from "@/src/store/slices/saved-activity-slice";
 import { theme } from "@/src/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Swiper from "react-native-deck-swiper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -32,24 +32,53 @@ export default function DiscoverySwipeScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
+  const { appUser } = useAuth();
   const { groups, currentIndex, loading, error, hasMore, nextCursor } =
     useAppSelector((state) => state.groupedCards);
-  const [cityFilter, setCityFilter] = useState("");
   const swiperRef = useRef<any>(null);
 
   useEffect(() => {
     loadCards();
-  }, [cityFilter]);
+  }, []);
+
+  const getInitials = () => {
+    if (!appUser) return "U";
+    const first = appUser.firstName?.charAt(0) || "";
+    const last = appUser.lastName?.charAt(0) || "";
+    return (first + last).toUpperCase() || "U";
+  };
+
+  const getLocation = () => {
+    return appUser?.city || "Select location";
+  };
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: "Discover",
-      headerLeft: () => null,
+      title: "",
+      headerStyle: {
+        backgroundColor: theme.colors.bg,
+      },
+      headerLeft: () => (
+        <View style={styles.headerLeft}>
+          <View style={styles.profileCircle}>
+            <Text style={styles.profileInitials}>{getInitials()}</Text>
+          </View>
+        </View>
+      ),
+      headerTitle: () => (
+        <View style={styles.headerCenter}>
+          <Text style={styles.locationLabel}>Your Location</Text>
+          <View style={styles.locationRow}>
+            <Ionicons name="location" size={16} color={theme.colors.text} />
+            <Text style={styles.locationText}>{getLocation()}</Text>
+          </View>
+        </View>
+      ),
       headerRight: () => (
         <View style={styles.headerRight}>
           <Pressable style={styles.headerIconBtn}>
             <Ionicons
-              name={"ellipsis-horizontal"}
+              name="options-outline"
               size={22}
               color={theme.colors.text}
             />
@@ -57,14 +86,12 @@ export default function DiscoverySwipeScreen() {
         </View>
       ),
     });
-  }, [navigation]);
+  }, [navigation, appUser]);
 
   const loadCards = async () => {
     dispatch(resetFeed());
     try {
-      await dispatch(
-        fetchGroupedCards({ city: cityFilter || undefined }),
-      ).unwrap();
+      await dispatch(fetchGroupedCards({})).unwrap();
     } catch (err) {
       console.error("Failed to load grouped cards:", err);
     }
@@ -75,7 +102,6 @@ export default function DiscoverySwipeScreen() {
     try {
       await dispatch(
         fetchGroupedCards({
-          city: cityFilter || undefined,
           cursor: nextCursor,
         }),
       ).unwrap();
@@ -214,29 +240,10 @@ export default function DiscoverySwipeScreen() {
   if (groups.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <View style={styles.searchBar}>
-          <TextInput
-            style={styles.searchInput}
-            value={cityFilter}
-            onChangeText={setCityFilter}
-            placeholder="Filter by city..."
-            placeholderTextColor="#999"
-          />
-          {cityFilter !== "" && (
-            <TouchableOpacity
-              onPress={() => setCityFilter("")}
-              style={styles.clearButton}
-            >
-              <Text style={styles.clearButtonText}>✕</Text>
-            </TouchableOpacity>
-          )}
-        </View>
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No activities found</Text>
           <Text style={styles.emptySubtext}>
-            {cityFilter
-              ? "Try a different city or clear the filter."
-              : "Check back later for new activities!"}
+            Check back later for new activities!
           </Text>
         </View>
       </SafeAreaView>
@@ -245,24 +252,6 @@ export default function DiscoverySwipeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <View style={styles.searchBar}>
-        <TextInput
-          style={styles.searchInput}
-          value={cityFilter}
-          onChangeText={setCityFilter}
-          placeholder="Filter by city..."
-          placeholderTextColor="#999"
-        />
-        {cityFilter !== "" && (
-          <TouchableOpacity
-            onPress={() => setCityFilter("")}
-            style={styles.clearButton}
-          >
-            <Text style={styles.clearButtonText}>✕</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
       <View style={styles.swipeContainer}>
         <Swiper
           ref={swiperRef}
@@ -276,84 +265,6 @@ export default function DiscoverySwipeScreen() {
           backgroundColor="transparent"
           stackSize={3}
           stackSeparation={15}
-          overlayLabels={{
-            left: {
-              title: "SKIP",
-              style: {
-                label: {
-                  backgroundColor: "#FF6B6B",
-                  color: "white",
-                  fontSize: 24,
-                  fontWeight: "800",
-                  padding: 10,
-                  borderRadius: 12,
-                },
-                wrapper: {
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  justifyContent: "flex-start",
-                  marginTop: 30,
-                  marginLeft: -30,
-                },
-              },
-            },
-            right: {
-              title: "BOOK",
-              style: {
-                label: {
-                  backgroundColor: theme.colors.accent,
-                  color: "white",
-                  fontSize: 24,
-                  fontWeight: "800",
-                  padding: 10,
-                  borderRadius: 12,
-                },
-                wrapper: {
-                  flexDirection: "column",
-                  alignItems: "flex-start",
-                  justifyContent: "flex-start",
-                  marginTop: 30,
-                  marginLeft: 30,
-                },
-              },
-            },
-            top: {
-              title: "DETAILS",
-              style: {
-                label: {
-                  backgroundColor: "#4ECDC4",
-                  color: "white",
-                  fontSize: 24,
-                  fontWeight: "800",
-                  padding: 10,
-                  borderRadius: 12,
-                },
-                wrapper: {
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                },
-              },
-            },
-            bottom: {
-              title: "SAVE",
-              style: {
-                label: {
-                  backgroundColor: "#FFD700",
-                  color: "white",
-                  fontSize: 24,
-                  fontWeight: "800",
-                  padding: 10,
-                  borderRadius: 12,
-                },
-                wrapper: {
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                },
-              },
-            },
-          }}
           animateOverlayLabelsOpacity
           animateCardOpacity
           verticalSwipe
@@ -371,42 +282,50 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.bg,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  headerLeft: {
+    marginLeft: 16,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: theme.colors.text,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 0,
-  },
-  searchInput: {
-    flex: 1,
+  profileCircle: {
+    width: 40,
     height: 40,
-    backgroundColor: theme.colors.card,
     borderRadius: 20,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    color: theme.colors.text,
-  },
-  clearButton: {
-    marginLeft: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
-  clearButtonText: {
-    fontSize: 18,
+  profileInitials: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  headerCenter: {
+    alignItems: "center",
+  },
+  locationLabel: {
+    fontSize: 12,
     color: theme.colors.muted,
+    marginBottom: 2,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  locationText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: theme.colors.text,
+  },
+  headerRight: {
+    marginRight: 16,
+  },
+  headerIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface,
   },
   swipeContainer: {
     flex: 1,
@@ -469,18 +388,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: theme.colors.muted,
     textAlign: "center",
-  },
-  headerRight: {
-    flexDirection: "row",
-    gap: theme.spacing.sm,
-    marginRight: theme.spacing.md,
-  },
-  headerIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surface,
   },
 });
