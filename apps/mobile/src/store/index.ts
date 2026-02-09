@@ -6,6 +6,7 @@ import consumerActivityReducer from "./slices/consumer-activity-slice";
 import groupedCardsReducer from "./slices/grouped-card-slice";
 import savedActivitiesReducer from "./slices/saved-activity-slice";
 import bookingsReducer from "./slices/bookings-slice";
+import businessBookingsReducer from "./slices/business-bookings-slice";
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     consumerActivity: consumerActivityReducer,
     savedActivities: savedActivitiesReducer,
     bookings: bookingsReducer,
+    businessBookings: businessBookingsReducer,
   },
 });
 

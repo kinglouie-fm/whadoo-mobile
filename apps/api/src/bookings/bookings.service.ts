@@ -396,4 +396,150 @@ export class BookingsService {
       nextCursor: hasMore ? results[results.length - 1].id : null,
     };
   }
+
+  async listBusinessBookings(
+    userId: string,
+    businessId: string,
+    kind?: 'upcoming' | 'past' | 'today',
+    options?: { status?: 'active' | 'cancelled' | 'completed'; limit?: number; cursor?: string }
+  ) {
+    // Verify user owns this business
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { ownerUserId: true },
+    });
+
+    if (!business) {
+      throw new NotFoundException('Business not found');
+    }
+
+    if (business.ownerUserId !== userId) {
+      throw new BadRequestException('You can only view bookings for your own business');
+    }
+
+    const limit = options?.limit || 50;
+    const now = new Date();
+
+    const where: any = { businessId };
+
+    // Filter by status if provided
+    if (options?.status) {
+      where.status = options.status;
+    }
+
+    // Filter by kind
+    if (kind === 'today') {
+      // Get today's date in Luxembourg timezone
+      const luxNow = new Date().toLocaleString('en-US', {
+        timeZone: 'Europe/Luxembourg',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const [month, day, year] = luxNow.split(', ')[0].split('/');
+      const todayStart = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0));
+      const todayEnd = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59));
+      
+      where.slotStart = {
+        gte: todayStart,
+        lte: todayEnd,
+      };
+    } else if (kind === 'upcoming') {
+      where.slotStart = { gte: now };
+    } else if (kind === 'past') {
+      where.slotStart = { lt: now };
+    }
+
+    // Cursor-based pagination
+    if (options?.cursor) {
+      where.id = {
+        lt: options.cursor,
+      };
+    }
+
+    const bookings = await this.prisma.booking.findMany({
+      where,
+      orderBy: kind === 'past' ? { slotStart: 'desc' } : { slotStart: 'asc' },
+      take: limit + 1,
+    });
+
+    const hasMore = bookings.length > limit;
+    const results = bookings.slice(0, limit);
+
+    return {
+      items: results,
+      nextCursor: hasMore ? results[results.length - 1].id : null,
+    };
+  }
+
+  async getBusinessStats(userId: string, businessId: string) {
+    // Verify user owns this business
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { ownerUserId: true },
+    });
+
+    if (!business) {
+      throw new NotFoundException('Business not found');
+    }
+
+    if (business.ownerUserId !== userId) {
+      throw new BadRequestException('You can only view stats for your own business');
+    }
+
+    const now = new Date();
+
+    // Get today's date range in Luxembourg timezone
+    const luxNow = new Date().toLocaleString('en-US', {
+      timeZone: 'Europe/Luxembourg',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const [month, day, year] = luxNow.split(', ')[0].split('/');
+    const todayStart = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0));
+    const todayEnd = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59));
+
+    // Count bookings happening today
+    const todayCount = await this.prisma.booking.count({
+      where: {
+        businessId,
+        status: 'active',
+        slotStart: {
+          gte: todayStart,
+          lte: todayEnd,
+        },
+      },
+    });
+
+    // Count upcoming bookings
+    const upcomingCount = await this.prisma.booking.count({
+      where: {
+        businessId,
+        status: 'active',
+        slotStart: {
+          gte: now,
+        },
+      },
+    });
+
+    // Calculate total revenue from active bookings
+    const revenueResult = await this.prisma.booking.aggregate({
+      where: {
+        businessId,
+        status: 'active',
+      },
+      _sum: {
+        paymentAmount: true,
+      },
+    });
+
+    const totalRevenue = revenueResult._sum.paymentAmount || 0;
+
+    return {
+      todayCount,
+      upcomingCount,
+      totalRevenue: Number(totalRevenue),
+    };
+  }
 }

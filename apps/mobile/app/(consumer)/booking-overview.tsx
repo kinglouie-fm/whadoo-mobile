@@ -5,12 +5,12 @@ import { theme } from "@/src/theme/theme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -93,6 +93,7 @@ export default function BookingOverviewScreen() {
       router.replace("/(consumer)/(tabs)/bookings");
     } catch (error: any) {
       let errorMessage = "Failed to create booking";
+      console.log(error);
 
       // Handle specific error codes
       if (error.message?.includes("SLOT_FULL")) {

@@ -78,13 +78,16 @@ export class AvailabilityResolutionService {
       throw new BadRequestException('Availability template is inactive');
     }
 
-    // 2. Parse date in Luxembourg timezone and check if it's in the past
-    // Date comes as YYYY-MM-DD string
-    const requestedDate = new Date(date + 'T00:00:00');
+    // 2. Parse date in UTC (date string is in YYYY-MM-DD format representing a calendar day)
+    // Date comes as YYYY-MM-DD string from query param
+    const [year, month, day] = date.split('-').map(Number);
+    const requestedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+    
+    // Compare calendar dates (not timestamps) to check if in past
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0));
 
-    if (requestedDate < today) {
+    if (requestedDate < todayUTC) {
       return []; // No slots for past dates
     }
 

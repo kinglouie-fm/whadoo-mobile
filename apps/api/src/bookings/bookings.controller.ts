@@ -61,4 +61,30 @@ export class BookingsController {
     const userId = req.appUser!.id;
     return this.service.getBooking(userId, bookingId);
   }
+
+  @Get('business/:businessId/list')
+  async listBusinessBookings(
+    @Req() req: AuthedRequest,
+    @Param('businessId') businessId: string,
+    @Query('status') status?: 'active' | 'cancelled' | 'completed',
+    @Query('kind') kind?: 'upcoming' | 'past' | 'today',
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string
+  ) {
+    const userId = req.appUser!.id;
+    return this.service.listBusinessBookings(userId, businessId, kind, {
+      status,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      cursor,
+    });
+  }
+
+  @Get('business/:businessId/stats')
+  async getBusinessStats(
+    @Req() req: AuthedRequest,
+    @Param('businessId') businessId: string
+  ) {
+    const userId = req.appUser!.id;
+    return this.service.getBusinessStats(userId, businessId);
+  }
 }
