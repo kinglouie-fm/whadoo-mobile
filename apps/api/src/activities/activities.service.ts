@@ -2,27 +2,30 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
-  NotFoundException
-} from "@nestjs/common";
-import { ActivityTypeDefinitionsService } from "../activity-type-definitions/activity-type-definitions.service";
-import { AvailabilityTemplatesService } from "../availability-templates/availability-templates.service";
+  NotFoundException,
+} from '@nestjs/common';
+import { ActivityTypeDefinitionsService } from '../activity-type-definitions/activity-type-definitions.service';
+import { AvailabilityTemplatesService } from '../availability-templates/availability-templates.service';
 import {
   ConflictErrorResponse,
   ErrorCodes,
-  PublishValidationError
-} from "../common/error-responses";
-import { PrismaService } from "../prisma/prisma.service";
-import { CreateActivityDto } from "./dto/create-activity.dto";
-import { GroupedCardDto, GroupedCardsResponseDto } from "./dto/grouped-card.dto";
-import { RecordSwipeDto } from "./dto/record-swipe.dto";
-import { UpdateActivityDto } from "./dto/update-activity.dto";
+  PublishValidationError,
+} from '../common/error-responses';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateActivityDto } from './dto/create-activity.dto';
+import {
+  GroupedCardDto,
+  GroupedCardsResponseDto,
+} from './dto/grouped-card.dto';
+import { RecordSwipeDto } from './dto/record-swipe.dto';
+import { UpdateActivityDto } from './dto/update-activity.dto';
 
 @Injectable()
 export class ActivitiesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly templatesService: AvailabilityTemplatesService,
-    private readonly typeDefinitionsService: ActivityTypeDefinitionsService
+    private readonly typeDefinitionsService: ActivityTypeDefinitionsService,
   ) {}
 
   async createActivity(userId: string, dto: CreateActivityDto) {
@@ -33,11 +36,11 @@ export class ActivitiesService {
     });
 
     if (!business) {
-      throw new NotFoundException("Business not found");
+      throw new NotFoundException('Business not found');
     }
 
     if (business.ownerUserId !== userId) {
-      throw new ForbiddenException("You do not own this business");
+      throw new ForbiddenException('You do not own this business');
     }
 
     // Validate type exists
@@ -49,26 +52,28 @@ export class ActivitiesService {
 
     // Validate config and pricing against type schema (if provided)
     if (dto.config && Object.keys(dto.config).length > 0) {
-      const configValidation = await this.typeDefinitionsService.validateActivityConfig(
-        dto.typeId,
-        dto.config
-      );
+      const configValidation =
+        await this.typeDefinitionsService.validateActivityConfig(
+          dto.typeId,
+          dto.config,
+        );
       if (!configValidation.valid) {
         throw new BadRequestException({
-          message: "Activity configuration validation failed",
+          message: 'Activity configuration validation failed',
           errors: configValidation.errors,
         });
       }
     }
 
     if (dto.pricing && Object.keys(dto.pricing).length > 0) {
-      const pricingValidation = await this.typeDefinitionsService.validateActivityPricing(
-        dto.typeId,
-        dto.pricing
-      );
+      const pricingValidation =
+        await this.typeDefinitionsService.validateActivityPricing(
+          dto.typeId,
+          dto.pricing,
+        );
       if (!pricingValidation.valid) {
         throw new BadRequestException({
-          message: "Activity pricing validation failed",
+          message: 'Activity pricing validation failed',
           errors: pricingValidation.errors,
         });
       }
@@ -93,7 +98,7 @@ export class ActivitiesService {
         catalogGroupTitle: dto.catalogGroupTitle ?? null,
         catalogGroupKind: dto.catalogGroupKind ?? null,
         availabilityTemplateId: dto.availabilityTemplateId ?? null,
-        status: "draft",
+        status: 'draft',
         images: dto.images
           ? {
               create: dto.images.map((img) => ({
@@ -112,7 +117,11 @@ export class ActivitiesService {
     return activity;
   }
 
-  async getActivity(activityId: string, userId?: string, viewAs: "business" | "consumer" = "business") {
+  async getActivity(
+    activityId: string,
+    userId?: string,
+    viewAs: 'business' | 'consumer' = 'business',
+  ) {
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
       include: {
@@ -131,20 +140,20 @@ export class ActivitiesService {
     });
 
     if (!activity) {
-      throw new NotFoundException("Activity not found");
+      throw new NotFoundException('Activity not found');
     }
 
     // Consumer view: only published
-    if (viewAs === "consumer") {
-      if (activity.status !== "published") {
-        throw new NotFoundException("Activity not found");
+    if (viewAs === 'consumer') {
+      if (activity.status !== 'published') {
+        throw new NotFoundException('Activity not found');
       }
       return activity;
     }
 
     // Business view: verify ownership
     if (userId && activity.business.ownerUserId !== userId) {
-      throw new ForbiddenException("You do not own this activity");
+      throw new ForbiddenException('You do not own this activity');
     }
 
     return activity;
@@ -158,11 +167,11 @@ export class ActivitiesService {
     });
 
     if (!business) {
-      throw new NotFoundException("Business not found");
+      throw new NotFoundException('Business not found');
     }
 
     if (business.ownerUserId !== userId) {
-      throw new ForbiddenException("You do not own this business");
+      throw new ForbiddenException('You do not own this business');
     }
 
     const activities = await this.prisma.activity.findMany({
@@ -179,7 +188,7 @@ export class ActivitiesService {
           select: { images: true },
         },
       },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { updatedAt: 'desc' },
     });
 
     return activities;
@@ -188,7 +197,7 @@ export class ActivitiesService {
   async listPublishedActivities(filters?: { city?: string; typeId?: string }) {
     const activities = await this.prisma.activity.findMany({
       where: {
-        status: "published",
+        status: 'published',
         ...(filters?.city ? { city: filters.city } : {}),
         ...(filters?.typeId ? { typeId: filters.typeId } : {}),
       },
@@ -205,7 +214,7 @@ export class ActivitiesService {
           },
         },
       },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { updatedAt: 'desc' },
     });
 
     return activities;
@@ -222,18 +231,18 @@ export class ActivitiesService {
     // Fetch published activities with their business and availability template info
     const activities = await this.prisma.activity.findMany({
       where: {
-        status: "published",
+        status: 'published',
         ...(filters?.city ? { city: filters.city } : {}),
         ...(filters?.typeId ? { typeId: filters.typeId } : {}),
         business: {
-          status: "active",
+          status: 'active',
         },
       },
       include: {
         images: {
           where: { isThumbnail: true },
           take: 1,
-          orderBy: { sortOrder: "asc" },
+          orderBy: { sortOrder: 'asc' },
         },
         business: {
           select: {
@@ -248,7 +257,7 @@ export class ActivitiesService {
           },
         },
       },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { updatedAt: 'desc' },
     });
 
     // Group activities by catalogGroupId or by individual activity if no grouping
@@ -276,15 +285,20 @@ export class ActivitiesService {
       });
 
       const representativeActivity = groupActivities[0];
-      const businessName = representativeActivity.business?.name || "Unknown Business";
-      const city = representativeActivity.city || "Unknown";
+      const businessName =
+        representativeActivity.business?.name || 'Unknown Business';
+      const city = representativeActivity.city || 'Unknown';
 
       // Calculate group-level fields
-      const priceFrom = groupActivities.reduce((min, act) => {
-        if (act.priceFrom === null) return min;
-        const price = Number(act.priceFrom);
-        return min === null || price < min ? price : min;
-      }, null as number | null) || 0;
+      const priceFrom =
+        groupActivities.reduce(
+          (min, act) => {
+            if (act.priceFrom === null) return min;
+            const price = Number(act.priceFrom);
+            return min === null || price < min ? price : min;
+          },
+          null as number | null,
+        ) || 0;
 
       const maxUpdatedAt = groupActivities.reduce((max, act) => {
         return act.updatedAt > max ? act.updatedAt : max;
@@ -294,7 +308,9 @@ export class ActivitiesService {
       const durations = groupActivities
         .map((act) => act.availabilityTemplate?.slotDurationMinutes)
         .filter((d): d is number => d !== null && d !== undefined);
-      const uniqueDurations = Array.from(new Set(durations)).sort((a, b) => a - b).slice(0, 3);
+      const uniqueDurations = Array.from(new Set(durations))
+        .sort((a, b) => a - b)
+        .slice(0, 3);
 
       // Get thumbnail
       const thumbnailUrl = representativeActivity.images[0]?.imageUrl || null;
@@ -307,7 +323,9 @@ export class ActivitiesService {
 
       // Use catalogGroupTitle or fallback to typeId + location
       const catalogGroupTitle = representativeActivity.catalogGroupTitle;
-      const typeLabel = catalogGroupTitle || `${representativeActivity.typeId} at ${businessName}`;
+      const typeLabel =
+        catalogGroupTitle ||
+        `${representativeActivity.typeId} at ${businessName}`;
 
       groups.push({
         catalogGroupId: groupKey,
@@ -316,7 +334,7 @@ export class ActivitiesService {
         typeId: representativeActivity.typeId,
         typeLabel,
         city,
-        locationSummary: `${city}${representativeActivity.address ? ", " + representativeActivity.address : ""}`,
+        locationSummary: `${city}${representativeActivity.address ? ', ' + representativeActivity.address : ''}`,
         thumbnailUrl: thumbnailUrl || undefined,
         priceFrom,
         tags,
@@ -333,7 +351,9 @@ export class ActivitiesService {
     // Apply cursor-based pagination
     let paginatedGroups = groups;
     if (filters?.cursor) {
-      const cursorIndex = groups.findIndex((g) => g.catalogGroupId === filters.cursor);
+      const cursorIndex = groups.findIndex(
+        (g) => g.catalogGroupId === filters.cursor,
+      );
       if (cursorIndex !== -1) {
         paginatedGroups = groups.slice(cursorIndex + 1);
       }
@@ -342,7 +362,9 @@ export class ActivitiesService {
     // Take limit + 1 to determine if there's a next page
     const hasMore = paginatedGroups.length > limit;
     const resultGroups = paginatedGroups.slice(0, limit);
-    const nextCursor = hasMore ? resultGroups[resultGroups.length - 1].catalogGroupId : null;
+    const nextCursor = hasMore
+      ? resultGroups[resultGroups.length - 1].catalogGroupId
+      : null;
 
     return {
       groups: resultGroups,
@@ -350,7 +372,11 @@ export class ActivitiesService {
     };
   }
 
-  async updateActivity(activityId: string, userId: string, dto: UpdateActivityDto) {
+  async updateActivity(
+    activityId: string,
+    userId: string,
+    dto: UpdateActivityDto,
+  ) {
     // Fetch activity with business
     const existing = await this.prisma.activity.findUnique({
       where: { id: activityId },
@@ -362,7 +388,7 @@ export class ActivitiesService {
     });
 
     if (!existing) {
-      throw new NotFoundException("Activity not found");
+      throw new NotFoundException('Activity not found');
     }
 
     // Validate type if being changed
@@ -375,18 +401,20 @@ export class ActivitiesService {
 
     // Validate config if provided
     if (dto.config !== undefined) {
-      const configToValidate = dto.config && Object.keys(dto.config).length > 0 
-        ? dto.config 
-        : existing.config;
-      
+      const configToValidate =
+        dto.config && Object.keys(dto.config).length > 0
+          ? dto.config
+          : existing.config;
+
       if (configToValidate && Object.keys(configToValidate).length > 0) {
-        const configValidation = await this.typeDefinitionsService.validateActivityConfig(
-          typeId,
-          configToValidate
-        );
+        const configValidation =
+          await this.typeDefinitionsService.validateActivityConfig(
+            typeId,
+            configToValidate,
+          );
         if (!configValidation.valid) {
           throw new BadRequestException({
-            message: "Activity configuration validation failed",
+            message: 'Activity configuration validation failed',
             errors: configValidation.errors,
           });
         }
@@ -395,18 +423,20 @@ export class ActivitiesService {
 
     // Validate pricing if provided
     if (dto.pricing !== undefined) {
-      const pricingToValidate = dto.pricing && Object.keys(dto.pricing).length > 0
-        ? dto.pricing
-        : existing.pricing;
-      
+      const pricingToValidate =
+        dto.pricing && Object.keys(dto.pricing).length > 0
+          ? dto.pricing
+          : existing.pricing;
+
       if (pricingToValidate && Object.keys(pricingToValidate).length > 0) {
-        const pricingValidation = await this.typeDefinitionsService.validateActivityPricing(
-          typeId,
-          pricingToValidate
-        );
+        const pricingValidation =
+          await this.typeDefinitionsService.validateActivityPricing(
+            typeId,
+            pricingToValidate,
+          );
         if (!pricingValidation.valid) {
           throw new BadRequestException({
-            message: "Activity pricing validation failed",
+            message: 'Activity pricing validation failed',
             errors: pricingValidation.errors,
           });
         }
@@ -414,29 +444,36 @@ export class ActivitiesService {
     }
 
     if (existing.business.ownerUserId !== userId) {
-      throw new ForbiddenException("You do not own this activity");
+      throw new ForbiddenException('You do not own this activity');
     }
 
     // Prevent changing/unlinking template from published activity
-    if (existing.status === "published" && dto.availabilityTemplateId !== undefined) {
+    if (
+      existing.status === 'published' &&
+      dto.availabilityTemplateId !== undefined
+    ) {
       if (
         dto.availabilityTemplateId === null ||
         dto.availabilityTemplateId !== existing.availabilityTemplateId
       ) {
         throw new ConflictErrorResponse(
           ErrorCodes.CANNOT_UNLINK_PUBLISHED,
-          "Cannot unlink or change availability template for a published activity. Unpublish the activity first.",
-          { field: "availabilityTemplateId" }
+          'Cannot unlink or change availability template for a published activity. Unpublish the activity first.',
+          { field: 'availabilityTemplateId' },
         );
       }
     }
 
     // Prevent changing type from published activity
-    if (existing.status === "published" && dto.typeId && dto.typeId !== existing.typeId) {
+    if (
+      existing.status === 'published' &&
+      dto.typeId &&
+      dto.typeId !== existing.typeId
+    ) {
       throw new ConflictErrorResponse(
         ErrorCodes.CANNOT_CHANGE_TYPE_PUBLISHED,
-        "Cannot change activity type for a published activity. Unpublish the activity first.",
-        { field: "typeId" }
+        'Cannot change activity type for a published activity. Unpublish the activity first.',
+        { field: 'typeId' },
       );
     }
 
@@ -490,25 +527,25 @@ export class ActivitiesService {
     });
 
     if (!activity) {
-      throw new NotFoundException("Activity not found");
+      throw new NotFoundException('Activity not found');
     }
 
     if (activity.business.ownerUserId !== userId) {
-      throw new ForbiddenException("You do not own this activity");
+      throw new ForbiddenException('You do not own this activity');
     }
 
     // Check required fields
     const missingFields: string[] = [];
-    if (!activity.title) missingFields.push("title");
-    if (!activity.typeId) missingFields.push("typeId");
-    if (!activity.city) missingFields.push("city");
+    if (!activity.title) missingFields.push('title');
+    if (!activity.typeId) missingFields.push('typeId');
+    if (!activity.city) missingFields.push('city');
 
     if (missingFields.length > 0) {
       throw new PublishValidationError(
         ErrorCodes.REQUIRED_FIELDS_MISSING,
-        `Missing required fields: ${missingFields.join(", ")}`,
+        `Missing required fields: ${missingFields.join(', ')}`,
         undefined,
-        missingFields
+        missingFields,
       );
     }
 
@@ -516,27 +553,29 @@ export class ActivitiesService {
     if (!activity.availabilityTemplateId) {
       throw new PublishValidationError(
         ErrorCodes.TEMPLATE_REQUIRED,
-        "Availability template must be linked before publishing.",
-        "availabilityTemplateId"
+        'Availability template must be linked before publishing.',
+        'availabilityTemplateId',
       );
     }
 
     // Verify template exists and is active
-    const template = await this.templatesService.getTemplateById(activity.availabilityTemplateId);
+    const template = await this.templatesService.getTemplateById(
+      activity.availabilityTemplateId,
+    );
 
     if (!template) {
       throw new PublishValidationError(
         ErrorCodes.TEMPLATE_NOT_FOUND,
-        "Linked availability template does not exist.",
-        "availabilityTemplateId"
+        'Linked availability template does not exist.',
+        'availabilityTemplateId',
       );
     }
 
-    if (template.status !== "active") {
+    if (template.status !== 'active') {
       throw new PublishValidationError(
         ErrorCodes.TEMPLATE_INACTIVE,
-        "Linked availability template is inactive. Activate or link a different template.",
-        "availabilityTemplateId"
+        'Linked availability template is inactive. Activate or link a different template.',
+        'availabilityTemplateId',
       );
     }
 
@@ -547,35 +586,37 @@ export class ActivitiesService {
       throw new PublishValidationError(
         ErrorCodes.INVALID_TYPE,
         `Activity type '${activity.typeId}' is not supported.`,
-        "typeId"
+        'typeId',
       );
     }
 
     // Validate config against type schema
-    const configValidation = await this.typeDefinitionsService.validateActivityConfig(
-      activity.typeId,
-      activity.config || {}
-    );
+    const configValidation =
+      await this.typeDefinitionsService.validateActivityConfig(
+        activity.typeId,
+        activity.config || {},
+      );
     if (!configValidation.valid) {
       throw new BadRequestException({
-        message: "Activity configuration must be complete before publishing",
+        message: 'Activity configuration must be complete before publishing',
         errors: configValidation.errors,
       });
     }
 
     // Karting-specific package validation
-    if (activity.typeId === "karting") {
+    if (activity.typeId === 'karting') {
       this.validateKartingPackages(activity.config);
     }
 
     // Validate pricing against type schema
-    const pricingValidation = await this.typeDefinitionsService.validateActivityPricing(
-      activity.typeId,
-      activity.pricing || {}
-    );
+    const pricingValidation =
+      await this.typeDefinitionsService.validateActivityPricing(
+        activity.typeId,
+        activity.pricing || {},
+      );
     if (!pricingValidation.valid) {
       throw new BadRequestException({
-        message: "Activity pricing must be complete before publishing",
+        message: 'Activity pricing must be complete before publishing',
         errors: pricingValidation.errors,
       });
     }
@@ -583,7 +624,7 @@ export class ActivitiesService {
     // Publish activity
     const updated = await this.prisma.activity.update({
       where: { id: activityId },
-      data: { status: "published" },
+      data: { status: 'published' },
       include: {
         images: true,
       },
@@ -603,16 +644,16 @@ export class ActivitiesService {
     });
 
     if (!activity) {
-      throw new NotFoundException("Activity not found");
+      throw new NotFoundException('Activity not found');
     }
 
     if (activity.business.ownerUserId !== userId) {
-      throw new ForbiddenException("You do not own this activity");
+      throw new ForbiddenException('You do not own this activity');
     }
 
     const updated = await this.prisma.activity.update({
       where: { id: activityId },
-      data: { status: "draft" },
+      data: { status: 'draft' },
       include: {
         images: true,
       },
@@ -632,16 +673,16 @@ export class ActivitiesService {
     });
 
     if (!activity) {
-      throw new NotFoundException("Activity not found");
+      throw new NotFoundException('Activity not found');
     }
 
     if (activity.business.ownerUserId !== userId) {
-      throw new ForbiddenException("You do not own this activity");
+      throw new ForbiddenException('You do not own this activity');
     }
 
     const updated = await this.prisma.activity.update({
       where: { id: activityId },
-      data: { status: "inactive" },
+      data: { status: 'inactive' },
       include: {
         images: true,
       },
@@ -671,8 +712,8 @@ export class ActivitiesService {
     if (!packages || !Array.isArray(packages) || packages.length === 0) {
       throw new PublishValidationError(
         ErrorCodes.PACKAGES_REQUIRED,
-        "Karting activities must have at least one package/formula defined.",
-        "config.packages"
+        'Karting activities must have at least one package/formula defined.',
+        'config.packages',
       );
     }
 
@@ -684,19 +725,23 @@ export class ActivitiesService {
       const pkg = packages[i];
 
       // Required fields: code and title
-      if (!pkg.code || typeof pkg.code !== "string" || pkg.code.trim() === "") {
+      if (!pkg.code || typeof pkg.code !== 'string' || pkg.code.trim() === '') {
         throw new PublishValidationError(
           ErrorCodes.PACKAGE_CODE_REQUIRED,
           `Package at index ${i} is missing required field: code`,
-          `config.packages[${i}].code`
+          `config.packages[${i}].code`,
         );
       }
 
-      if (!pkg.title || typeof pkg.title !== "string" || pkg.title.trim() === "") {
+      if (
+        !pkg.title ||
+        typeof pkg.title !== 'string' ||
+        pkg.title.trim() === ''
+      ) {
         throw new PublishValidationError(
           ErrorCodes.PACKAGE_TITLE_REQUIRED,
           `Package at index ${i} is missing required field: title`,
-          `config.packages[${i}].title`
+          `config.packages[${i}].title`,
         );
       }
 
@@ -708,7 +753,7 @@ export class ActivitiesService {
         throw new PublishValidationError(
           ErrorCodes.PACKAGE_CODE_DUPLICATE,
           `Duplicate package code: "${pkg.code}". Each package must have a unique code.`,
-          `config.packages[${i}].code`
+          `config.packages[${i}].code`,
         );
       }
       codes.add(normalizedCode);
@@ -723,8 +768,8 @@ export class ActivitiesService {
     if (defaultCount > 1) {
       throw new PublishValidationError(
         ErrorCodes.MULTIPLE_DEFAULT_PACKAGES,
-        "Only one package can be marked as default.",
-        "config.packages"
+        'Only one package can be marked as default.',
+        'config.packages',
       );
     }
 
@@ -735,9 +780,9 @@ export class ActivitiesService {
 
     // Sanitize format_lines (convert multiline string to array)
     for (const pkg of packages) {
-      if (pkg.format_lines && typeof pkg.format_lines === "string") {
+      if (pkg.format_lines && typeof pkg.format_lines === 'string') {
         pkg.format_lines = pkg.format_lines
-          .split("\n")
+          .split('\n')
           .map((line: string) => line.trim())
           .filter((line: string) => line.length > 0);
       }
@@ -745,7 +790,10 @@ export class ActivitiesService {
 
     // Ensure stable sort_order
     for (let i = 0; i < packages.length; i++) {
-      if (packages[i].sort_order === undefined || packages[i].sort_order === null) {
+      if (
+        packages[i].sort_order === undefined ||
+        packages[i].sort_order === null
+      ) {
         packages[i].sort_order = i;
       }
     }
@@ -769,7 +817,7 @@ export class ActivitiesService {
   async debugKartingActivities() {
     const activities = await this.prisma.activity.findMany({
       where: {
-        typeId: "karting",
+        typeId: 'karting',
       },
       select: {
         id: true,
@@ -792,12 +840,12 @@ export class ActivitiesService {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
 
     return {
       total: activities.length,
-      published: activities.filter((a) => a.status === "published").length,
+      published: activities.filter((a) => a.status === 'published').length,
       withGroupId: activities.filter((a) => a.catalogGroupId).length,
       activities: activities.map((a) => ({
         id: a.id,
@@ -813,17 +861,18 @@ export class ActivitiesService {
   }
 
   async getActivitiesByGroup(catalogGroupId: string) {
-    const activities = await this.prisma.activity.findMany({
+    // Try to find activities by catalogGroupId
+    let activities = await this.prisma.activity.findMany({
       where: {
         catalogGroupId,
-        status: "published",
+        status: 'published',
         business: {
-          status: "active",
+          status: 'active',
         },
       },
       include: {
         images: {
-          orderBy: { sortOrder: "asc" },
+          orderBy: { sortOrder: 'asc' },
         },
         business: {
           select: {
@@ -846,19 +895,12 @@ export class ActivitiesService {
           },
         },
       },
-      orderBy: [
-        { priceFrom: "asc" },
-        { updatedAt: "desc" },
-      ],
+      orderBy: [{ priceFrom: 'asc' }, { updatedAt: 'desc' }],
     });
-
-    if (activities.length === 0) {
-      throw new NotFoundException("No activities found in this group");
-    }
 
     return {
       catalogGroupId,
-      catalogGroupTitle: activities[0].catalogGroupTitle,
+      catalogGroupTitle: activities[0].catalogGroupTitle || activities[0].title,
       businessName: activities[0].business?.name,
       businessCity: activities[0].business?.city,
       businessAddress: activities[0].business?.address,

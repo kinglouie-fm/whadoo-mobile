@@ -126,7 +126,15 @@ export default function ActivityDetailScreen() {
       setConfig(newConfig);
       setPricing({});
     }
-  }, [dispatch, typeId, isEditMode]);
+  }, [
+    dispatch,
+    typeId,
+    isEditMode,
+    business,
+    catalogGroupId,
+    catalogGroupTitle,
+    catalogGroupKind,
+  ]);
 
   const textInputCommonProps = useMemo(
     () => ({
@@ -141,8 +149,31 @@ export default function ActivityDetailScreen() {
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
+
+    // Basic required fields
     if (!title.trim()) newErrors.title = "Title is required";
     if (!typeId.trim()) newErrors.typeId = "Type is required";
+    if (!description.trim()) newErrors.description = "Description is required";
+    if (!category.trim()) newErrors.category = "Category is required";
+    if (!city.trim()) newErrors.city = "City is required";
+    if (!address.trim()) newErrors.address = "Address is required";
+    if (!priceFrom.trim() || isNaN(parseFloat(priceFrom))) {
+      newErrors.priceFrom = "Valid price is required";
+    }
+
+    // Catalog group fields (required for discovery)
+    if (!catalogGroupId.trim()) {
+      newErrors.catalogGroupId = "Catalog Group ID is required";
+    }
+    if (!catalogGroupTitle.trim()) {
+      newErrors.catalogGroupTitle = "Catalog Group Title is required";
+    }
+
+    // Availability template is required
+    if (!availabilityTemplateId) {
+      newErrors.availabilityTemplateId = "Availability template is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -288,65 +319,82 @@ export default function ActivityDetailScreen() {
 
           {/* Description */}
           <View style={styles.field}>
-            <Text style={styles.label}>Description</Text>
+            <Text style={styles.label}>Description *</Text>
             <TextInput
               {...textInputCommonProps}
-              style={[styles.input, styles.textArea]}
+              style={[
+                styles.input,
+                styles.textArea,
+                errors.description && styles.inputError,
+              ]}
               value={description}
               onChangeText={setDescription}
               placeholder="Describe your activity..."
               multiline
               numberOfLines={4}
             />
+            {errors.description && (
+              <Text style={styles.errorText}>{errors.description}</Text>
+            )}
           </View>
 
           {/* City */}
           <View style={styles.field}>
-            <Text style={styles.label}>City</Text>
+            <Text style={styles.label}>City *</Text>
             <TextInput
               {...textInputCommonProps}
-              style={styles.input}
+              style={[styles.input, errors.city && styles.inputError]}
               value={city}
               onChangeText={setCity}
               placeholder="e.g., Amsterdam"
             />
+            {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
           </View>
 
           {/* Address */}
           <View style={styles.field}>
-            <Text style={styles.label}>Address</Text>
+            <Text style={styles.label}>Address *</Text>
             <TextInput
               {...textInputCommonProps}
-              style={styles.input}
+              style={[styles.input, errors.address && styles.inputError]}
               value={address}
               onChangeText={setAddress}
               placeholder="Street address"
             />
+            {errors.address && (
+              <Text style={styles.errorText}>{errors.address}</Text>
+            )}
           </View>
 
           {/* Category */}
           <View style={styles.field}>
-            <Text style={styles.label}>Category</Text>
+            <Text style={styles.label}>Category *</Text>
             <TextInput
               {...textInputCommonProps}
-              style={styles.input}
+              style={[styles.input, errors.category && styles.inputError]}
               value={category}
               onChangeText={setCategory}
               placeholder="e.g., Sports, Food, Entertainment"
             />
+            {errors.category && (
+              <Text style={styles.errorText}>{errors.category}</Text>
+            )}
           </View>
 
           {/* Price From */}
           <View style={styles.field}>
-            <Text style={styles.label}>Price From (€)</Text>
+            <Text style={styles.label}>Price From (€) *</Text>
             <TextInput
               {...textInputCommonProps}
-              style={styles.input}
+              style={[styles.input, errors.priceFrom && styles.inputError]}
               value={priceFrom}
               onChangeText={setPriceFrom}
               placeholder="0.00"
               keyboardType="decimal-pad"
             />
+            {errors.priceFrom && (
+              <Text style={styles.errorText}>{errors.priceFrom}</Text>
+            )}
             <Text style={styles.helperText}>
               {typeId === "karting" && config.packages?.length > 0
                 ? "Auto-calculated from packages"
@@ -355,45 +403,61 @@ export default function ActivityDetailScreen() {
           </View>
 
           {/* Catalog Group Fields */}
-          {typeId === "karting" && (
-            <>
-              <View style={styles.field}>
-                <Text style={styles.label}>Catalog Group ID</Text>
-                <TextInput
-                  {...textInputCommonProps}
-                  style={styles.input}
-                  value={catalogGroupId}
-                  onChangeText={setCatalogGroupId}
-                  placeholder="e.g., acl-karting-mondercange"
-                />
-                <Text style={styles.helperText}>
-                  Group related activities (e.g., different durations)
-                </Text>
-              </View>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Discovery Settings</Text>
+            <Text style={styles.sectionSubtitle}>
+              Required for customers to find your activity.
+            </Text>
+          </View>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Catalog Group Title</Text>
-                <TextInput
-                  {...textInputCommonProps}
-                  style={styles.input}
-                  value={catalogGroupTitle}
-                  onChangeText={setCatalogGroupTitle}
-                  placeholder="e.g., Karting at ActionFunCenter"
-                />
-              </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>Catalog Group ID *</Text>
+            <TextInput
+              {...textInputCommonProps}
+              style={[styles.input, errors.catalogGroupId && styles.inputError]}
+              value={catalogGroupId}
+              onChangeText={setCatalogGroupId}
+              placeholder="e.g., businessname-escape-room"
+            />
+            {errors.catalogGroupId && (
+              <Text style={styles.errorText}>{errors.catalogGroupId}</Text>
+            )}
+            <Text style={styles.helperText}>
+              Unique ID for grouping related activities.
+            </Text>
+          </View>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Catalog Group Kind</Text>
-                <TextInput
-                  {...textInputCommonProps}
-                  style={styles.input}
-                  value={catalogGroupKind}
-                  onChangeText={setCatalogGroupKind}
-                  placeholder="karting"
-                />
-              </View>
-            </>
-          )}
+          <View style={styles.field}>
+            <Text style={styles.label}>Catalog Group Title *</Text>
+            <TextInput
+              {...textInputCommonProps}
+              style={[
+                styles.input,
+                errors.catalogGroupTitle && styles.inputError,
+              ]}
+              value={catalogGroupTitle}
+              onChangeText={setCatalogGroupTitle}
+              placeholder="e.g., Escape Room at YourBusiness"
+            />
+            {errors.catalogGroupTitle && (
+              <Text style={styles.errorText}>{errors.catalogGroupTitle}</Text>
+            )}
+            <Text style={styles.helperText}>
+              Display name shown in discovery feed.
+            </Text>
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Catalog Group Kind</Text>
+            <TextInput
+              {...textInputCommonProps}
+              style={styles.input}
+              value={catalogGroupKind}
+              onChangeText={setCatalogGroupKind}
+              placeholder={typeId || "activity_type"}
+            />
+            <Text style={styles.helperText}>Activity type identifier.</Text>
+          </View>
 
           {/* Dynamic Config / Packages */}
           {currentTypeDefinition && (
@@ -431,15 +495,18 @@ export default function ActivityDetailScreen() {
           {/* Availability Template Picker */}
           <View style={styles.field}>
             <View style={styles.labelRow}>
-              <Text style={styles.label}>Availability Template</Text>
+              <Text style={styles.label}>Availability Template *</Text>
               {!availabilityTemplateId && (
                 <View style={styles.requiredIndicator}>
-                  <Text style={styles.requiredText}>
-                    ⚠️ Required to publish
-                  </Text>
+                  <Text style={styles.requiredText}>⚠️ Required</Text>
                 </View>
               )}
             </View>
+            {errors.availabilityTemplateId && (
+              <Text style={styles.errorText}>
+                {errors.availabilityTemplateId}
+              </Text>
+            )}
 
             {templates.length > 0 ? (
               <View style={styles.templatePicker}>
@@ -682,4 +749,23 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   infoText: { fontSize: 13, color: "#22C55E", fontWeight: "800" },
+
+  sectionHeader: {
+    marginTop: 24,
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: stylesVars.border,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: stylesVars.subText,
+    lineHeight: 18,
+  },
 });
