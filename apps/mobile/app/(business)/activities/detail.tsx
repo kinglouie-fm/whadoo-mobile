@@ -2,7 +2,7 @@ import { PrimaryButton, SecondaryButton } from "@/src/components/Button";
 import { ConfigSchemaRenderer } from "@/src/components/ConfigSchemaRenderer";
 import { FormInput, TextArea } from "@/src/components/Input";
 import { PackagesEditor } from "@/src/components/PackagesEditor";
-import { PricingSchemaRenderer } from "@/src/components/PricingSchemaRenderer";
+// import { PricingSchemaRenderer } from "@/src/components/PricingSchemaRenderer";
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
@@ -453,12 +453,12 @@ export default function ActivityDetailScreen() {
               />
             )}
 
-            <PricingSchemaRenderer
+            {/* <PricingSchemaRenderer
               typeDefinition={currentTypeDefinition}
               currentPricing={pricing}
               onPricingChange={setPricing}
               errors={errors}
-            />
+            /> */}
           </>
         )}
 
