@@ -23,12 +23,14 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { Calendar } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -48,6 +50,9 @@ export default function AvailabilityDetailScreen() {
   const [name, setName] = useState("");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("09:00:00");
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [editingExceptionIndex, setEditingExceptionIndex] = useState<number | null>(null);
+  const [editingDateField, setEditingDateField] = useState<"startDate" | "endDate" | null>(null);
   const [endTime, setEndTime] = useState("17:00:00");
   const [slotDuration, setSlotDuration] = useState("60");
   const [capacity, setCapacity] = useState("1");
@@ -226,6 +231,21 @@ export default function AvailabilityDetailScreen() {
     setExceptions(updated);
   };
 
+  const openCalendar = (index: number, field: "startDate" | "endDate") => {
+    setEditingExceptionIndex(index);
+    setEditingDateField(field);
+    setCalendarVisible(true);
+  };
+
+  const handleDateSelect = (day: any) => {
+    if (editingExceptionIndex !== null && editingDateField) {
+      updateException(editingExceptionIndex, editingDateField, day.dateString);
+    }
+    setCalendarVisible(false);
+    setEditingExceptionIndex(null);
+    setEditingDateField(null);
+  };
+
   if (loading && isEditMode) {
     return (
       <View style={ui.loadingContainer}>
@@ -365,25 +385,30 @@ export default function AvailabilityDetailScreen() {
             <View key={index} style={styles.exceptionCard}>
               <View style={styles.exceptionRow}>
                 <View style={styles.exceptionField}>
-                  <FormInput
-                    label="Start Date"
-                    value={exception.startDate}
-                    onChangeText={(val) =>
-                      updateException(index, "startDate", val)
-                    }
-                    placeholder="YYYY-MM-DD"
-                    error={errors[`exception${index}`]}
-                  />
+                  <Text style={[typography.label, styles.labelSpacing]}>
+                    Start Date
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={() => openCalendar(index, "startDate")}
+                  >
+                    <Text style={typography.body}>
+                      {exception.startDate || "Select date"}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
                 <View style={styles.exceptionField}>
-                  <FormInput
-                    label="End Date"
-                    value={exception.endDate}
-                    onChangeText={(val) =>
-                      updateException(index, "endDate", val)
-                    }
-                    placeholder="YYYY-MM-DD"
-                  />
+                  <Text style={[typography.label, styles.labelSpacing]}>
+                    End Date
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={() => openCalendar(index, "endDate")}
+                  >
+                    <Text style={typography.body}>
+                      {exception.endDate || "Select date"}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
               <FormInput
@@ -406,6 +431,47 @@ export default function AvailabilityDetailScreen() {
           ))}
         </View>
       </ScrollView>
+
+      <Modal
+        visible={calendarVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCalendarVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setCalendarVisible(false)}
+        >
+          <View style={styles.calendarContainer}>
+            <Calendar
+              onDayPress={handleDateSelect}
+              markedDates={
+                editingExceptionIndex !== null && editingDateField
+                  ? {
+                      [exceptions[editingExceptionIndex]?.[editingDateField] || ""]: {
+                        selected: true,
+                        selectedColor: theme.colors.accent,
+                      },
+                    }
+                  : {}
+              }
+              theme={{
+                backgroundColor: theme.colors.card,
+                calendarBackground: theme.colors.card,
+                textSectionTitleColor: theme.colors.muted,
+                selectedDayBackgroundColor: theme.colors.accent,
+                selectedDayTextColor: theme.colors.bg,
+                todayTextColor: theme.colors.accent,
+                dayTextColor: theme.colors.text,
+                textDisabledColor: theme.colors.muted,
+                monthTextColor: theme.colors.text,
+                arrowColor: theme.colors.accent,
+              }}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -493,5 +559,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     borderRadius: 18,
     alignSelf: "flex-start",
+  },
+
+  dateButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.divider,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  calendarContainer: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    margin: theme.spacing.lg,
+    width: "90%",
   },
 });
