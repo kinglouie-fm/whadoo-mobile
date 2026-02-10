@@ -1,3 +1,5 @@
+import { IconButton } from "@/src/components/Button";
+import { EmptyState } from "@/src/components/EmptyState";
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
@@ -8,6 +10,8 @@ import {
   unpublishActivity,
 } from "@/src/store/slices/activity-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -36,12 +40,6 @@ import Toast from "react-native-toast-message";
 
 type FilterStatus = "all" | "draft" | "published" | "inactive";
 const FILTERS: FilterStatus[] = ["all", "draft", "published", "inactive"];
-
-const stylesVars = {
-  cardBg: "rgba(255,255,255,0.08)", //  same as saved.tsx
-  text: "#FFFFFF",
-  subText: "rgba(255,255,255,0.78)",
-};
 
 export default function ActivitiesScreen() {
   const router = useRouter();
@@ -459,24 +457,16 @@ export default function ActivitiesScreen() {
       headerRight: () => (
         <View style={styles.headerRight}>
           {!selectMode && (
-            <Pressable
-              style={styles.headerIconBtn}
+            <IconButton
+              icon="add"
               onPress={() => router.push("/(business)/activities/detail")}
-            >
-              <MaterialIcons name="add" size={22} color={theme.colors.text} />
-            </Pressable>
+            />
           )}
 
-          <Pressable
-            style={styles.headerIconBtn}
+          <IconButton
+            icon="more-horiz"
             onPress={selectMode ? exitSelectMode : openHeaderMenu}
-          >
-            <MaterialIcons
-              name="more-horiz"
-              size={22}
-              color={theme.colors.text}
-            />
-          </Pressable>
+          />
         </View>
       ),
       headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
@@ -554,7 +544,7 @@ export default function ActivitiesScreen() {
               <MaterialIcons
                 name="location-on"
                 size={16}
-                color={stylesVars.subText}
+                color={theme.colors.text}
               />
               <Text style={styles.subText} numberOfLines={1}>
                 {locationText}
@@ -562,7 +552,7 @@ export default function ActivitiesScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <MaterialIcons name="info" size={16} color={stylesVars.subText} />
+              <MaterialIcons name="info" size={16} color={theme.colors.text} />
               <Text
                 style={[styles.subText, { color: badge.color }]}
                 numberOfLines={1}
@@ -584,14 +574,14 @@ export default function ActivitiesScreen() {
                 selectMode ? styles.disabled : null,
               ]}
             >
-              <MaterialIcons name="sync" size={18} color={stylesVars.subText} />
+              <MaterialIcons name="sync" size={18} color={theme.colors.text} />
             </Pressable>
 
             <View style={styles.chevronWrap}>
               <MaterialIcons
                 name="chevron-right"
                 size={18}
-                color={stylesVars.subText}
+                color={theme.colors.text}
               />
             </View>
           </View>
@@ -603,12 +593,11 @@ export default function ActivitiesScreen() {
   const listEmpty = useMemo(() => {
     if (loading) return null;
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No activities.</Text>
-        <Text style={styles.emptySubtext}>
-          Tap + to create your first activity.
-        </Text>
-      </View>
+      <EmptyState
+        icon="grid-view"
+        title="No activities"
+        subtitle="Tap + to create your first activity"
+      />
     );
   }, [loading]);
 
@@ -616,7 +605,7 @@ export default function ActivitiesScreen() {
     return (
       <View style={styles.screen}>
         <ActivityIndicator size="large" color={theme.colors.accent} />
-        <Text style={styles.emptySubtext}>Loading business information…</Text>
+        <Text style={typography.body}>Loading business information…</Text>
       </View>
     );
   }
@@ -780,7 +769,7 @@ export default function ActivitiesScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: theme.colors.bg },
+  screen: ui.container,
 
   errorBanner: {
     backgroundColor: "rgba(255,77,77,0.15)",
@@ -790,24 +779,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  errorText: { color: theme.colors.danger, flex: 1, marginRight: 12 },
-  retryText: { color: theme.colors.accent, fontWeight: "700" },
+  errorText: {
+    ...typography.body,
+    color: theme.colors.danger,
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
+  retryText: {
+    ...typography.body,
+    color: theme.colors.accent,
+    fontWeight: "700",
+  },
 
   listContent: {
     padding: 16,
     paddingBottom: 10,
   },
 
-  //  NEW card style (match saved.tsx)
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: stylesVars.cardBg,
-    borderRadius: 18,
-    padding: 12,
-    marginBottom: 14,
-    gap: 12,
-
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    gap: theme.spacing.md,
     shadowColor: "#000",
     shadowOpacity: 0.22,
     shadowRadius: 12,
@@ -833,23 +829,36 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: 64,
     height: 64,
-    borderRadius: 14,
+    borderRadius: theme.radius.md,
     backgroundColor: "rgba(255,255,255,0.25)",
   },
-  placeholderThumbnail: { alignItems: "center", justifyContent: "center" },
-  placeholderText: { fontSize: 28 },
+  placeholderThumbnail: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  placeholderText: {
+    fontSize: 28,
+  },
 
-  cardContent: { flex: 1, minHeight: 64, justifyContent: "center" },
-  title: { color: stylesVars.text, fontSize: 16, fontWeight: "600" },
+  cardContent: {
+    flex: 1,
+    minHeight: 64,
+    justifyContent: "center",
+  },
+  title: typography.body,
 
-  infoRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
+  infoRow: {
+    ...ui.row,
+    gap: 6,
+    marginTop: 6,
+  },
   subText: {
-    color: stylesVars.subText,
-    fontSize: 12,
+    ...typography.captionSmall,
+    color: "rgba(255,255,255,0.78)",
     flex: 1,
   },
 
-  trailing: { flexDirection: "row", alignItems: "center" },
+  trailing: ui.row,
   trailingIconBtn: {
     width: 34,
     height: 34,
@@ -857,29 +866,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  chevronWrap: { paddingLeft: 2 },
+  chevronWrap: {
+    paddingLeft: 2,
+  },
 
-  pressed: { opacity: 0.65 },
-  disabled: { opacity: 0.4 },
+  pressed: {
+    opacity: 0.65,
+  },
+  disabled: {
+    opacity: 0.4,
+  },
 
   rightActionsWrap: {
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: theme.spacing.md,
   },
   deleteAction: {
     width: 64,
     height: "100%",
     backgroundColor: theme.colors.danger,
-    borderRadius: 18,
+    borderRadius: theme.radius.lg,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 12,
+    marginLeft: theme.spacing.md,
   },
 
-  emptyContainer: { alignItems: "center", paddingVertical: 48 },
-  emptyText: { color: theme.colors.text, fontSize: 18, fontWeight: "800" },
-  emptySubtext: { color: theme.colors.muted, marginTop: 8 },
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: 48,
+  },
 
   bottomBar: {
     position: "absolute",
@@ -913,14 +929,6 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
     marginRight: theme.spacing.md,
   },
-  headerIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surface,
-  },
 
   modalOverlay: {
     flex: 1,
@@ -936,28 +944,28 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.divider,
   },
   menuTitle: {
-    color: theme.colors.text,
-    fontSize: 16,
+    ...typography.body,
     fontWeight: "800",
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   menuSectionTitle: {
-    color: theme.colors.muted,
-    fontSize: 12,
-    fontWeight: "800",
-    marginBottom: 8,
+    ...typography.label,
+    marginBottom: theme.spacing.sm,
   },
   menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    ...ui.row,
     gap: 10,
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.md,
   },
-  menuItemActive: { opacity: 0.9 },
-  menuItemText: { color: theme.colors.text, fontSize: 14, fontWeight: "700" },
+  menuItemActive: {
+    opacity: 0.9,
+  },
+  menuItemText: {
+    ...typography.caption,
+    fontWeight: "700",
+  },
   menuDivider: {
-    height: 1,
-    backgroundColor: theme.colors.divider,
+    ...ui.divider,
     marginVertical: 10,
   },
 });

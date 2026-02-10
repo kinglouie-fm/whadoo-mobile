@@ -1,3 +1,7 @@
+import { Avatar } from "@/src/components/Avatar";
+import { IconButton } from "@/src/components/Button";
+import { EmptyState } from "@/src/components/EmptyState";
+import { StatusBadge } from "@/src/components/StatusBadge";
 import { useAuth } from "@/src/providers/auth-context";
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -6,6 +10,8 @@ import {
   fetchBusinessStats,
 } from "@/src/store/slices/business-bookings-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -48,11 +54,11 @@ export default function BusinessHomeScreen() {
     }
   };
 
-  const initials = useMemo(() => {
-    if (!appUser) return "B";
-    const first = appUser.firstName?.charAt(0) || "";
-    const last = appUser.lastName?.charAt(0) || "";
-    return (first + last).toUpperCase() || "B";
+  const avatarName = useMemo(() => {
+    if (!appUser) return "Business";
+    const first = appUser.firstName || "";
+    const last = appUser.lastName || "";
+    return `${first} ${last}`.trim() || "Business";
   }, [appUser]);
 
   const location = appUser?.city || "Your location";
@@ -63,9 +69,7 @@ export default function BusinessHomeScreen() {
       headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       headerLeft: () => (
         <View style={styles.headerLeft}>
-          <View style={styles.profileCircle}>
-            <Text style={styles.profileInitials}>{initials}</Text>
-          </View>
+          <Avatar name={avatarName} photoUrl={appUser?.photoUrl} size={40} />
         </View>
       ),
       headerTitle: () => (
@@ -83,26 +87,21 @@ export default function BusinessHomeScreen() {
       ),
       headerRight: () => (
         <View style={styles.headerRight}>
-          <Pressable
-            style={styles.headerIconBtn}
+          <IconButton
+            icon="settings"
             onPress={() => router.push("/(business)/settings")}
-          >
-            <MaterialIcons
-              name="settings"
-              size={22}
-              color={theme.colors.text}
-            />
-          </Pressable>
+            size={22}
+          />
         </View>
       ),
     });
-  }, [navigation, router, initials, location]);
+  }, [navigation, router, avatarName, location, appUser?.photoUrl]);
 
   const isLoading = businessLoading || loading;
   const upcomingBookings = bookings.slice(0, 5); // Show first 5
 
   return (
-    <View style={styles.screen}>
+    <View style={ui.container}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -188,29 +187,13 @@ export default function BusinessHomeScreen() {
             ))
           ) : (
             <View style={styles.listCard}>
-              <Text style={styles.listEmptyTitle}>No bookings yet</Text>
-              <Text style={styles.listEmptySub}>
-                When customers book your activities, they will show up here.
-              </Text>
+              <EmptyState
+                icon="calendar-month"
+                title="No bookings yet"
+                subtitle="When customers book your activities, they will show up here."
+              />
             </View>
           )}
-        </View>
-
-        {/* Tips / onboarding */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Next steps</Text>
-          <View style={styles.tipCard}>
-            <Text style={styles.tipTitle}>Improve your conversion</Text>
-            <Text style={styles.tipText}>
-              Add packages (e.g. Standard / Premium) and a strong thumbnail.
-            </Text>
-            <Pressable
-              style={styles.tipBtn}
-              onPress={() => router.push("/(business)/(tabs)/activities")}
-            >
-              <Text style={styles.tipBtnText}>Add packages</Text>
-            </Pressable>
-          </View>
         </View>
       </ScrollView>
     </View>
@@ -235,7 +218,7 @@ function KpiCard({
         <ActivityIndicator
           size="small"
           color={theme.colors.accent}
-          style={{ marginVertical: 6 }}
+          style={{ marginVertical: theme.spacing.md / 2 }}
         />
       ) : (
         <Text style={styles.kpiValue}>{value}</Text>
@@ -257,12 +240,12 @@ function BookingPreviewCard({ booking }: { booking: any }) {
     hour12: false,
   });
 
-  const statusColor =
-    booking.status === "active"
-      ? theme.colors.accent
-      : booking.status === "cancelled"
-        ? theme.colors.muted
-        : theme.colors.text;
+  const status =
+    booking.status === "active" ||
+    booking.status === "cancelled" ||
+    booking.status === "completed"
+      ? (booking.status as "active" | "cancelled" | "completed")
+      : "active";
 
   return (
     <View style={styles.bookingCard}>
@@ -270,13 +253,7 @@ function BookingPreviewCard({ booking }: { booking: any }) {
         <Text style={styles.bookingTitle} numberOfLines={1}>
           {booking.activitySnapshot?.title || "Activity"}
         </Text>
-        <View
-          style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}
-        >
-          <Text style={[styles.statusText, { color: statusColor }]}>
-            {booking.status}
-          </Text>
-        </View>
+        <StatusBadge status={status} />
       </View>
 
       <View style={styles.bookingDetails}>
@@ -338,121 +315,91 @@ function ActionTile({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: theme.colors.bg },
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-  },
   content: {
-    padding: 16,
-    paddingBottom: 28,
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xxl,
   },
 
   headerLeft: {
-    marginLeft: 16,
-  },
-  profileCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  profileInitials: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: theme.colors.text,
+    marginLeft: theme.spacing.lg,
   },
   headerCenter: {
     alignItems: "center",
   },
   locationLabel: {
-    fontSize: 12,
+    ...typography.captionSmall,
     color: theme.colors.muted,
-    marginBottom: 2,
+    marginBottom: theme.spacing.sm / 4,
   },
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: theme.spacing.sm / 2,
   },
   locationText: {
-    fontSize: 15,
-    fontWeight: "700",
+    ...theme.typography.bodyLarge,
     color: theme.colors.text,
   },
   headerRight: {
-    marginRight: 16,
-  },
-  headerIconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surface,
+    marginRight: theme.spacing.lg,
   },
 
   // KPI row
   kpiRow: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 6,
-    marginBottom: 18,
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.md / 2,
+    marginBottom: theme.spacing.lg,
   },
   kpiCard: {
     flex: 1,
     backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 12,
-    gap: 6,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    gap: theme.spacing.md / 2,
   },
   kpiValue: {
-    fontSize: 18,
-    fontWeight: "600",
+    ...typography.h4,
     color: theme.colors.text,
   },
   kpiLabel: {
-    fontSize: 12,
+    ...typography.captionSmall,
     fontWeight: "700",
     color: theme.colors.muted,
   },
 
   section: {
-    marginBottom: 18,
+    marginBottom: theme.spacing.lg,
   },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: theme.spacing.sm,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    ...typography.body,
     color: theme.colors.text,
-    marginBottom: 10,
+    marginBottom: theme.spacing.sm,
   },
   linkText: {
-    fontSize: 13,
-    fontWeight: "600",
+    ...typography.caption,
     color: theme.colors.accent,
   },
 
   tile: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderRadius: 16,
+    gap: theme.spacing.md,
+    padding: theme.spacing.md,
+    borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.surface,
-    marginBottom: 10,
+    marginBottom: theme.spacing.sm,
   },
   tileIcon: {
     width: 40,
     height: 40,
-    borderRadius: 14,
+    borderRadius: theme.radius.md,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: theme.colors.card,
@@ -461,110 +408,55 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tileTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    ...typography.body,
     color: theme.colors.text,
-    marginBottom: 2,
+    marginBottom: theme.spacing.sm / 4,
   },
   tileSubtitle: {
-    fontSize: 12,
+    ...typography.captionSmall,
     color: theme.colors.muted,
   },
 
   listCard: {
     backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 14,
-  },
-  listEmptyTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  listEmptySub: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    lineHeight: 17,
-  },
-
-  tipCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 14,
-  },
-  tipTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: theme.colors.text,
-    marginBottom: 6,
-  },
-  tipText: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    lineHeight: 17,
-    marginBottom: 12,
-  },
-  tipBtn: {
-    alignSelf: "flex-start",
-    backgroundColor: theme.colors.accent,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  tipBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: theme.colors.bg,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
   },
 
   bookingCard: {
     backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
   bookingHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: theme.spacing.sm,
   },
   bookingTitle: {
-    fontSize: 14,
-    fontWeight: "600",
+    ...typography.caption,
     color: theme.colors.text,
     flex: 1,
-    marginRight: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "capitalize",
+    marginRight: theme.spacing.sm,
   },
   bookingDetails: {
-    gap: 6,
-    marginBottom: 8,
+    gap: theme.spacing.md / 2,
+    marginBottom: theme.spacing.sm,
   },
   bookingDetailRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: theme.spacing.md / 2,
   },
   bookingDetailText: {
-    fontSize: 12,
+    ...typography.captionSmall,
     color: theme.colors.muted,
-    fontWeight: "600",
   },
   bookingPrice: {
-    fontSize: 14,
-    fontWeight: "600",
+    ...typography.caption,
     color: theme.colors.accent,
-    marginTop: 4,
+    marginTop: theme.spacing.sm / 2,
   },
 });

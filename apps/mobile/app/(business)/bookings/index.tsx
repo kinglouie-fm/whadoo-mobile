@@ -1,3 +1,5 @@
+import { EmptyState } from "@/src/components/EmptyState";
+import { StatusBadge } from "@/src/components/StatusBadge";
 import { TopBar } from "@/src/components/TopBar";
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -6,6 +8,8 @@ import {
   fetchBusinessBookings,
 } from "@/src/store/slices/business-bookings-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { MaterialIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
@@ -82,19 +86,24 @@ export default function BusinessBookingsScreen() {
     return (
       <TouchableOpacity style={styles.bookingCard}>
         <View style={styles.bookingHeader}>
-          <Text style={styles.bookingTitle} numberOfLines={1}>
+          <Text
+            style={[typography.body, styles.titleText]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {item.activitySnapshot?.title || "Activity"}
           </Text>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: statusColor + "20" },
-            ]}
-          >
-            <Text style={[styles.statusText, { color: statusColor }]}>
-              {item.status}
-            </Text>
-          </View>
+
+          {String(item.status).toLowerCase() !== "active" && (
+            <StatusBadge
+              status={
+                String(item.status).toLowerCase() as
+                  | "active"
+                  | "cancelled"
+                  | "completed"
+              }
+            />
+          )}
         </View>
 
         <View style={styles.bookingDetails}>
@@ -140,26 +149,25 @@ export default function BusinessBookingsScreen() {
     );
   };
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <MaterialIcons
-        name="calendar-month"
-        size={64}
-        color={theme.colors.muted}
+  const renderEmptyState = () => {
+    const subtitle =
+      selectedTab === "upcoming"
+        ? "You don't have any upcoming bookings yet."
+        : selectedTab === "past"
+          ? "No past bookings to show."
+          : "No bookings to display.";
+
+    return (
+      <EmptyState
+        icon="calendar-month"
+        title="No bookings found"
+        subtitle={subtitle}
       />
-      <Text style={styles.emptyTitle}>No bookings found</Text>
-      <Text style={styles.emptyText}>
-        {selectedTab === "upcoming"
-          ? "You don't have any upcoming bookings yet."
-          : selectedTab === "past"
-            ? "No past bookings to show."
-            : "No bookings to display."}
-      </Text>
-    </View>
-  );
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={ui.container} edges={["top"]}>
       <TopBar title="Bookings" />
 
       {/* Tab selector */}
@@ -236,21 +244,18 @@ export default function BusinessBookingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-  },
+  container: ui.container,
   tabContainer: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    gap: 8,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   tab: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     alignItems: "center",
     backgroundColor: theme.colors.surface,
   },
@@ -258,7 +263,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.accent,
   },
   tabText: {
-    fontSize: 14,
+    ...typography.caption,
     fontWeight: "800",
     color: theme.colors.muted,
   },
@@ -266,81 +271,42 @@ const styles = StyleSheet.create({
     color: theme.colors.bg,
   },
   listContent: {
-    padding: 16,
-    paddingTop: 8,
+    padding: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
   },
   bookingCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    ...ui.card,
+    marginBottom: theme.spacing.md,
+    overflow: "hidden",
   },
   bookingHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
+    ...ui.rowBetween,
+    marginBottom: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
-  bookingTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: theme.colors.text,
+  titleText: {
     flex: 1,
-    marginRight: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: "800",
-    textTransform: "capitalize",
+    flexShrink: 1,
+    minWidth: 0,
   },
   bookingDetails: {
-    gap: 8,
-    marginBottom: 12,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
   detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    ...ui.row,
+    gap: theme.spacing.sm,
   },
   detailText: {
-    fontSize: 13,
-    color: theme.colors.muted,
-    fontWeight: "600",
+    ...typography.caption,
   },
   bookingPrice: {
     fontSize: 16,
     fontWeight: "900",
     color: theme.colors.accent,
-    marginBottom: 8,
+    marginBottom: theme.spacing.sm,
   },
   bookingId: {
-    fontSize: 11,
-    color: theme.colors.muted,
-    fontWeight: "600",
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 80,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: theme.colors.text,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: theme.colors.muted,
-    textAlign: "center",
-    paddingHorizontal: 40,
-    lineHeight: 20,
+    ...typography.captionSmall,
   },
 });

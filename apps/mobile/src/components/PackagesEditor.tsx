@@ -1,5 +1,8 @@
+import { FormInput, TextArea } from "@/src/components/Input";
 import { theme } from "@/src/theme/theme";
-import React, { useMemo, useState } from "react";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
+import React, { useState } from "react";
 import {
   Alert,
   Modal,
@@ -7,11 +10,11 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PrimaryButton, SecondaryButton } from "./Button";
 
 interface Package {
   code: string;
@@ -41,14 +44,6 @@ interface PackagesEditorProps {
   onChange: (packages: Package[]) => void;
 }
 
-const stylesVars = {
-  cardBg: "rgba(255,255,255,0.08)",
-  inputBg: "rgba(255,255,255,0.06)",
-  border: "rgba(255,255,255,0.12)",
-  subText: "rgba(255,255,255,0.78)",
-  subText2: "rgba(255,255,255,0.62)",
-};
-
 export const PackagesEditor: React.FC<PackagesEditorProps> = ({
   packages,
   onChange,
@@ -57,16 +52,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
 
-  const inputProps = useMemo(
-    () => ({
-      underlineColorAndroid: "transparent" as const, //  remove Android blue underline
-      selectionColor: theme.colors.accent,
-      cursorColor: theme.colors.accent,
-      placeholderTextColor: stylesVars.subText2,
-      keyboardAppearance: "dark" as const,
-    }),
-    [],
-  );
+  const insets = useSafeAreaInsets();
 
   const handleAdd = () => {
     const newPackage: Package = {
@@ -173,14 +159,16 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Packages / Formulas</Text>
-        <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-          <Text style={styles.addButtonText}>+ Add Package</Text>
-        </TouchableOpacity>
+        <Text style={typography.label}>Packages / Formulas</Text>
+        <SecondaryButton
+          title="+ Add Package"
+          style={styles.headerButton}
+          onPress={handleAdd}
+        />
       </View>
 
       {packages.length === 0 ? (
-        <Text style={styles.emptyText}>
+        <Text style={[typography.bodyMuted, styles.emptyText]}>
           No packages defined. Add at least one package to publish.
         </Text>
       ) : (
@@ -189,18 +177,18 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
             <View key={index} style={styles.packageCard}>
               <View style={styles.packageHeader}>
                 <View style={styles.packageInfo}>
-                  <Text style={styles.packageTitle} numberOfLines={1}>
+                  <Text style={typography.body} numberOfLines={1}>
                     {pkg.title}
-                    {pkg.is_default ? (
+                    {pkg.is_default && (
                       <Text style={styles.defaultBadge}> (Default)</Text>
-                    ) : null}
+                    )}
                   </Text>
-                  <Text style={styles.packageCode}>Code: {pkg.code}</Text>
-                  {pkg.track_type ? (
-                    <Text style={styles.packageTrackType}>
+                  <Text style={typography.captionSmall}>Code: {pkg.code}</Text>
+                  {pkg.track_type && (
+                    <Text style={typography.caption}>
                       {pkg.track_type === "indoor" ? "🏢 Indoor" : "🌳 Outdoor"}
                     </Text>
-                  ) : null}
+                  )}
                 </View>
 
                 <View style={styles.packageActions}>
@@ -238,19 +226,23 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                     onPress={() => handleRemove(index)}
                     style={[styles.actionButton, styles.removeButton]}
                   >
-                    <Text style={styles.removeButtonText}>Remove</Text>
+                    <Text style={[styles.actionButtonText, { color: "#fff" }]}>
+                      Remove
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {pkg.description ? (
-                <Text style={styles.packageDescription}>{pkg.description}</Text>
-              ) : null}
-              {pkg.base_price != null ? (
-                <Text style={styles.packagePrice}>
+              {pkg.description && (
+                <Text style={[typography.body, styles.packageDescription]}>
+                  {pkg.description}
+                </Text>
+              )}
+              {pkg.base_price != null && (
+                <Text style={[typography.body, styles.packagePrice]}>
                   Price: {pkg.currency || "EUR"} {pkg.base_price}
                 </Text>
-              ) : null}
+              )}
             </View>
           ))}
         </ScrollView>
@@ -259,65 +251,67 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
       <Modal
         visible={modalVisible}
         animationType="slide"
+        presentationStyle="fullScreen"
+        statusBarTranslucent
         onRequestClose={() => setModalVisible(false)}
       >
-        <SafeAreaView
-          style={{ flex: 1, backgroundColor: theme.colors.bg }}
-          edges={["top"]}
-        >
-          <View style={styles.modalHeaderBar}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.modalHeaderTitle}>
+        <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+          <View
+            style={[
+              styles.modalHeaderBar,
+              {
+                paddingTop: insets.top + theme.spacing.md,
+                paddingBottom: theme.spacing.md,
+              },
+            ]}
+          >
+            <SecondaryButton
+              title="Cancel"
+              onPress={() => setModalVisible(false)}
+              style={styles.headerButton}
+            />
+            <Text style={[typography.h4, styles.headerTitle]}>
               {editingIndex !== null ? "Edit Package" : "Add Package"}
             </Text>
-
-            <TouchableOpacity onPress={handleSave}>
-              <Text style={styles.modalSaveText}>Save</Text>
-            </TouchableOpacity>
+            <PrimaryButton
+              title="Save"
+              onPress={handleSave}
+              style={styles.headerButton}
+            />
           </View>
 
           <ScrollView
             style={styles.modalScroll}
-            contentContainerStyle={styles.modalScrollContent}
+            contentContainerStyle={[
+              styles.modalScrollContent,
+              { paddingBottom: 40 + insets.bottom },
+            ]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>
-                Package Code <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.code || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({ ...prev!, code: text }))
-                }
-                placeholder="e.g., standard, mini-gp, grand-gp"
-              />
-            </View>
+            <FormInput
+              label="Package Code *"
+              value={editingPackage?.code || ""}
+              onChangeText={(text) =>
+                setEditingPackage((prev) => ({ ...prev!, code: text }))
+              }
+              placeholder="e.g., standard, mini-gp, grand-gp"
+            />
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>
-                Package Title <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.title || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({ ...prev!, title: text }))
-                }
-                placeholder="e.g., Standard Session, Mini GP"
-              />
-            </View>
+            <FormInput
+              label="Package Title *"
+              value={editingPackage?.title || ""}
+              onChangeText={(text) =>
+                setEditingPackage((prev) => ({ ...prev!, title: text }))
+              }
+              placeholder="e.g., Standard Session, Mini GP"
+            />
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>
-                Track Type <Text style={styles.required}>*</Text>
+            <View>
+              <Text
+                style={[typography.label, { marginBottom: theme.spacing.sm }]}
+              >
+                Track Type <Text style={{ color: theme.colors.danger }}>*</Text>
               </Text>
               <View style={styles.trackTypeRow}>
                 <TouchableOpacity
@@ -370,45 +364,33 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Description</Text>
-              <TextInput
-                {...inputProps}
-                style={[styles.input, styles.textArea]}
-                value={editingPackage?.description || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({ ...prev!, description: text }))
-                }
-                placeholder="Describe this package..."
-                multiline
-                numberOfLines={3}
-              />
-            </View>
+            <TextArea
+              label="Description"
+              value={editingPackage?.description || ""}
+              onChangeText={(text) =>
+                setEditingPackage((prev) => ({ ...prev!, description: text }))
+              }
+              placeholder="Describe this package..."
+              numberOfLines={3}
+            />
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Format Details (one per line)</Text>
-              <TextInput
-                {...inputProps}
-                style={[styles.input, styles.textArea]}
-                value={editingPackage?.format_lines || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    format_lines: text,
-                  }))
-                }
-                placeholder={"e.g., 8 min qualifying\n16 min race"}
-                multiline
-                numberOfLines={4}
-              />
-            </View>
+            <TextArea
+              label="Format Details (one per line)"
+              value={editingPackage?.format_lines || ""}
+              onChangeText={(text) =>
+                setEditingPackage((prev) => ({
+                  ...prev!,
+                  format_lines: text,
+                }))
+              }
+              placeholder={"e.g., 8 min qualifying\n16 min race"}
+              numberOfLines={4}
+            />
 
             <View style={styles.formRow}>
-              <View style={[styles.formGroup, styles.formGroupHalf]}>
-                <Text style={styles.label}>Base Price</Text>
-                <TextInput
-                  {...inputProps}
-                  style={styles.input}
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Base Price"
                   value={editingPackage?.base_price?.toString() || ""}
                   onChangeText={(text) =>
                     setEditingPackage((prev) => ({
@@ -421,11 +403,9 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                 />
               </View>
 
-              <View style={[styles.formGroup, styles.formGroupHalf]}>
-                <Text style={styles.label}>Currency</Text>
-                <TextInput
-                  {...inputProps}
-                  style={styles.input}
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Currency"
                   value={editingPackage?.currency || ""}
                   onChangeText={(text) =>
                     setEditingPackage((prev) => ({ ...prev!, currency: text }))
@@ -435,9 +415,12 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>
-                Pricing Model <Text style={styles.required}>*</Text>
+            <View>
+              <Text
+                style={[typography.label, { marginBottom: theme.spacing.sm }]}
+              >
+                Pricing Model{" "}
+                <Text style={{ color: theme.colors.danger }}>*</Text>
               </Text>
               <View style={styles.trackTypeRow}>
                 <TouchableOpacity
@@ -495,29 +478,23 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               </Text>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Minimum Participants</Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.min_participants?.toString() || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    min_participants: text ? parseInt(text) : undefined,
-                  }))
-                }
-                placeholder="e.g., 5"
-                keyboardType="number-pad"
-              />
-            </View>
+            <FormInput
+              label="Minimum Participants"
+              value={editingPackage?.min_participants?.toString() || ""}
+              onChangeText={(text) =>
+                setEditingPackage((prev) => ({
+                  ...prev!,
+                  min_participants: text ? parseInt(text) : undefined,
+                }))
+              }
+              placeholder="e.g., 5"
+              keyboardType="number-pad"
+            />
 
             <View style={styles.formRow}>
-              <View style={[styles.formGroup, styles.formGroupHalf]}>
-                <Text style={styles.label}>Minimum Age</Text>
-                <TextInput
-                  {...inputProps}
-                  style={styles.input}
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Minimum Age"
                   value={editingPackage?.age_min?.toString() || ""}
                   onChangeText={(text) =>
                     setEditingPackage((prev) => ({
@@ -530,11 +507,9 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                 />
               </View>
 
-              <View style={[styles.formGroup, styles.formGroupHalf]}>
-                <Text style={styles.label}>Maximum Age</Text>
-                <TextInput
-                  {...inputProps}
-                  style={styles.input}
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Maximum Age"
                   value={editingPackage?.age_max?.toString() || ""}
                   onChangeText={(text) =>
                     setEditingPackage((prev) => ({
@@ -548,25 +523,21 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Schedule Note</Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.schedule_note || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    schedule_note: text,
-                  }))
-                }
-                placeholder="e.g., First Wednesday of month at 17:15"
-              />
-            </View>
+            <FormInput
+              label="Schedule Note"
+              value={editingPackage?.schedule_note || ""}
+              onChangeText={(text) =>
+                setEditingPackage((prev) => ({
+                  ...prev!,
+                  schedule_note: text,
+                }))
+              }
+              placeholder="e.g., First Wednesday of month at 17:15"
+            />
 
-            <View style={styles.formGroup}>
+            <View>
               <View style={styles.switchRow}>
-                <Text style={styles.label}>Default Package</Text>
+                <Text style={typography.label}>Default Package</Text>
                 <Switch
                   value={editingPackage?.is_default || false}
                   onValueChange={(value) =>
@@ -584,9 +555,9 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               </View>
             </View>
 
-            <View style={styles.formGroup}>
+            <View>
               <View style={styles.switchRow}>
-                <Text style={styles.label}>
+                <Text style={typography.label}>
                   Request Only (not bookable online)
                 </Text>
                 <Switch
@@ -606,98 +577,71 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               </View>
             </View>
           </ScrollView>
-        </SafeAreaView>
+        </View>
       </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { marginVertical: theme.spacing.lg },
+  container: {
+    marginVertical: theme.spacing.lg,
+  },
 
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    ...ui.rowBetween,
+    marginBottom: theme.spacing.md,
   },
-  headerText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: stylesVars.subText2,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+  headerButton: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    minWidth: 70,
   },
-
-  addButton: {
-    height: 34,
-    paddingHorizontal: 12,
-    borderRadius: 17,
-    backgroundColor: stylesVars.cardBg,
-    borderWidth: 1,
-    borderColor: stylesVars.border,
-    alignItems: "center",
-    justifyContent: "center",
+  headerTitle: {
+    flex: 1,
+    textAlign: "center" as const,
   },
-  addButtonText: { color: theme.colors.text, fontWeight: "900", fontSize: 13 },
 
   emptyText: {
-    color: stylesVars.subText2,
     textAlign: "center",
-    paddingVertical: 18,
-    fontWeight: "700",
+    paddingVertical: theme.spacing.lg,
   },
-  packagesList: { maxHeight: 420 },
+  packagesList: {
+    maxHeight: 420,
+  },
 
   packageCard: {
-    backgroundColor: stylesVars.cardBg,
-    padding: theme.spacing.md,
-    borderRadius: 18,
+    ...ui.card,
     marginBottom: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: stylesVars.border,
   },
 
   packageHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    ...ui.rowBetween,
     alignItems: "flex-start",
-    gap: 12,
+    gap: theme.spacing.md,
   },
-  packageInfo: { flex: 1, minWidth: 0 },
-
-  packageTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: theme.colors.text,
-    marginBottom: 4,
+  packageInfo: {
+    flex: 1,
+    minWidth: 0,
   },
-  defaultBadge: { color: theme.colors.accent, fontSize: 12, fontWeight: "900" },
 
-  packageCode: { fontSize: 12, color: stylesVars.subText2, fontWeight: "700" },
-  packageTrackType: {
+  defaultBadge: {
+    color: theme.colors.accent,
     fontSize: 12,
-    color: stylesVars.subText,
-    marginTop: 4,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 
   packageDescription: {
-    fontSize: 13,
-    color: theme.colors.text,
-    marginTop: 10,
-    fontWeight: "600",
+    marginTop: theme.spacing.sm,
   },
   packagePrice: {
-    fontSize: 13,
-    color: theme.colors.text,
-    marginTop: 8,
+    marginTop: theme.spacing.sm,
     fontWeight: "900",
   },
 
   packageActions: {
     flexDirection: "row",
-    gap: 6,
+    gap: theme.spacing.sm,
     flexWrap: "wrap",
     justifyContent: "flex-end",
     maxWidth: 180,
@@ -705,122 +649,82 @@ const styles = StyleSheet.create({
 
   actionButton: {
     height: 30,
-    paddingHorizontal: 10,
+    paddingHorizontal: theme.spacing.sm,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: stylesVars.border,
+    borderColor: theme.colors.divider,
     alignItems: "center",
     justifyContent: "center",
   },
-  actionButtonDisabled: { opacity: 0.4 },
+  actionButtonDisabled: {
+    opacity: 0.4,
+  },
   actionButtonText: {
-    color: theme.colors.text,
-    fontSize: 12,
+    ...typography.captionSmall,
     fontWeight: "900",
   },
 
   removeButton: {
     backgroundColor: theme.colors.danger,
-    borderColor: theme.colors.danger,
   },
-  removeButtonText: { color: "#fff", fontSize: 12, fontWeight: "900" },
 
   modalHeaderBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    ...ui.rowBetween,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     backgroundColor: theme.colors.bg,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.divider,
   },
-  modalHeaderTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: theme.colors.text,
-  },
-  modalCancelText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: theme.colors.muted,
-  },
-  modalSaveText: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: theme.colors.accent,
-  },
-  modalScroll: { flex: 1, backgroundColor: theme.colors.bg },
-  modalScrollContent: { padding: theme.spacing.lg, paddingBottom: 40 },
-
-  modalContainer: {
+  modalScroll: {
     flex: 1,
     backgroundColor: theme.colors.bg,
+  },
+  modalScrollContent: {
     padding: theme.spacing.lg,
+    paddingBottom: 40,
   },
-  modalHeader: {
+
+  formRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-    paddingTop: theme.spacing.lg,
+    gap: theme.spacing.sm,
   },
-  modalTitle: { fontSize: 16, fontWeight: "900", color: theme.colors.text },
-  closeButton: { fontSize: 22, color: stylesVars.subText2, fontWeight: "900" },
-
-  formGroup: { marginBottom: 14 },
-  formRow: { flexDirection: "row", gap: 10 },
-  formGroupHalf: { flex: 1 },
-
-  label: {
-    fontSize: 12,
-    fontWeight: "900",
-    marginBottom: 8,
-    color: stylesVars.subText2,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
+  formGroupHalf: {
+    flex: 1,
   },
-  required: { color: theme.colors.danger, fontWeight: "900" },
-
-  input: {
-    borderWidth: 1,
-    borderColor: stylesVars.border,
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 15,
-    backgroundColor: stylesVars.inputBg,
-    color: theme.colors.text,
-  },
-  textArea: { minHeight: 90, textAlignVertical: "top" },
 
   switchRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
+    ...ui.rowBetween,
+    gap: theme.spacing.md,
   },
 
-  trackTypeRow: { flexDirection: "row", gap: 10 },
+  trackTypeRow: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+  },
   trackTypeOption: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.md,
     borderWidth: 1,
-    borderColor: stylesVars.border,
+    borderColor: theme.colors.divider,
     borderRadius: 999,
     alignItems: "center",
-    backgroundColor: stylesVars.inputBg,
+    backgroundColor: theme.colors.surface,
   },
   trackTypeOptionSelected: {
     backgroundColor: theme.colors.accent,
     borderColor: theme.colors.accent,
   },
-  trackTypeText: { fontSize: 13, fontWeight: "900", color: theme.colors.text },
-  trackTypeTextSelected: { color: "#0B0B0B" }, //  readable on accent
+  trackTypeText: {
+    ...typography.caption,
+    fontWeight: "900",
+  },
+  trackTypeTextSelected: {
+    color: "#0B0B0B",
+  },
   fieldHint: {
-    fontSize: 12,
-    color: stylesVars.subText2,
-    marginTop: 8,
+    ...typography.captionSmall,
+    marginTop: theme.spacing.sm,
   },
 });

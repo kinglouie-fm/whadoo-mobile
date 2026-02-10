@@ -1,3 +1,5 @@
+import { IconButton } from "@/src/components/Button";
+import { EmptyState } from "@/src/components/EmptyState";
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
@@ -6,6 +8,8 @@ import {
   fetchTemplates,
 } from "@/src/store/slices/availability-template-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -59,13 +63,6 @@ function formatDays(days: number[]) {
     .map((d) => DAY_NAMES[d] || `${d}`)
     .join(", ");
 }
-
-const stylesVars = {
-  cardBg: "rgba(255,255,255,0.08)", //  same vibe as saved.tsx
-  text: "#FFFFFF",
-  subText: "rgba(255,255,255,0.78)",
-  iconBg: "rgba(255,255,255,0.25)",
-};
 
 export default function AvailabilityScreen() {
   const router = useRouter();
@@ -199,24 +196,16 @@ export default function AvailabilityScreen() {
       headerRight: () => (
         <View style={styles.headerRight}>
           {!selectMode && (
-            <Pressable
-              style={styles.headerIconBtn}
+            <IconButton
+              icon="add"
               onPress={() => router.push("/(business)/availability/detail")}
-            >
-              <MaterialIcons name="add" size={22} color={theme.colors.text} />
-            </Pressable>
+            />
           )}
 
-          <Pressable
-            style={styles.headerIconBtn}
+          <IconButton
+            icon="more-horiz"
             onPress={selectMode ? exitSelectMode : openHeaderMenu}
-          >
-            <MaterialIcons
-              name="more-horiz"
-              size={22}
-              color={theme.colors.text}
-            />
-          </Pressable>
+          />
         </View>
       ),
     });
@@ -300,7 +289,7 @@ export default function AvailabilityScreen() {
             <MaterialIcons
               name="calendar-month"
               size={22}
-              color={stylesVars.text}
+              color={theme.colors.text}
             />
           </View>
 
@@ -313,7 +302,7 @@ export default function AvailabilityScreen() {
               <MaterialIcons
                 name="repeat"
                 size={16}
-                color={stylesVars.subText}
+                color={theme.colors.text}
               />
               <Text style={styles.subText} numberOfLines={1}>
                 {daysText || "—"}
@@ -324,7 +313,7 @@ export default function AvailabilityScreen() {
               <MaterialIcons
                 name="access-time"
                 size={16}
-                color={stylesVars.subText}
+                color={theme.colors.text}
               />
               <Text style={styles.subText} numberOfLines={1}>
                 {timeText}
@@ -332,11 +321,7 @@ export default function AvailabilityScreen() {
             </View>
 
             <View style={[styles.infoRow, { marginTop: 6 }]}>
-              <MaterialIcons
-                name="timer"
-                size={16}
-                color={stylesVars.subText}
-              />
+              <MaterialIcons name="timer" size={16} color={theme.colors.text} />
               <Text style={styles.subText} numberOfLines={1}>
                 {metaText}
               </Text>
@@ -369,7 +354,7 @@ export default function AvailabilityScreen() {
                 <MaterialIcons
                   name="sync"
                   size={18}
-                  color={stylesVars.subText}
+                  color={theme.colors.text}
                 />
               </Pressable>
             ) : (
@@ -380,7 +365,7 @@ export default function AvailabilityScreen() {
               <MaterialIcons
                 name="chevron-right"
                 size={18}
-                color={stylesVars.subText}
+                color={theme.colors.text}
               />
             </View>
           </View>
@@ -427,12 +412,11 @@ export default function AvailabilityScreen() {
         }
         onScrollBeginDrag={closeOpenSwipeRow}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No availability templates.</Text>
-            <Text style={styles.emptySub}>
-              Create your first one to get started.
-            </Text>
-          </View>
+          <EmptyState
+            icon="timeline"
+            title="No availability templates"
+            subtitle="Create your first one to get started"
+          />
         }
       />
 
@@ -522,20 +506,12 @@ export default function AvailabilityScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.bg },
+  container: ui.container,
 
   headerRight: {
     flexDirection: "row",
     gap: theme.spacing.sm,
     marginRight: theme.spacing.md,
-  },
-  headerIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surface,
   },
 
   errorBanner: {
@@ -546,21 +522,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  errorText: { color: theme.colors.danger, flex: 1, marginRight: 12 },
-  retryText: { color: theme.colors.accent, fontWeight: "700" },
+  errorText: {
+    ...typography.body,
+    color: theme.colors.danger,
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
+  retryText: {
+    ...typography.body,
+    color: theme.colors.accent,
+    fontWeight: "700",
+  },
 
-  listContent: { padding: 16, paddingBottom: 10 },
+  listContent: {
+    padding: 16,
+    paddingBottom: 10,
+  },
 
-  //  card matches saved.tsx style, but with icon instead of image
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: stylesVars.cardBg,
-    borderRadius: 18,
-    padding: 12,
-    marginBottom: 14,
-    gap: 12,
-
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    gap: theme.spacing.md,
     shadowColor: "#000",
     shadowOpacity: 0.22,
     shadowRadius: 12,
@@ -590,25 +576,36 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 64,
     height: 64,
-    borderRadius: 14,
-    backgroundColor: stylesVars.iconBg,
+    borderRadius: theme.radius.md,
+    backgroundColor: "rgba(255,255,255,0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
 
-  cardContent: { flex: 1, minHeight: 64, justifyContent: "center" },
-  title: { fontSize: 16, fontWeight: "600", color: stylesVars.text },
+  cardContent: {
+    flex: 1,
+    minHeight: 64,
+    justifyContent: "center",
+  },
+  title: typography.body,
 
-  infoRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
+  infoRow: {
+    ...ui.row,
+    gap: 6,
+    marginTop: 6,
+  },
   subText: {
-    color: stylesVars.subText,
-    fontSize: 12,
+    ...typography.captionSmall,
+    color: "rgba(255,255,255,0.78)",
     flex: 1,
   },
 
-  statusText: { marginTop: 6, fontSize: 12 },
+  statusText: {
+    ...typography.captionSmall,
+    marginTop: 6,
+  },
 
-  trailing: { flexDirection: "row", alignItems: "center" },
+  trailing: ui.row,
   trailingIconBtn: {
     width: 34,
     height: 34,
@@ -616,24 +613,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  chevronWrap: { paddingLeft: 2 },
+  chevronWrap: {
+    paddingLeft: 2,
+  },
 
-  pressed: { opacity: 0.65 },
-  disabled: { opacity: 0.4 },
+  pressed: {
+    opacity: 0.65,
+  },
+  disabled: {
+    opacity: 0.4,
+  },
 
   rightActionsWrap: {
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: theme.spacing.md,
   },
   deactivateAction: {
     width: 64,
     height: "100%",
     backgroundColor: theme.colors.danger,
-    borderRadius: 18,
+    borderRadius: theme.radius.lg,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 12,
+    marginLeft: theme.spacing.md,
   },
 
   bottomBar: {
@@ -657,17 +660,11 @@ const styles = StyleSheet.create({
   actionCancel: { backgroundColor: "#2A2A2A" },
   actionDisabled: { opacity: 0.35 },
 
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.bg,
+  center: ui.loadingContainer,
+  centerText: {
+    ...typography.bodyMuted,
+    marginTop: 10,
   },
-  centerText: { color: theme.colors.muted, marginTop: 10 },
-
-  empty: { alignItems: "center", paddingTop: 60 },
-  emptyTitle: { color: theme.colors.text, fontSize: 16, fontWeight: "700" },
-  emptySub: { color: theme.colors.muted, marginTop: 6 },
 
   modalOverlay: {
     flex: 1,
@@ -683,28 +680,28 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.divider,
   },
   menuTitle: {
-    color: theme.colors.text,
-    fontSize: 16,
+    ...typography.body,
     fontWeight: "800",
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   menuSectionTitle: {
-    color: theme.colors.muted,
-    fontSize: 12,
-    fontWeight: "800",
-    marginBottom: 8,
+    ...typography.label,
+    marginBottom: theme.spacing.sm,
   },
   menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    ...ui.row,
     gap: 10,
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.md,
   },
-  menuItemActive: { opacity: 0.9 },
-  menuItemText: { color: theme.colors.text, fontSize: 14, fontWeight: "700" },
+  menuItemActive: {
+    opacity: 0.9,
+  },
+  menuItemText: {
+    ...typography.caption,
+    fontWeight: "700",
+  },
   menuDivider: {
-    height: 1,
-    backgroundColor: theme.colors.divider,
+    ...ui.divider,
     marginVertical: 10,
   },
 });

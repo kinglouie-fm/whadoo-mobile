@@ -1,6 +1,11 @@
+import { IconButton } from "@/src/components/Button";
+import { EmptyState } from "@/src/components/EmptyState";
+import { StatusBadge } from "@/src/components/StatusBadge";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { fetchBookings } from "@/src/store/slices/bookings-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -28,12 +33,6 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: "completed", label: "Completed" },
 ];
 
-const stylesVars = {
-  cardBg: "rgba(255,255,255,0.08)",
-  text: "#FFFFFF",
-  subText: "rgba(255,255,255,0.78)",
-};
-
 export default function MyBookingsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
@@ -56,16 +55,13 @@ export default function MyBookingsScreen() {
       headerShadowVisible: false,
       headerLeft: () => null,
       headerRight: () => (
-        <Pressable
-          style={styles.headerIconBtn}
-          onPress={() => setFilterVisible(true)}
-        >
-          <MaterialIcons
-            name="more-horiz"
+        <View style={styles.headerRight}>
+          <IconButton
+            icon="more-horiz"
             size={24}
-            color={theme.colors.text}
+            onPress={() => setFilterVisible(true)}
           />
-        </Pressable>
+        </View>
       ),
     });
   }, [navigation]);
@@ -115,8 +111,6 @@ export default function MyBookingsScreen() {
     const price = booking.priceSnapshot;
 
     const status = String(booking.status || "active").toLowerCase();
-    const statusStyle =
-      (styles as any)[`status_${status}`] ?? styles.status_active;
 
     const thumbUrl: string | null =
       activity?.thumbnailUrl ??
@@ -153,66 +147,78 @@ export default function MyBookingsScreen() {
         {/* content */}
         <View style={styles.cardContent}>
           <View style={styles.titleRow}>
-            <Text style={styles.title} numberOfLines={1}>
+            <Text
+              style={[typography.body, styles.titleText]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {activity?.title || "Untitled"}
             </Text>
 
-            {status !== "active" ? (
-              <Text style={styles.statusText}>{status.toUpperCase()}</Text>
-            ) : null}
+            {status !== "active" && (
+              <StatusBadge
+                status={status as "active" | "cancelled" | "completed"}
+              />
+            )}
           </View>
 
           <View style={styles.infoRow}>
-            <MaterialIcons name="event" size={16} color={stylesVars.subText} />
+            <MaterialIcons
+              name="event"
+              size={16}
+              color="rgba(255,255,255,0.78)"
+            />
             <Text style={styles.subText} numberOfLines={1}>
               {dateTimeText}
             </Text>
           </View>
 
-          <View style={[styles.infoRow, { marginTop: 6 }]}>
-            <MaterialIcons name="group" size={16} color={stylesVars.subText} />
+          <View style={styles.infoRow}>
+            <MaterialIcons
+              name="group"
+              size={16}
+              color="rgba(255,255,255,0.78)"
+            />
             <Text style={styles.subText} numberOfLines={1}>
               {participantsText}
             </Text>
           </View>
 
-          {priceText ? (
-            <View style={[styles.infoRow, { marginTop: 6 }]}>
+          {priceText && (
+            <View style={styles.infoRow}>
               <MaterialIcons
                 name="payments"
                 size={16}
-                color={stylesVars.subText}
+                color="rgba(255,255,255,0.78)"
               />
               <Text style={styles.subText} numberOfLines={1}>
                 Total: {priceText}
               </Text>
             </View>
-          ) : null}
+          )}
         </View>
 
-        {/* chevron */}
         <View style={styles.chevronWrap}>
           <MaterialIcons
             name="chevron-right"
             size={24}
-            color={stylesVars.subText}
+            color="rgba(255,255,255,0.78)"
           />
         </View>
       </TouchableOpacity>
     );
   };
 
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
-        {currentState.items.length > 0 && filteredItems.length === 0
-          ? "No bookings match your filter."
-          : activeTab === "upcoming"
-            ? "You have no upcoming bookings yet."
-            : "No past bookings yet."}
-      </Text>
-    </View>
-  );
+  const renderEmpty = () => {
+    const message =
+      currentState.items.length > 0 && filteredItems.length === 0
+        ? "No bookings match your filter."
+        : activeTab === "upcoming"
+          ? "You have no upcoming bookings yet."
+          : "No past bookings yet.";
+
+    return <EmptyState icon="calendar-month" title={message} />;
+  };
 
   const renderFooter = () => {
     if (!currentState.loading || currentState.items.length === 0) return null;
@@ -224,7 +230,7 @@ export default function MyBookingsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={ui.container}>
       {/* Tabs */}
       <View style={styles.tabsContainer}>
         <TouchableOpacity
@@ -320,49 +326,47 @@ export default function MyBookingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.bg },
-
-  headerIconBtn: {
+  headerRight: {
     marginRight: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surface,
   },
 
   tabsContainer: {
     flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    gap: theme.spacing.md,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.radius.md,
     backgroundColor: theme.colors.surface,
     alignItems: "center",
   },
-  tabActive: { backgroundColor: theme.colors.accent },
-  tabText: { fontSize: 16, fontWeight: "700", color: theme.colors.muted },
-  tabTextActive: { color: theme.colors.bg },
+  tabActive: {
+    backgroundColor: theme.colors.accent,
+  },
+  tabText: {
+    ...typography.body,
+    color: theme.colors.muted,
+  },
+  tabTextActive: {
+    color: theme.colors.bg,
+  },
 
   listContent: {
-    padding: 16,
+    padding: theme.spacing.lg,
     paddingBottom: 28,
   },
 
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: stylesVars.cardBg,
-    borderRadius: 18,
-    padding: 12,
-    marginBottom: 14,
-    gap: 12,
-
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    gap: theme.spacing.md,
     shadowColor: "#000",
     shadowOpacity: 0.22,
     shadowRadius: 12,
@@ -373,21 +377,43 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: 64,
     height: 64,
-    borderRadius: 14,
+    borderRadius: theme.radius.md,
     backgroundColor: "rgba(255,255,255,0.25)",
   },
-  placeholderThumbnail: { alignItems: "center", justifyContent: "center" },
-  placeholderText: { fontSize: 28 },
+  placeholderThumbnail: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  placeholderText: {
+    fontSize: 28,
+  },
 
-  cardContent: { flex: 1, minHeight: 64, justifyContent: "center" },
+  cardContent: {
+    flex: 1,
+    minHeight: 64,
+    justifyContent: "center",
+    minWidth: 0,
+  },
 
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  title: { flex: 1, fontSize: 16, fontWeight: "600", color: stylesVars.text },
+  titleRow: {
+    ...ui.row,
+    gap: 10,
+    justifyContent: "space-between",
+  },
+  titleText: {
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
+  },
 
-  infoRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
+  infoRow: {
+    ...ui.row,
+    gap: 6,
+    marginTop: 6,
+  },
   subText: {
-    color: stylesVars.subText,
-    fontSize: 12,
+    ...typography.captionSmall,
+    color: "rgba(255,255,255,0.78)",
     flex: 1,
   },
 
@@ -398,21 +424,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // status pill (keeps your status logic, but fits the new card)
-  //   statusPill: {
-  //     paddingHorizontal: 10,
-  //     paddingVertical: 6,
-  //     borderRadius: 999,
-  //   },
-  status_active: { backgroundColor: theme.colors.accent },
-  status_cancelled: { backgroundColor: "#EF4444" },
-  status_completed: { backgroundColor: "#10B981" },
-  statusText: { fontSize: 11, fontWeight: "900", color: theme.colors.accent },
-
-  emptyContainer: { padding: 40, alignItems: "center" },
-  emptyText: { fontSize: 16, color: theme.colors.muted, textAlign: "center" },
-
-  footerLoader: { paddingVertical: 20, alignItems: "center" },
+  footerLoader: {
+    paddingVertical: theme.spacing.lg,
+    alignItems: "center",
+  },
 
   modalOverlay: {
     flex: 1,
@@ -421,29 +436,28 @@ const styles = StyleSheet.create({
   },
   menuSheet: {
     backgroundColor: theme.colors.card,
-    padding: 16,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    padding: theme.spacing.lg,
+    borderTopLeftRadius: theme.radius.lg,
+    borderTopRightRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: theme.colors.divider,
   },
   menuTitle: {
-    color: theme.colors.text,
-    fontSize: 16,
+    ...typography.body,
     fontWeight: "800",
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   menuSectionTitle: {
-    color: theme.colors.muted,
-    fontSize: 12,
-    fontWeight: "800",
-    marginBottom: 8,
+    ...typography.label,
+    marginBottom: theme.spacing.sm,
   },
   menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    ...ui.row,
     gap: 10,
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.md,
   },
-  menuItemText: { color: theme.colors.text, fontSize: 14, fontWeight: "700" },
+  menuItemText: {
+    ...typography.caption,
+    fontWeight: "700",
+  },
 });

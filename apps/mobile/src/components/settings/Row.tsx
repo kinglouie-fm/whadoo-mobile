@@ -1,5 +1,8 @@
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 
 export function Row({
     title,
@@ -16,19 +19,25 @@ export function Row({
         <Pressable
             onPress={onPress}
             disabled={!onPress}
-            style={{
-                paddingVertical: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: "#333",
-                opacity: onPress ? 1 : 0.7,
-            }}
+            style={[styles.container, { opacity: onPress ? 1 : 0.7 }]}
         >
-            <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
-                <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{title}</Text>
-                {right ? <Text style={{ color: "#aaa" }}>{right}</Text> : null}
+            <View style={ui.rowBetween}>
+                <Text style={typography.body}>{title}</Text>
+                {right && <Text style={typography.bodyMuted}>{right}</Text>}
             </View>
 
-            {subtitle ? <Text style={{ color: "#777", marginTop: 6 }}>{subtitle}</Text> : null}
+            {subtitle && <Text style={[typography.captionMuted, styles.subtitle]}>{subtitle}</Text>}
         </Pressable>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        paddingVertical: theme.spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.divider,
+    },
+    subtitle: {
+        marginTop: 6,
+    },
+});

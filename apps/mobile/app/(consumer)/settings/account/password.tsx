@@ -1,5 +1,8 @@
 import { TopBar } from "@/src/components/TopBar";
+import { PrimaryButton } from "@/src/components/Button";
+import { FormInput } from "@/src/components/Input";
 import { theme } from "@/src/theme/theme";
+import { ui } from "@/src/theme/ui";
 import {
     EmailAuthProvider,
     getAuth,
@@ -8,7 +11,7 @@ import {
     updatePassword,
 } from "@react-native-firebase/auth";
 import React, { useMemo, useState } from "react";
-import { Alert, Button, Text, TextInput, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PasswordScreen() {
@@ -86,81 +89,41 @@ export default function PasswordScreen() {
   };
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: theme.colors.bg }}
-      edges={["top"]}
-    >
+    <SafeAreaView style={ui.container} edges={["top"]}>
       <TopBar title="Password" />
-      <View
-        style={{
-          flex: 1,
-          padding: 20,
-          backgroundColor: theme.colors.bg,
-          gap: 12,
-        }}
-      >
+      <View style={[ui.container, ui.contentPadding, { gap: 12 }]}>
         {!canChange ? (
-          <>
-            <Text style={{ color: theme.colors.muted }}>
-              This account uses Google Sign-In. Password is managed by Google.
-            </Text>
-          </>
+          <Text style={{ color: theme.colors.muted }}>
+            This account uses Google Sign-In. Password is managed by Google.
+          </Text>
         ) : (
           <>
-            <TextInput
+            <FormInput
+              label="Current password"
               value={currentPassword}
               onChangeText={setCurrentPassword}
               placeholder="Current password"
               secureTextEntry
-              style={{
-                borderWidth: 1,
-                borderColor: "#444",
-                borderRadius: 10,
-                padding: 12,
-                color: theme.colors.text,
-              }}
-              placeholderTextColor="#666"
             />
 
-            <TextInput
+            <FormInput
+              label="New password"
               value={newPassword}
               onChangeText={setNewPassword}
               placeholder="New password"
               secureTextEntry
-              style={{
-                borderWidth: 1,
-                borderColor: "#444",
-                borderRadius: 10,
-                padding: 12,
-                color: theme.colors.text,
-              }}
-              placeholderTextColor="#666"
             />
 
-            <TextInput
+            <FormInput
+              label="Confirm new password"
               value={confirm}
               onChangeText={setConfirm}
               placeholder="Confirm new password"
               secureTextEntry
-              style={{
-                borderWidth: 1,
-                borderColor: "#444",
-                borderRadius: 10,
-                padding: 12,
-                color: theme.colors.text,
-              }}
-              placeholderTextColor="#666"
             />
 
-            <Button
-              title={busy ? "Saving..." : "Save"}
-              onPress={save}
-              disabled={busy}
-            />
-            <Button
-              title="Forgot password? Send reset email"
-              onPress={doReset}
-            />
+            <PrimaryButton title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
+            <PrimaryButton title="Forgot password? Send reset email" onPress={doReset} />
           </>
         )}
       </View>

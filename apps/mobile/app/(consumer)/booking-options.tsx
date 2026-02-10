@@ -1,11 +1,16 @@
 import { TopBar } from "@/src/components/TopBar";
+import { Card, PriceSummaryCard } from "@/src/components/Card";
+import { PrimaryButton } from "@/src/components/Button";
+import { SelectableChip } from "@/src/components/SelectableChip";
+import { ScreenContainer } from "@/src/components/ScreenContainer";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { fetchActivityGroup, fetchConsumerActivity } from "@/src/store/slices/consumer-activity-slice";
 import { theme } from "@/src/theme/theme";
+import { ui } from "@/src/theme/ui";
+import { typography } from "@/src/theme/typography";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
     ScrollView,
     StyleSheet,
     Text,
@@ -123,64 +128,29 @@ export default function BookingOptionsScreen() {
         });
     };
 
-    if (loading) {
-        return (
-            <SafeAreaView style={styles.container} edges={["top"]}>
-                <TopBar title="Booking Options" />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.colors.accent} />
-                </View>
-            </SafeAreaView>
-        );
-    }
-
-    if (!displayData || !selectedActivity) {
-        return (
-            <SafeAreaView style={styles.container} edges={["top"]}>
-                <TopBar title="Booking Options" />
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>Activity not found</Text>
-                </View>
-            </SafeAreaView>
-        );
-    }
-
     return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
+        <SafeAreaView style={ui.container} edges={["top"]}>
             <TopBar title="Booking Options" />
+            <ScreenContainer loading={loading} error={!displayData || !selectedActivity ? "Activity not found" : undefined}>
+                {!loading && displayData && selectedActivity && (
 
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+            <ScrollView style={ui.scrollView} contentContainerStyle={styles.scrollContent}>
                 {/* Duration Selector */}
                 {displayData.activities.length > 1 && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Select Duration</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View style={ui.section}>
+                        <Text style={typography.h3}>Select Duration</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
                             {displayData.activities.map((activity: any, index: number) => (
-                                <TouchableOpacity
-                                    key={activity.id}
-                                    style={[
-                                        styles.durationChip,
-                                        selectedActivityIndex === index && styles.durationChipSelected,
-                                    ]}
-                                    onPress={() => setSelectedActivityIndex(index)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.durationChipText,
-                                            selectedActivityIndex === index && styles.durationChipTextSelected,
-                                        ]}
-                                    >
-                                        {activity.duration} min
-                                    </Text>
-                                    <Text
-                                        style={[
-                                            styles.durationChipPrice,
-                                            selectedActivityIndex === index && styles.durationChipPriceSelected,
-                                        ]}
-                                    >
+                                <View key={activity.id} style={styles.chipWrapper}>
+                                    <SelectableChip
+                                        label={`${activity.duration} min`}
+                                        selected={selectedActivityIndex === index}
+                                        onPress={() => setSelectedActivityIndex(index)}
+                                    />
+                                    <Text style={[typography.captionMuted, styles.chipPrice]}>
                                         €{activity.priceFrom}
                                     </Text>
-                                </TouchableOpacity>
+                                </View>
                             ))}
                         </ScrollView>
                     </View>
@@ -188,8 +158,8 @@ export default function BookingOptionsScreen() {
 
                 {/* Package Selection */}
                 {hasPackages && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Select Package</Text>
+                    <View style={ui.section}>
+                        <Text style={typography.h3}>Select Package</Text>
                         <View style={styles.packagesList}>
                             {packages.map((pkg: any, index: number) => {
                                 const isSelected = selectedPackageIndex === index;
@@ -202,8 +172,8 @@ export default function BookingOptionsScreen() {
                                         ]}
                                         onPress={() => setSelectedPackageIndex(index)}
                                     >
-                                        <View style={styles.packageHeader}>
-                                            <Text style={styles.packageTitle}>{pkg.title || "Package"}</Text>
+                                        <View style={ui.rowBetween}>
+                                            <Text style={typography.h4}>{pkg.title || "Package"}</Text>
                                             {pkg.is_default && (
                                                 <View style={styles.defaultBadge}>
                                                     <Text style={styles.defaultBadgeText}>Default</Text>
@@ -211,10 +181,10 @@ export default function BookingOptionsScreen() {
                                             )}
                                         </View>
                                         {pkg.description && (
-                                            <Text style={styles.packageDescription}>{pkg.description}</Text>
+                                            <Text style={[typography.captionMuted, styles.packageDescription]}>{pkg.description}</Text>
                                         )}
                                         {pkg.base_price && (
-                                            <Text style={styles.packagePrice}>
+                                            <Text style={[typography.body, styles.packagePrice]}>
                                                 €{pkg.base_price} {pkg.currency || "EUR"}
                                                 {(pkg.pricing_type || "per_person") === "per_person"
                                                     ? " per person"
@@ -222,26 +192,26 @@ export default function BookingOptionsScreen() {
                                             </Text>
                                         )}
                                         {pkg.track_type && (
-                                            <Text style={styles.packageDetail}>Track: {pkg.track_type}</Text>
+                                            <Text style={typography.caption}>Track: {pkg.track_type}</Text>
                                         )}
                                         {pkg.player_count && (
-                                            <Text style={styles.packageDetail}>Players: {pkg.player_count}</Text>
+                                            <Text style={typography.caption}>Players: {pkg.player_count}</Text>
                                         )}
                                         {pkg.includes_wine && (
-                                            <Text style={styles.packageDetail}>✓ Wine pairing included</Text>
+                                            <Text style={typography.caption}>✓ Wine pairing included</Text>
                                         )}
                                         {pkg.includes_extras && (
-                                            <Text style={styles.packageDetail}>✓ Extra decorations included</Text>
+                                            <Text style={typography.caption}>✓ Extra decorations included</Text>
                                         )}
                                         {(pkg.min_participants || pkg.max_participants) && (
-                                            <Text style={styles.packageDetail}>
+                                            <Text style={typography.caption}>
                                                 {pkg.min_participants === pkg.max_participants
                                                     ? `${pkg.min_participants} participants`
                                                     : `${pkg.min_participants || 1}-${pkg.max_participants || "Any"} participants`}
                                             </Text>
                                         )}
                                         {(pkg.age_min || pkg.age_max) && (
-                                            <Text style={styles.packageDetail}>
+                                            <Text style={typography.caption}>
                                                 Age: {pkg.age_min || "Any"} - {pkg.age_max || "Any"}
                                             </Text>
                                         )}
@@ -253,10 +223,10 @@ export default function BookingOptionsScreen() {
                 )}
 
                 {/* Participants Selector */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Participants</Text>
+                <View style={ui.section}>
+                    <Text style={typography.h3}>Participants</Text>
                     {selectedPackage && (minParticipants > 1 || maxParticipants < 20) && (
-                        <Text style={styles.participantHint}>
+                        <Text style={[typography.captionMuted, styles.participantHint]}>
                             {minParticipants === maxParticipants
                                 ? `This package is for ${minParticipants} participants`
                                 : `This package requires ${minParticipants}-${maxParticipants} participants`}
@@ -303,170 +273,93 @@ export default function BookingOptionsScreen() {
 
                 {/* Price Breakdown */}
                 {selectedActivity.priceFrom && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Price Summary</Text>
-                        <View style={styles.priceCard}>
-                            {pricingType === 'fixed' ? (
-                                <>
-                                    <View style={styles.priceRow}>
-                                        <Text style={styles.priceLabel}>Group rate:</Text>
-                                        <Text style={styles.priceValue}>
-                                            €
-                                            {hasPackages && packages[selectedPackageIndex]?.base_price
-                                                ? packages[selectedPackageIndex].base_price
-                                                : selectedActivity.priceFrom}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.priceRow}>
-                                        <Text style={styles.priceLabel}>Participants:</Text>
-                                        <Text style={styles.priceValue}>
-                                            {participantsCount} {participantsCount === 1 ? "person" : "people"}
-                                        </Text>
-                                    </View>
-                                    <View style={[styles.priceRow, styles.totalRow]}>
-                                        <Text style={styles.totalLabel}>Total:</Text>
-                                        <Text style={styles.totalValue}>
-                                            €
-                                            {hasPackages && packages[selectedPackageIndex]?.base_price
-                                                ? Number(packages[selectedPackageIndex].base_price).toFixed(2)
-                                                : Number(selectedActivity.priceFrom).toFixed(2)}
-                                        </Text>
-                                    </View>
-                                </>
-                            ) : (
-                                <>
-                                    <View style={styles.priceRow}>
-                                        <Text style={styles.priceLabel}>Per person:</Text>
-                                        <Text style={styles.priceValue}>
-                                            €
-                                            {hasPackages && packages[selectedPackageIndex]?.base_price
-                                                ? packages[selectedPackageIndex].base_price
-                                                : selectedActivity.priceFrom}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.priceRow}>
-                                        <Text style={styles.priceLabel}>Participants:</Text>
-                                        <Text style={styles.priceValue}>× {participantsCount}</Text>
-                                    </View>
-                                    <View style={[styles.priceRow, styles.totalRow]}>
-                                        <Text style={styles.totalLabel}>Total:</Text>
-                                        <Text style={styles.totalValue}>
-                                            €
-                                            {(
-                                                (hasPackages && packages[selectedPackageIndex]?.base_price
-                                                    ? Number(packages[selectedPackageIndex].base_price)
-                                                    : Number(selectedActivity.priceFrom)) * participantsCount
-                                            ).toFixed(2)}
-                                        </Text>
-                                    </View>
-                                </>
-                            )}
-                        </View>
+                    <View style={ui.section}>
+                        <Text style={typography.h3}>Price Summary</Text>
+                        {pricingType === 'fixed' ? (
+                            <PriceSummaryCard
+                                items={[
+                                    {
+                                        label: "Group rate:",
+                                        value: `€${hasPackages && packages[selectedPackageIndex]?.base_price
+                                            ? packages[selectedPackageIndex].base_price
+                                            : selectedActivity.priceFrom}`,
+                                    },
+                                    {
+                                        label: "Participants:",
+                                        value: `${participantsCount} ${participantsCount === 1 ? "person" : "people"}`,
+                                    },
+                                ]}
+                                total={hasPackages && packages[selectedPackageIndex]?.base_price
+                                    ? Number(packages[selectedPackageIndex].base_price).toFixed(2)
+                                    : Number(selectedActivity.priceFrom).toFixed(2)}
+                                currency="EUR"
+                                style={styles.priceCardMargin}
+                            />
+                        ) : (
+                            <PriceSummaryCard
+                                items={[
+                                    {
+                                        label: "Per person:",
+                                        value: `€${hasPackages && packages[selectedPackageIndex]?.base_price
+                                            ? packages[selectedPackageIndex].base_price
+                                            : selectedActivity.priceFrom}`,
+                                    },
+                                    {
+                                        label: "Participants:",
+                                        value: `× ${participantsCount}`,
+                                    },
+                                ]}
+                                total={(
+                                    (hasPackages && packages[selectedPackageIndex]?.base_price
+                                        ? Number(packages[selectedPackageIndex].base_price)
+                                        : Number(selectedActivity.priceFrom)) * participantsCount
+                                ).toFixed(2)}
+                                currency="EUR"
+                                style={styles.priceCardMargin}
+                            />
+                        )}
                     </View>
                 )}
 
-                <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-                    <Text style={styles.continueButtonText}>Select Date & Time</Text>
-                </TouchableOpacity>
-            </ScrollView>
+                    <View style={styles.buttonContainer}>
+                        <PrimaryButton title="Select Date & Time" onPress={handleContinue} />
+                    </View>
+                </ScrollView>
+                )}
+            </ScreenContainer>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.colors.bg,
-    },
-    scrollView: {
-        flex: 1,
-    },
     scrollContent: {
-        padding: 20,
+        padding: theme.spacing.lg,
         paddingBottom: 40,
     },
-    loadingContainer: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
+    chipsScroll: {
+        marginTop: theme.spacing.md,
     },
-    errorContainer: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20,
+    chipWrapper: {
+        marginRight: theme.spacing.md,
     },
-    errorText: {
-        fontSize: 16,
-        color: theme.colors.muted,
+    chipPrice: {
+        marginTop: 4,
         textAlign: "center",
     },
-    section: {
-        marginBottom: 32,
-    },
-    sectionTitle: {
-        fontSize: 20,
-        fontWeight: "800",
-        color: theme.colors.text,
-        marginBottom: 16,
-    },
-    durationChip: {
-        backgroundColor: theme.colors.surface,
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 12,
-        marginRight: 12,
-        borderWidth: 2,
-        borderColor: theme.colors.divider,
-        minWidth: 100,
-        alignItems: "center",
-    },
-    durationChipSelected: {
-        backgroundColor: theme.colors.accent,
-        borderColor: theme.colors.accent,
-    },
-    durationChipText: {
-        fontSize: 16,
-        fontWeight: "700",
-        color: theme.colors.text,
-        marginBottom: 4,
-    },
-    durationChipTextSelected: {
-        color: theme.colors.bg,
-    },
-    durationChipPrice: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: theme.colors.muted,
-    },
-    durationChipPriceSelected: {
-        color: theme.colors.bg,
-    },
     packagesList: {
-        gap: 12,
+        gap: theme.spacing.md,
+        marginTop: theme.spacing.md,
     },
     packageCard: {
         backgroundColor: theme.colors.surface,
-        padding: 16,
-        borderRadius: 12,
+        padding: theme.spacing.md,
+        borderRadius: theme.radius.md,
         borderWidth: 2,
         borderColor: theme.colors.divider,
     },
     packageCardSelected: {
         borderColor: theme.colors.accent,
         backgroundColor: theme.colors.card,
-    },
-    packageHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 8,
-    },
-    packageTitle: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: theme.colors.text,
-        flex: 1,
     },
     defaultBadge: {
         backgroundColor: theme.colors.accent,
@@ -480,25 +373,15 @@ const styles = StyleSheet.create({
         color: theme.colors.bg,
     },
     packageDescription: {
-        fontSize: 14,
-        color: theme.colors.muted,
-        marginBottom: 8,
+        marginBottom: theme.spacing.sm,
     },
     packagePrice: {
-        fontSize: 16,
-        fontWeight: "700",
         color: theme.colors.accent,
         marginBottom: 4,
-    },
-    packageDetail: {
-        fontSize: 14,
-        color: theme.colors.text,
-        marginTop: 4,
+        fontWeight: "700",
     },
     participantHint: {
-        fontSize: 14,
-        color: theme.colors.muted,
-        marginBottom: 12,
+        marginBottom: theme.spacing.md,
         textAlign: "center",
     },
     participantsContainer: {
@@ -506,8 +389,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: theme.colors.surface,
-        padding: 20,
-        borderRadius: 12,
+        padding: theme.spacing.lg,
+        borderRadius: theme.radius.md,
+        marginTop: theme.spacing.md,
     },
     participantButton: {
         backgroundColor: theme.colors.accent,
@@ -537,53 +421,10 @@ const styles = StyleSheet.create({
         minWidth: 60,
         textAlign: "center",
     },
-    priceCard: {
-        backgroundColor: theme.colors.surface,
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: theme.colors.divider,
+    priceCardMargin: {
+        marginTop: theme.spacing.md,
     },
-    priceRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 8,
-    },
-    priceLabel: {
-        fontSize: 16,
-        color: theme.colors.muted,
-    },
-    priceValue: {
-        fontSize: 16,
-        color: theme.colors.text,
-        fontWeight: "600",
-    },
-    totalRow: {
-        marginTop: 12,
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.divider,
-    },
-    totalLabel: {
-        fontSize: 18,
-        color: theme.colors.text,
-        fontWeight: "800",
-    },
-    totalValue: {
-        fontSize: 24,
-        color: theme.colors.accent,
-        fontWeight: "800",
-    },
-    continueButton: {
-        backgroundColor: theme.colors.accent,
-        paddingVertical: 16,
-        borderRadius: 12,
-        alignItems: "center",
-        marginTop: 16,
-    },
-    continueButtonText: {
-        fontSize: 18,
-        fontWeight: "800",
-        color: theme.colors.bg,
+    buttonContainer: {
+        marginTop: theme.spacing.md,
     },
 });

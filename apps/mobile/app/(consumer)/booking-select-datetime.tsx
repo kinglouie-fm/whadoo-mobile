@@ -1,6 +1,11 @@
+import { PrimaryButton } from "@/src/components/Button";
+import { EmptyState } from "@/src/components/EmptyState";
+import { SelectableChip } from "@/src/components/SelectableChip";
 import { TopBar } from "@/src/components/TopBar";
 import { apiGet } from "@/src/lib/api";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -8,7 +13,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
@@ -138,19 +142,19 @@ export default function BookingSelectDateTimeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={ui.container} edges={["top"]}>
       <TopBar title="Select Date & Time" />
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={ui.scrollView}>
         {/* Participants Summary */}
         <View style={styles.summaryBox}>
-          <Text style={styles.summaryLabel}>Participants:</Text>
-          <Text style={styles.summaryValue}>{participantsCount} people</Text>
+          <Text style={typography.bodyMuted}>Participants:</Text>
+          <Text style={typography.h4}>{participantsCount} people</Text>
         </View>
 
         {/* Calendar */}
-        <View style={styles.calendarContainer}>
-          <Text style={styles.sectionTitle}>Select a Date</Text>
+        <View style={[ui.section, styles.sectionContent]}>
+          <Text style={[typography.h3, styles.sectionTitle]}>Select a Date</Text>
           <Calendar
             minDate={today}
             onDayPress={handleDateSelect}
@@ -182,46 +186,44 @@ export default function BookingSelectDateTimeScreen() {
 
         {/* Time Slots */}
         {selectedDate && (
-          <View style={styles.timeSlotsContainer}>
-            <Text style={styles.sectionTitle}>Available Times</Text>
+          <View style={[ui.section, styles.sectionContent]}>
+            <Text style={[typography.h3, styles.sectionTitle]}>
+              Available Times
+            </Text>
 
             {loading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color={theme.colors.accent} />
-                <Text style={styles.loadingText}>
+                <Text
+                  style={[typography.bodyMuted, { marginTop: theme.spacing.sm }]}
+                >
                   Loading available times...
                 </Text>
               </View>
             ) : availableSlots.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
-                  No available times for this date. Try another day.
-                </Text>
-              </View>
+              <EmptyState
+                icon="schedule"
+                title="No available times"
+                subtitle="No available times for this date. Try another day."
+              />
             ) : (
               <View style={styles.timeGrid}>
                 {availableSlots.map((slot) => (
-                  <TouchableOpacity
-                    key={slot.time}
-                    style={[
-                      styles.timeSlot,
-                      selectedTime === slot.time && styles.timeSlotSelected,
-                    ]}
-                    onPress={() => handleTimeSelect(slot.time)}
-                  >
+                  <View key={slot.time} style={styles.timeSlotWrapper}>
+                    <SelectableChip
+                      label={slot.time}
+                      selected={selectedTime === slot.time}
+                      onPress={() => handleTimeSelect(slot.time)}
+                    />
                     <Text
                       style={[
-                        styles.timeSlotText,
-                        selectedTime === slot.time &&
-                          styles.timeSlotTextSelected,
+                        typography.captionMuted,
+                        { marginTop: theme.spacing.sm },
                       ]}
                     >
-                      {slot.time}
-                    </Text>
-                    <Text style={styles.capacityText}>
                       {slot.remainingCapacity} spots left
                     </Text>
-                  </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             )}
@@ -230,12 +232,13 @@ export default function BookingSelectDateTimeScreen() {
 
         {/* Continue Button */}
         {selectedTime && (
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-          >
-            <Text style={styles.continueButtonText}>Continue to Overview</Text>
-          </TouchableOpacity>
+          <View style={styles.continueButtonWrapper}>
+            <PrimaryButton
+              title="Continue to Overview"
+              onPress={handleContinue}
+              style={styles.continueButton}
+            />
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -243,108 +246,39 @@ export default function BookingSelectDateTimeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-  },
-  scrollView: {
-    flex: 1,
-  },
   summaryBox: {
-    backgroundColor: theme.colors.surface,
-    padding: 16,
-    marginHorizontal: 20,
-    marginTop: 16,
-    borderRadius: 12,
+    ...ui.card,
+    marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.lg,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  summaryLabel: {
-    fontSize: 16,
-    color: theme.colors.muted,
-    fontWeight: "600",
-  },
-  summaryValue: {
-    fontSize: 18,
-    color: theme.colors.text,
-    fontWeight: "800",
-  },
-  calendarContainer: {
-    padding: 20,
+  sectionContent: {
+    paddingHorizontal: theme.spacing.lg,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: theme.colors.text,
-    marginBottom: 16,
-  },
-  timeSlotsContainer: {
-    padding: 20,
-    paddingTop: 0,
+    marginBottom: theme.spacing.lg,
   },
   loadingContainer: {
-    padding: 20,
+    padding: theme.spacing.xl,
     alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: theme.colors.muted,
-  },
-  emptyContainer: {
-    padding: 20,
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 16,
-    color: theme.colors.muted,
-    textAlign: "center",
   },
   timeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: theme.spacing.md,
   },
-  timeSlot: {
-    backgroundColor: theme.colors.surface,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: theme.colors.divider,
+  timeSlotWrapper: {
     minWidth: "30%",
     alignItems: "center",
   },
-  timeSlotSelected: {
-    backgroundColor: theme.colors.accent,
-    borderColor: theme.colors.accent,
-  },
-  timeSlotText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: theme.colors.text,
-  },
-  timeSlotTextSelected: {
-    color: theme.colors.bg,
-  },
-  capacityText: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    marginTop: 4,
+  continueButtonWrapper: {
+    marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.xxl,
   },
   continueButton: {
-    backgroundColor: theme.colors.accent,
-    paddingVertical: 16,
-    marginHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 32,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  continueButtonText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: theme.colors.bg,
+    width: "100%",
   },
 });

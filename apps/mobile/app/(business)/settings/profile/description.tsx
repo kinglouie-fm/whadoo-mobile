@@ -1,10 +1,12 @@
 // apps/mobile/app/(business)/settings/profile/description.tsx
 import { TopBar } from "@/src/components/TopBar";
+import { PrimaryButton } from "@/src/components/Button";
+import { TextArea } from "@/src/components/Input";
 import { apiPatch } from "@/src/lib/api";
 import { useBusiness } from "@/src/providers/business-context";
-import { theme } from "@/src/theme/theme";
+import { ui } from "@/src/theme/ui";
 import React, { useEffect, useState } from "react";
-import { Alert, Button, TextInput, View } from "react-native";
+import { Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BusinessDescriptionScreen() {
@@ -28,27 +30,17 @@ export default function BusinessDescriptionScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+        <SafeAreaView style={ui.container} edges={["top"]}>
             <TopBar title="Description" />
-            <View style={{ padding: 16, gap: 12 }}>
-                <TextInput
+            <View style={[ui.contentPadding, { gap: 12 }]}>
+                <TextArea
+                    label="Business description"
                     value={value}
                     onChangeText={setValue}
                     placeholder="Describe your business..."
-                    placeholderTextColor="#666"
-                    multiline
                     numberOfLines={6}
-                    style={{
-                        borderWidth: 1,
-                        borderColor: theme.colors.divider,
-                        borderRadius: 12,
-                        padding: 12,
-                        minHeight: 140,
-                        textAlignVertical: "top",
-                        color: theme.colors.text,
-                    }}
                 />
-                <Button title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
+                <PrimaryButton title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
             </View>
         </SafeAreaView>
     );

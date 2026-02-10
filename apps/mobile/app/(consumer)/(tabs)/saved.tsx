@@ -1,3 +1,5 @@
+import { IconButton } from "@/src/components/Button";
+import { EmptyState } from "@/src/components/EmptyState";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
   bulkDeleteSavedActivities,
@@ -8,6 +10,8 @@ import {
   unsaveActivity,
 } from "@/src/store/slices/saved-activity-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -87,18 +91,15 @@ export default function SavedActivitiesScreen() {
       headerShadowVisible: false,
       headerLeft: () => null,
       headerRight: () => (
-        <Pressable
-          style={styles.headerIconBtn}
-          onPress={
-            multiSelectMode ? exitSelectMode : () => setMenuVisible(true)
-          }
-        >
-          <MaterialIcons
-            name={multiSelectMode ? "close" : "more-horiz"}
+        <View style={styles.headerRight}>
+          <IconButton
+            icon={multiSelectMode ? "close" : "more-horiz"}
             size={24}
-            color={theme.colors.text}
+            onPress={
+              multiSelectMode ? exitSelectMode : () => setMenuVisible(true)
+            }
           />
-        </Pressable>
+        </View>
       ),
     });
   }, [navigation, multiSelectMode, selectedIds.length]);
@@ -329,8 +330,8 @@ export default function SavedActivitiesScreen() {
 
   if (loading && items.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.loadingContainer}>
+      <SafeAreaView style={ui.container} edges={["top"]}>
+        <View style={ui.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.accent} />
         </View>
       </SafeAreaView>
@@ -339,11 +340,11 @@ export default function SavedActivitiesScreen() {
 
   if (error && items.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Failed to load saved activities</Text>
-          <Pressable style={styles.retryButton} onPress={handleRefresh}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+      <SafeAreaView style={ui.container} edges={["top"]}>
+        <View style={ui.errorContainer}>
+          <Text style={typography.body}>Failed to load saved activities</Text>
+          <Pressable onPress={handleRefresh}>
+            <Text style={typography.body}>Retry</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -352,25 +353,19 @@ export default function SavedActivitiesScreen() {
 
   if (items.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.emptyContainer}>
-          <MaterialIcons
-            name="favorite-border"
-            size={64}
-            color={theme.colors.muted}
-          />
-          <Text style={styles.emptyTitle}>No saved activities yet</Text>
-          <Text style={styles.emptySubtitle}>
-            Swipe down on activities to save them
-          </Text>
-        </View>
+      <SafeAreaView style={ui.container} edges={["top"]}>
+        <EmptyState
+          icon="favorite-border"
+          title="No saved activities yet"
+          subtitle="Swipe down on activities to save them"
+        />
       </SafeAreaView>
     );
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={styles.container}>
+      <View style={ui.container}>
         <FlatList
           data={sortedItems}
           renderItem={renderItem}
@@ -479,16 +474,8 @@ const stylesVars = {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.bg },
-
-  headerIconBtn: {
+  headerRight: {
     marginRight: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surface,
   },
 
   listContent: {
@@ -496,65 +483,19 @@ const styles = StyleSheet.create({
     paddingBottom: 130,
   },
 
-  loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
-
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: theme.colors.danger,
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: theme.colors.accent,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  retryButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: theme.colors.text,
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontSize: 15,
-    color: theme.colors.muted,
-    marginTop: 8,
-    textAlign: "center",
-  },
-
-  // --- card (match screenshot vibe) ---
   card: {
     position: "relative",
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: stylesVars.cardBg,
-    borderRadius: 18,
-    padding: 12,
-    marginBottom: 14,
-    gap: 12,
-
-    // iOS shadow
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    gap: theme.spacing.md,
     shadowColor: "#000",
     shadowOpacity: 0.22,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 10 },
-
-    // Android shadow
     elevation: 6,
   },
   cardSelected: {
@@ -580,22 +521,32 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: 64,
     height: 64,
-    borderRadius: 14,
+    borderRadius: theme.radius.md,
     backgroundColor: "rgba(255,255,255,0.25)",
   },
   placeholderThumbnail: {
     alignItems: "center",
     justifyContent: "center",
   },
-  placeholderText: { fontSize: 28 },
+  placeholderText: {
+    fontSize: 28,
+  },
 
-  cardContent: { flex: 1, minHeight: 64, justifyContent: "center" },
-  title: { fontSize: 16, fontWeight: "600", color: stylesVars.text },
+  cardContent: {
+    flex: 1,
+    minHeight: 64,
+    justifyContent: "center",
+  },
+  title: typography.body,
 
-  infoRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
+  infoRow: {
+    ...ui.row,
+    gap: 6,
+    marginTop: 6,
+  },
   subText: {
-    color: stylesVars.subText,
-    fontSize: 12,
+    ...typography.captionSmall,
+    color: "rgba(255,255,255,0.78)",
     flex: 1,
   },
 
@@ -606,23 +557,21 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // swipe delete action (same as activities.tsx style)
   rightActionsWrap: {
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: theme.spacing.md,
   },
   deleteAction: {
     width: 64,
     height: "100%",
     backgroundColor: theme.colors.danger,
-    borderRadius: 18,
+    borderRadius: theme.radius.lg,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 12,
+    marginLeft: theme.spacing.md,
   },
 
-  // floating multiselect bar
   bottomBar: {
     position: "absolute",
     bottom: 22,
@@ -644,7 +593,6 @@ const styles = StyleSheet.create({
   actionCancel: { backgroundColor: "#2A2A2A" },
   actionDisabled: { opacity: 0.35 },
 
-  // menu sheet
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -652,35 +600,35 @@ const styles = StyleSheet.create({
   },
   menuSheet: {
     backgroundColor: theme.colors.card,
-    padding: 16,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    padding: theme.spacing.lg,
+    borderTopLeftRadius: theme.radius.lg,
+    borderTopRightRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: theme.colors.divider,
   },
   menuTitle: {
-    color: theme.colors.text,
-    fontSize: 16,
+    ...typography.body,
     fontWeight: "800",
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   menuSectionTitle: {
-    color: theme.colors.muted,
-    fontSize: 12,
-    fontWeight: "800",
-    marginBottom: 8,
+    ...typography.label,
+    marginBottom: theme.spacing.sm,
   },
   menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    ...ui.row,
     gap: 10,
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.md,
   },
-  menuItemActive: { opacity: 0.9 },
-  menuItemText: { color: theme.colors.text, fontSize: 14, fontWeight: "700" },
+  menuItemActive: {
+    opacity: 0.9,
+  },
+  menuItemText: {
+    ...typography.caption,
+    fontWeight: "700",
+  },
   menuDivider: {
-    height: 1,
-    backgroundColor: theme.colors.divider,
+    ...ui.divider,
     marginVertical: 10,
   },
 });

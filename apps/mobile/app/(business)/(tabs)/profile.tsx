@@ -1,54 +1,17 @@
 // apps/mobile/app/(business)/(tabs)/profile.tsx
 import { useAuth } from "@/src/providers/auth-context";
 import { useBusiness } from "@/src/providers/business-context";
+import { Avatar } from "@/src/components/Avatar";
+import { Card } from "@/src/components/Card";
 import { theme } from "@/src/theme/theme";
+import { ui } from "@/src/theme/ui";
+import { typography } from "@/src/theme/typography";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useLayoutEffect, useMemo } from "react";
-import { Alert, Image, Pressable, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-function Avatar({
-  name,
-  photoUrl,
-}: {
-  name: string;
-  photoUrl?: string | null;
-}) {
-  const initials =
-    name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
-      .join("") || "B";
-
-  return (
-    <View
-      style={{
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        backgroundColor: "#2b2b2b",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
-      }}
-    >
-      {photoUrl ? (
-        <Image
-          source={{ uri: photoUrl }}
-          style={{ width: "100%", height: "100%" }}
-        />
-      ) : (
-        <Text style={{ color: theme.colors.text, fontWeight: "800" }}>
-          {initials}
-        </Text>
-      )}
-    </View>
-  );
-}
 
 function Row({
   icon,
@@ -64,41 +27,23 @@ function Row({
   danger?: boolean;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        paddingVertical: 16,
-        flexDirection: "row",
-        alignItems: "flex-start",
-        gap: 12,
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.divider,
-      }}
-    >
+    <Pressable onPress={onPress} style={styles.row}>
       <MaterialIcons
         name={icon}
         size={20}
         color={danger ? theme.colors.danger : theme.colors.text}
-        style={{ width: 20, marginTop: 2 }}
+        style={styles.rowIcon}
       />
 
       <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            color: danger ? theme.colors.danger : theme.colors.text,
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
+        <Text style={[typography.body, danger && { color: theme.colors.danger }]}>
           {title}
         </Text>
-        {subtitle ? (
-          <Text
-            style={{ color: theme.colors.muted, marginTop: 4, fontSize: 12 }}
-          >
+        {subtitle && (
+          <Text style={[typography.captionSmall, styles.rowSubtitle]}>
             {subtitle}
           </Text>
-        ) : null}
+        )}
       </View>
 
       <MaterialIcons
@@ -139,45 +84,19 @@ export default function BusinessProfileHome() {
     null;
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: theme.colors.bg }}
-      edges={["top"]}
-    >
-      <View style={{ paddingHorizontal: 16 }}>
-        <View
-          style={{
-            backgroundColor: theme.colors.card,
-            borderRadius: 18,
-            padding: 14,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 12,
-            marginBottom: 14,
-          }}
-        >
+    <SafeAreaView style={ui.container} edges={["top"]}>
+      <View style={styles.content}>
+        <Card style={styles.profileCard}>
           <Avatar name={name} photoUrl={photoUrl} />
           <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                color: theme.colors.text,
-                fontSize: 18,
-                fontWeight: "800",
-              }}
-            >
-              {name}
-            </Text>
-            <Text style={{ color: theme.colors.muted, marginTop: 6 }}>
+            <Text style={typography.h4}>{name}</Text>
+            <Text style={[typography.captionMuted, styles.subtitle]}>
               Business
             </Text>
           </View>
-        </View>
+        </Card>
 
-        <View
-          style={{
-            borderBottomWidth: 1,
-            borderBottomColor: theme.colors.divider,
-          }}
-        >
+        <View style={styles.menuSection}>
           <Row
             icon="grid-view"
             title="Manage activities"
@@ -198,7 +117,11 @@ export default function BusinessProfileHome() {
           />
         </View>
 
-        <Pressable
+        <Row
+          icon="logout"
+          title="Log out"
+          subtitle="Log out the account"
+          danger
           onPress={async () => {
             try {
               await signOut();
@@ -206,31 +129,43 @@ export default function BusinessProfileHome() {
               Alert.alert("Logout failed", e?.message ?? String(e));
             }
           }}
-          style={{
-            paddingVertical: 32,
-            flexDirection: "row",
-            alignItems: "flex-start",
-            gap: 12,
-            borderTopWidth: 1,
-            borderTopColor: theme.colors.divider,
-          }}
-        >
-          <MaterialIcons
-            name="logout"
-            size={20}
-            color={theme.colors.danger}
-            style={{ width: 20, marginTop: 2 }}
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: theme.colors.danger, fontSize: 18 }}>
-              Log out
-            </Text>
-            <Text style={{ color: theme.colors.muted, marginTop: 4 }}>
-              Log out the account
-            </Text>
-          </View>
-        </Pressable>
+        />
       </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: 16,
+  },
+  profileCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    padding: theme.spacing.md,
+  },
+  subtitle: {
+    marginTop: 6,
+  },
+  menuSection: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.divider,
+  },
+  row: {
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.divider,
+  },
+  rowIcon: {
+    width: 20,
+    marginTop: 2,
+  },
+  rowSubtitle: {
+    marginTop: 4,
+  },
+});

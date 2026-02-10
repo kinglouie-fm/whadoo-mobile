@@ -1,3 +1,8 @@
+import {
+  PrimaryButton,
+  SecondaryButton,
+} from "@/src/components/Button";
+import { EmptyState } from "@/src/components/EmptyState";
 import { TopBar } from "@/src/components/TopBar";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
@@ -11,6 +16,8 @@ import {
   unsaveActivity,
 } from "@/src/store/slices/saved-activity-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -157,13 +164,13 @@ export default function ActivityDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <SafeAreaView style={ui.container} edges={["top"]}>
         <TopBar
           title="Activity Details"
           rightIcon={isSaved ? "favorite" : "favorite-outline"}
           onRightPress={handleToggleSave}
         />
-        <View style={styles.loadingContainer}>
+        <View style={ui.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.accent} />
         </View>
       </SafeAreaView>
@@ -172,14 +179,14 @@ export default function ActivityDetailScreen() {
 
   if (!displayData || !representativeActivity) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <SafeAreaView style={ui.container} edges={["top"]}>
         <TopBar
           title="Activity Details"
           rightIcon={isSaved ? "favorite" : "favorite-outline"}
           onRightPress={handleToggleSave}
         />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Activity not found</Text>
+        <View style={ui.errorContainer}>
+          <EmptyState icon="error-outline" title="Activity not found" />
         </View>
       </SafeAreaView>
     );
@@ -191,7 +198,7 @@ export default function ActivityDetailScreen() {
   }, 0);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={ui.container} edges={["top"]}>
       <TopBar
         title=""
         rightIcon={isSaved ? "favorite" : "favorite-outline"}
@@ -199,7 +206,7 @@ export default function ActivityDetailScreen() {
       />
 
       <ScrollView
-        style={styles.scrollView}
+        style={ui.scrollView}
         showsVerticalScrollIndicator={false}
       >
         {/* Image Carousel with Stories Progress */}
@@ -251,21 +258,26 @@ export default function ActivityDetailScreen() {
             </>
           ) : (
             <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderText}>📸</Text>
+              <EmptyState
+                icon="image-not-supported"
+                title="No photos"
+              />
             </View>
           )}
         </View>
 
         <View style={styles.content}>
           <View style={styles.titleSection}>
-            <Text style={styles.title}>
+            <Text style={[typography.h1, { marginBottom: theme.spacing.sm }]}>
               {displayData.catalogGroupTitle || representativeActivity.title}
             </Text>
             {displayData.businessName && (
-              <Text style={styles.subtitle}>{displayData.businessName}</Text>
+              <Text style={[typography.h4, { marginBottom: theme.spacing.sm }]}>
+                {displayData.businessName}
+              </Text>
             )}
             {displayData.businessCity && (
-              <Text style={styles.location}>
+              <Text style={typography.bodyMuted}>
                 📍 {displayData.businessCity}
                 {displayData.businessAddress &&
                   `, ${displayData.businessAddress}`}
@@ -274,9 +286,11 @@ export default function ActivityDetailScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Information</Text>
+            <Text style={[typography.h4, { marginBottom: theme.spacing.md }]}>
+              Information
+            </Text>
             {representativeActivity.description && (
-              <Text style={styles.description}>
+              <Text style={typography.body}>
                 {representativeActivity.description}
               </Text>
             )}
@@ -284,14 +298,18 @@ export default function ActivityDetailScreen() {
 
           {lowestPrice > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>From</Text>
-              <Text style={styles.priceValue}>€{lowestPrice.toFixed(2)}</Text>
+              <Text style={[typography.h4, { marginBottom: theme.spacing.md }]}>
+                From
+              </Text>
+              <Text style={typography.price}>€{lowestPrice.toFixed(2)}</Text>
             </View>
           )}
 
           {images.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Photos</Text>
+              <Text style={[typography.h4, { marginBottom: theme.spacing.md }]}>
+                Photos
+              </Text>
               <View style={styles.photosGrid}>
                 {images.map((uri: string, index: number) => (
                   <TouchableOpacity
@@ -313,8 +331,8 @@ export default function ActivityDetailScreen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={styles.bookButton}
+        <PrimaryButton
+          title="Book"
           onPress={() => {
             if (catalogGroupId) {
               router.push({
@@ -328,37 +346,13 @@ export default function ActivityDetailScreen() {
               });
             }
           }}
-        >
-          <Text style={styles.bookButtonText}>Book</Text>
-        </TouchableOpacity>
+        />
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  errorText: {
-    fontSize: 16,
-    color: theme.colors.muted,
-    textAlign: "center",
-  },
   imageContainer: {
     position: "relative",
   },
@@ -391,16 +385,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  placeholderText: {
-    fontSize: 64,
-  },
   progressContainer: {
     position: "absolute",
-    top: 16,
-    left: 12,
-    right: 12,
+    top: theme.spacing.lg,
+    left: theme.spacing.md,
+    right: theme.spacing.md,
     flexDirection: "row",
-    gap: 4,
+    gap: theme.spacing.sm / 2,
     zIndex: 10,
   },
   progressBarBg: {
@@ -416,56 +407,24 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   content: {
-    padding: 20,
+    padding: theme.spacing.lg,
     paddingBottom: 100,
   },
   titleSection: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: theme.colors.muted,
-    marginBottom: 8,
-  },
-  location: {
-    fontSize: 16,
-    color: theme.colors.muted,
+    marginBottom: theme.spacing.xl,
   },
   section: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: theme.colors.text,
-    marginBottom: 12,
-  },
-  description: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: theme.colors.text,
-  },
-  priceValue: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: theme.colors.text,
+    marginBottom: theme.spacing.xxl,
   },
   photosGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: theme.spacing.sm,
   },
   photoCard: {
-    width: (width - 56) / 2,
+    width: (width - theme.spacing.lg * 2 - theme.spacing.sm) / 2,
     height: 140,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     overflow: "hidden",
     backgroundColor: theme.colors.surface,
   },
@@ -478,20 +437,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
+    padding: theme.spacing.lg,
     backgroundColor: theme.colors.bg,
     borderTopWidth: 1,
     borderTopColor: theme.colors.divider,
-  },
-  bookButton: {
-    backgroundColor: theme.colors.accent,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  bookButtonText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: theme.colors.bg,
   },
 });

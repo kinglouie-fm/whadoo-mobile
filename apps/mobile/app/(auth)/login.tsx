@@ -1,68 +1,14 @@
+import { FormInput } from "@/src/components/Input";
+import { PrimaryButton, SecondaryButton } from "@/src/components/Button";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { theme } from "@/src/theme/theme";
 import { GoogleAuthProvider, getAuth, signInWithCredential, signInWithEmailAndPassword } from "@react-native-firebase/auth";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, Pressable, Text, TextInput, View } from "react-native";
-
-function InputLine(props: React.ComponentProps<typeof TextInput>) {
-    return (
-        <TextInput
-            {...props}
-            style={[
-                {
-                    height: 44,
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#4a4a4a",
-                    color: theme.colors.text,
-                    fontFamily: theme.fonts.regular,
-                    fontSize: 16,
-                },
-                props.style,
-            ]}
-            placeholderTextColor="#7a7a7a"
-        />
-    );
-}
-
-function PrimaryButton({ title, onPress, disabled }: { title: string; onPress: () => void; disabled?: boolean }) {
-    return (
-        <Pressable
-            onPress={onPress}
-            disabled={disabled}
-            style={{
-                height: 54,
-                borderRadius: 999,
-                backgroundColor: theme.colors.accent,
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: disabled ? 0.6 : 1,
-            }}
-        >
-            <Text style={{ fontFamily: theme.fonts.bold, color: theme.colors.buttonTextOnAccent, fontSize: 16 }}>{title}</Text>
-        </Pressable>
-    );
-}
-
-function OutlineButton({ title, onPress, disabled }: { title: string; onPress: () => void; disabled?: boolean }) {
-    return (
-        <Pressable
-            onPress={onPress}
-            disabled={disabled}
-            style={{
-                height: 54,
-                borderRadius: 999,
-                borderWidth: 1,
-                borderColor: "#5a5a5a",
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: disabled ? 0.6 : 1,
-            }}
-        >
-            <Text style={{ fontFamily: theme.fonts.medium, color: theme.colors.text, fontSize: 16 }}>{title}</Text>
-        </Pressable>
-    );
-}
+import { Alert, Pressable, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -100,46 +46,47 @@ export default function LoginScreen() {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.bg, padding: 24, justifyContent: "center" }}>
-            <Text style={{ fontFamily: theme.fonts.bold, color: theme.colors.text, fontSize: 26, textAlign: "center" }}>
-                Welcome Back
-            </Text>
-            <Text style={{ fontFamily: theme.fonts.regular, color: theme.colors.muted, textAlign: "center", marginTop: 8, marginBottom: 26 }}>
-                Please enter your details.
-            </Text>
+        <View style={[ui.container, styles.container]}>
+            <Text style={[typography.h2, styles.title]}>Welcome Back</Text>
+            <Text style={[typography.bodyMuted, styles.subtitle]}>Please enter your details.</Text>
 
-            <Text style={{ fontFamily: theme.fonts.medium, color: theme.colors.text, marginBottom: 6 }}>Email</Text>
-            <InputLine value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+            <FormInput
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter your email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+            />
 
-            <View style={{ height: 16 }} />
+            <FormInput
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
+                secureTextEntry
+            />
 
-            <Text style={{ fontFamily: theme.fonts.medium, color: theme.colors.text, marginBottom: 6 }}>Password</Text>
-            <InputLine value={password} onChangeText={setPassword} secureTextEntry />
-
-            <View style={{ height: 10 }} />
-
-            <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+            <View style={styles.forgotRow}>
                 <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
-                    <Text style={{ fontFamily: theme.fonts.medium, color: theme.colors.muted }}>Forgot password?</Text>
+                    <Text style={typography.captionMuted}>Forgot password?</Text>
                 </Pressable>
             </View>
 
-            <View style={{ height: 18 }} />
+            <PrimaryButton title={busy ? "..." : "Login"} onPress={signIn} disabled={busy} loading={busy} />
 
-            <PrimaryButton title={busy ? "..." : "Login"} onPress={signIn} disabled={busy} />
-
-            <View style={{ height: 18, flexDirection: "row", alignItems: "center", gap: 10, margin: 20 }}>
-                <View style={{ flex: 1, height: 1, backgroundColor: "#3a3a3a" }} />
-                <Text style={{ color: theme.colors.muted, fontFamily: theme.fonts.regular }}>Or</Text>
-                <View style={{ flex: 1, height: 1, backgroundColor: "#3a3a3a" }} />
+            <View style={styles.dividerRow}>
+                <View style={[styles.divider, ui.divider]} />
+                <Text style={typography.captionMuted}>Or</Text>
+                <View style={[styles.divider, ui.divider]} />
             </View>
 
-            <OutlineButton title={busy ? "..." : "Continue with Google"} onPress={signInGoogle} disabled={busy} />
+            <SecondaryButton title={busy ? "..." : "Continue with Google"} onPress={signInGoogle} disabled={busy} />
 
-            <View style={{ marginTop: 18, alignItems: "center" }}>
-                <Text style={{ color: theme.colors.muted, fontFamily: theme.fonts.regular }}>
+            <View style={styles.footer}>
+                <Text style={typography.bodyMuted}>
                     Don’t have an account?{" "}
-                    <Link href="/(auth)/register" style={{ color: theme.colors.accent, fontFamily: theme.fonts.bold }}>
+                    <Link href="/(auth)/register" style={styles.link}>
                         Register
                     </Link>
                 </Text>
@@ -147,3 +94,41 @@ export default function LoginScreen() {
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        padding: theme.spacing.xl,
+        justifyContent: "center",
+    },
+    title: {
+        textAlign: "center",
+    },
+    subtitle: {
+        textAlign: "center",
+        marginTop: theme.spacing.sm,
+        marginBottom: theme.spacing.lg,
+    },
+    forgotRow: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        marginBottom: theme.spacing.lg,
+    },
+    dividerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: theme.spacing.md,
+        marginVertical: theme.spacing.lg,
+    },
+    divider: {
+        flex: 1,
+        height: 1,
+    },
+    footer: {
+        marginTop: theme.spacing.lg,
+        alignItems: "center",
+    },
+    link: {
+        color: theme.colors.accent,
+        fontWeight: "700",
+    },
+});

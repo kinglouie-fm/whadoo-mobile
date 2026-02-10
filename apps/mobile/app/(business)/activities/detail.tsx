@@ -1,4 +1,6 @@
+import { PrimaryButton, SecondaryButton } from "@/src/components/Button";
 import { ConfigSchemaRenderer } from "@/src/components/ConfigSchemaRenderer";
+import { FormInput, TextArea } from "@/src/components/Input";
 import { PackagesEditor } from "@/src/components/PackagesEditor";
 import { PricingSchemaRenderer } from "@/src/components/PricingSchemaRenderer";
 import { useBusiness } from "@/src/providers/business-context";
@@ -17,27 +19,20 @@ import {
 } from "@/src/store/slices/activity-type-slice";
 import { fetchTemplates } from "@/src/store/slices/availability-template-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const stylesVars = {
-  cardBg: "rgba(255,255,255,0.08)",
-  inputBg: "rgba(255,255,255,0.06)",
-  border: "rgba(255,255,255,0.12)",
-  subText: "rgba(255,255,255,0.78)",
-  subText2: "rgba(255,255,255,0.62)",
-};
 
 export default function ActivityDetailScreen() {
   const router = useRouter();
@@ -166,17 +161,6 @@ export default function ActivityDetailScreen() {
     catalogGroupKind,
   ]);
 
-  const textInputCommonProps = useMemo(
-    () => ({
-      placeholderTextColor: stylesVars.subText2,
-      selectionColor: theme.colors.accent,
-      cursorColor: theme.colors.accent,
-      underlineColorAndroid: "transparent" as const, //  kills Android blue underline
-      keyboardAppearance: "dark" as const,
-    }),
-    [],
-  );
-
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -269,50 +253,48 @@ export default function ActivityDetailScreen() {
 
   if (loading && isEditMode) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={ui.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.accent} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <SafeAreaView style={ui.container} edges={["top", "bottom"]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.cancelButton}>Cancel</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>
+        <SecondaryButton
+          title="Cancel"
+          onPress={() => router.back()}
+          style={styles.headerButton}
+        />
+        <Text style={[typography.h4, styles.headerTitle]}>
           {isEditMode ? "Edit" : "Create"} Activity
         </Text>
-
-        <TouchableOpacity onPress={handleSave}>
-          <Text style={styles.saveButton}>Save</Text>
-        </TouchableOpacity>
+        <PrimaryButton
+          title="Save"
+          onPress={handleSave}
+          style={styles.headerButton}
+        />
       </View>
 
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.form, styles.scrollContent]}
+        style={ui.scrollView}
+        contentContainerStyle={[ui.contentPadding, styles.scrollContent]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Title *</Text>
-          <TextInput
-            {...textInputCommonProps}
-            style={[styles.input, errors.title && styles.inputError]}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="e.g., Go-Kart Racing"
-          />
-          {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-        </View>
+        <FormInput
+          label="Title *"
+          value={title}
+          onChangeText={setTitle}
+          placeholder="e.g., Go-Kart Racing"
+          error={errors.title}
+        />
 
         {/* Type Dropdown */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Type *</Text>
+        <View style={ui.section}>
+          <Text style={[typography.label, styles.labelSpacing]}>Type *</Text>
           <View style={styles.typeDropdown}>
             {typeDefinitions.map((type) => (
               <TouchableOpacity
@@ -326,7 +308,7 @@ export default function ActivityDetailScreen() {
               >
                 <Text
                   style={[
-                    styles.typeOptionText,
+                    typography.caption,
                     typeId === type.typeId && styles.typeOptionTextSelected,
                   ]}
                 >
@@ -335,96 +317,65 @@ export default function ActivityDetailScreen() {
               </TouchableOpacity>
             ))}
           </View>
-
           {errors.typeId && (
-            <Text style={styles.errorText}>{errors.typeId}</Text>
+            <Text style={[typography.captionSmall, styles.errorText]}>
+              {errors.typeId}
+            </Text>
           )}
           {isEditMode && (
-            <Text style={styles.helperText}>
+            <Text style={[typography.captionSmall, styles.helperText]}>
               Type cannot be changed after creation
             </Text>
           )}
         </View>
 
         {/* Description */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Description *</Text>
-          <TextInput
-            {...textInputCommonProps}
-            style={[
-              styles.input,
-              styles.textArea,
-              errors.description && styles.inputError,
-            ]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Describe your activity..."
-            multiline
-            numberOfLines={4}
-          />
-          {errors.description && (
-            <Text style={styles.errorText}>{errors.description}</Text>
-          )}
-        </View>
+        <TextArea
+          label="Description *"
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Describe your activity..."
+          error={errors.description}
+        />
 
         {/* City */}
-        <View style={styles.field}>
-          <Text style={styles.label}>City *</Text>
-          <TextInput
-            {...textInputCommonProps}
-            style={[styles.input, errors.city && styles.inputError]}
-            value={city}
-            onChangeText={setCity}
-            placeholder="e.g., Amsterdam"
-          />
-          {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
-        </View>
+        <FormInput
+          label="City *"
+          value={city}
+          onChangeText={setCity}
+          placeholder="e.g., Amsterdam"
+          error={errors.city}
+        />
 
         {/* Address */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Address *</Text>
-          <TextInput
-            {...textInputCommonProps}
-            style={[styles.input, errors.address && styles.inputError]}
-            value={address}
-            onChangeText={setAddress}
-            placeholder="Street address"
-          />
-          {errors.address && (
-            <Text style={styles.errorText}>{errors.address}</Text>
-          )}
-        </View>
+        <FormInput
+          label="Address *"
+          value={address}
+          onChangeText={setAddress}
+          placeholder="Street address"
+          error={errors.address}
+        />
 
         {/* Category */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Category *</Text>
-          <TextInput
-            {...textInputCommonProps}
-            style={[styles.input, errors.category && styles.inputError]}
-            value={category}
-            onChangeText={setCategory}
-            placeholder="e.g., Sports, Food, Entertainment"
-          />
-          {errors.category && (
-            <Text style={styles.errorText}>{errors.category}</Text>
-          )}
-        </View>
+        <FormInput
+          label="Category *"
+          value={category}
+          onChangeText={setCategory}
+          placeholder="e.g., Sports, Food, Entertainment"
+          error={errors.category}
+        />
 
         {/* Price From */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Price From (€) *</Text>
-          <TextInput
-            {...textInputCommonProps}
-            style={[styles.input, errors.priceFrom && styles.inputError]}
+        <View style={ui.section}>
+          <FormInput
+            label="Price From (€) *"
             value={priceFrom}
             onChangeText={setPriceFrom}
             placeholder="0.00"
             keyboardType="decimal-pad"
+            error={errors.priceFrom}
           />
-          {errors.priceFrom && (
-            <Text style={styles.errorText}>{errors.priceFrom}</Text>
-          )}
-          <Text style={styles.helperText}>
+          <Text style={[typography.captionSmall, styles.helperText]}>
             {["karting", "cooking_class", "escape_room"].includes(typeId) &&
             config.packages?.length > 0
               ? "Auto-calculated from packages"
@@ -434,59 +385,48 @@ export default function ActivityDetailScreen() {
 
         {/* Catalog Group Fields */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Discovery Settings</Text>
-          <Text style={styles.sectionSubtitle}>
+          <Text style={[typography.h4, styles.sectionTitle]}>
+            Discovery Settings
+          </Text>
+          <Text style={[typography.captionMuted, styles.sectionSubtitle]}>
             Required for customers to find your activity.
           </Text>
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Catalog Group ID *</Text>
-          <TextInput
-            {...textInputCommonProps}
-            style={[styles.input, errors.catalogGroupId && styles.inputError]}
-            value={catalogGroupId}
-            onChangeText={setCatalogGroupId}
-            placeholder="e.g., businessname-escape-room"
-          />
-          {errors.catalogGroupId && (
-            <Text style={styles.errorText}>{errors.catalogGroupId}</Text>
-          )}
-          <Text style={styles.helperText}>
-            Unique ID for grouping related activities.
-          </Text>
-        </View>
+        <FormInput
+          label="Catalog Group ID *"
+          value={catalogGroupId}
+          onChangeText={setCatalogGroupId}
+          placeholder="e.g., businessname-escape-room"
+          error={errors.catalogGroupId}
+          containerStyle={ui.section}
+        />
+        <Text style={[typography.captionSmall, styles.helperText]}>
+          Unique ID for grouping related activities.
+        </Text>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Catalog Group Title *</Text>
-          <TextInput
-            {...textInputCommonProps}
-            style={[
-              styles.input,
-              errors.catalogGroupTitle && styles.inputError,
-            ]}
-            value={catalogGroupTitle}
-            onChangeText={setCatalogGroupTitle}
-            placeholder="e.g., Escape Room at YourBusiness"
-          />
-          {errors.catalogGroupTitle && (
-            <Text style={styles.errorText}>{errors.catalogGroupTitle}</Text>
-          )}
-          <Text style={styles.helperText}>
-            Display name shown in discovery feed.
-          </Text>
-        </View>
+        <FormInput
+          label="Catalog Group Title *"
+          value={catalogGroupTitle}
+          onChangeText={setCatalogGroupTitle}
+          placeholder="e.g., Escape Room at YourBusiness"
+          error={errors.catalogGroupTitle}
+          containerStyle={ui.section}
+        />
+        <Text style={[typography.captionSmall, styles.helperText]}>
+          Display name shown in discovery feed.
+        </Text>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Catalog Group Kind</Text>
-          <TextInput
-            {...textInputCommonProps}
-            style={styles.input}
+        <View style={ui.section}>
+          <FormInput
+            label="Catalog Group Kind"
             value={catalogGroupKind}
             onChangeText={setCatalogGroupKind}
             placeholder={typeId || "activity_type"}
           />
-          <Text style={styles.helperText}>Activity type identifier.</Text>
+          <Text style={[typography.captionSmall, styles.helperText]}>
+            Activity type identifier.
+          </Text>
         </View>
 
         {/* Dynamic Config / Packages */}
@@ -523,18 +463,22 @@ export default function ActivityDetailScreen() {
         )}
 
         {/* Availability Template Picker */}
-        <View style={styles.field}>
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>Availability Template *</Text>
+        <View style={ui.section}>
+          <View style={[ui.rowBetween, styles.labelRow]}>
+            <Text style={[typography.label, styles.labelSpacing]}>
+              Availability Template *
+            </Text>
             {!availabilityTemplateId && (
               <View style={styles.requiredIndicator}>
-                <Text style={styles.requiredText}>⚠️ Required</Text>
+                <Text style={[typography.captionSmall, styles.requiredText]}>
+                  ⚠️ Required
+                </Text>
               </View>
             )}
           </View>
 
           {errors.availabilityTemplateId && (
-            <Text style={styles.errorText}>
+            <Text style={[typography.captionSmall, styles.errorText]}>
               {errors.availabilityTemplateId}
             </Text>
           )}
@@ -556,16 +500,10 @@ export default function ActivityDetailScreen() {
                       isEditMode && currentActivity?.status === "published"
                     }
                   >
+                    <Text style={typography.caption}>{template.name}</Text>
                     <Text
-                      style={[
-                        styles.templateOptionText,
-                        availabilityTemplateId === template.id &&
-                          styles.templateOptionTextSelected,
-                      ]}
+                      style={[typography.captionSmall, styles.templateDetails]}
                     >
-                      {template.name}
-                    </Text>
-                    <Text style={styles.templateDetails}>
                       {template.daysOfWeek?.length || 0} days •{" "}
                       {template.capacity} capacity
                     </Text>
@@ -574,19 +512,16 @@ export default function ActivityDetailScreen() {
 
               {availabilityTemplateId &&
                 currentActivity?.status !== "published" && (
-                  <TouchableOpacity
-                    style={styles.templateClearButton}
+                  <SecondaryButton
+                    title="Clear Selection"
                     onPress={() => setAvailabilityTemplateId("")}
-                  >
-                    <Text style={styles.templateClearText}>
-                      Clear Selection
-                    </Text>
-                  </TouchableOpacity>
+                    style={styles.templateClearButton}
+                  />
                 )}
             </View>
           ) : (
             <View style={styles.warningBox}>
-              <Text style={styles.warningText}>
+              <Text style={[typography.caption, styles.warningText]}>
                 ⚠️ No active templates found. Create one in the Availability tab
                 first.
               </Text>
@@ -595,7 +530,7 @@ export default function ActivityDetailScreen() {
 
           {isEditMode && currentActivity?.status === "published" && (
             <View style={styles.infoBox}>
-              <Text style={styles.infoText}>
+              <Text style={[typography.caption, styles.infoText]}>
                 ✓ Template is linked and cannot be changed while published
               </Text>
             </View>
@@ -607,16 +542,7 @@ export default function ActivityDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.bg },
-  scroll: { flex: 1, backgroundColor: theme.colors.bg },
-  scrollContent: { paddingBottom: 40 },
-
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: theme.colors.bg,
-  },
+  scrollContent: { paddingBottom: theme.spacing.xxl },
 
   header: {
     flexDirection: "row",
@@ -628,137 +554,78 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.divider,
   },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: theme.colors.text,
-  },
-  cancelButton: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: theme.colors.muted,
-  },
-  saveButton: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: theme.colors.accent,
+  headerTitle: { flex: 1, textAlign: "center" as const },
+  headerButton: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    minWidth: 70,
   },
 
-  form: { padding: theme.spacing.lg },
-  field: { marginBottom: theme.spacing.lg },
-
-  label: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: theme.colors.muted,
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
+  labelSpacing: { marginBottom: theme.spacing.sm },
   helperText: {
-    fontSize: 12,
+    marginTop: theme.spacing.sm,
     color: theme.colors.muted,
-    marginTop: 6,
-    fontWeight: "700",
   },
-
-  input: {
-    borderWidth: 1,
-    borderColor: theme.colors.divider,
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 15,
-    backgroundColor: theme.colors.surface,
-    color: theme.colors.text,
-  },
-  textArea: { height: 110, textAlignVertical: "top" },
-
-  inputError: { borderColor: theme.colors.danger },
   errorText: {
     color: theme.colors.danger,
-    fontSize: 12,
-    marginTop: 6,
-    fontWeight: "800",
+    marginTop: theme.spacing.sm,
   },
 
-  typeDropdown: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  typeDropdown: {
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    gap: theme.spacing.sm,
+  },
   typeOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: stylesVars.border,
-    backgroundColor: stylesVars.cardBg,
+    borderColor: theme.colors.divider,
+    backgroundColor: theme.colors.surface,
   },
   typeOptionSelected: {
     backgroundColor: theme.colors.accent,
     borderColor: theme.colors.accent,
   },
-  typeOptionText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: theme.colors.text,
-  },
   typeOptionTextSelected: {
-    color: "#0B0B0B",
+    color: theme.colors.buttonTextOnAccent,
   },
 
-  templatePicker: { marginTop: 8, gap: 10 },
+  templatePicker: { marginTop: theme.spacing.sm, gap: theme.spacing.md },
   templateOption: {
     padding: theme.spacing.md,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: stylesVars.border,
-    backgroundColor: stylesVars.cardBg,
+    borderColor: theme.colors.divider,
+    backgroundColor: theme.colors.surface,
   },
   templateOptionSelected: {
     borderColor: theme.colors.accent,
     backgroundColor: "rgba(255,255,255,0.10)",
   },
-  templateOptionText: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: theme.colors.text,
-  },
-  templateOptionTextSelected: { color: theme.colors.text },
   templateDetails: {
-    fontSize: 12,
     color: theme.colors.muted,
-    marginTop: 6,
-    fontWeight: "700",
+    marginTop: theme.spacing.sm,
   },
 
   templateClearButton: {
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.divider,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  templateClearText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: theme.colors.muted,
+    paddingVertical: theme.spacing.sm,
+    alignSelf: "flex-start",
   },
 
-  labelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
+  labelRow: { marginBottom: theme.spacing.sm },
   requiredIndicator: {
     backgroundColor: "rgba(255,77,77,0.12)",
     borderWidth: 1,
     borderColor: "rgba(255,77,77,0.25)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     borderRadius: 999,
   },
-  requiredText: { fontSize: 12, color: theme.colors.danger, fontWeight: "900" },
+  requiredText: { color: theme.colors.danger },
 
   warningBox: {
     backgroundColor: "rgba(245,158,11,0.14)",
@@ -766,9 +633,9 @@ const styles = StyleSheet.create({
     borderColor: "rgba(245,158,11,0.25)",
     padding: theme.spacing.md,
     borderRadius: theme.radius.lg,
-    marginTop: 8,
+    marginTop: theme.spacing.sm,
   },
-  warningText: { fontSize: 13, color: "#F59E0B", fontWeight: "800" },
+  warningText: { color: "#F59E0B" },
 
   infoBox: {
     backgroundColor: "rgba(34,197,94,0.12)",
@@ -776,26 +643,17 @@ const styles = StyleSheet.create({
     borderColor: "rgba(34,197,94,0.22)",
     padding: theme.spacing.md,
     borderRadius: theme.radius.lg,
-    marginTop: 8,
+    marginTop: theme.spacing.sm,
   },
-  infoText: { fontSize: 13, color: "#22C55E", fontWeight: "800" },
+  infoText: { color: "#22C55E" },
 
   sectionHeader: {
-    marginTop: 24,
-    marginBottom: 16,
-    paddingBottom: 12,
+    marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.divider,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: 13,
-    color: theme.colors.muted,
-    lineHeight: 18,
-  },
+  sectionTitle: { marginBottom: theme.spacing.sm },
+  sectionSubtitle: { lineHeight: 18 },
 });

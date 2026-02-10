@@ -1,10 +1,12 @@
 // apps/mobile/app/(business)/settings/profile/contact.tsx
 import { TopBar } from "@/src/components/TopBar";
+import { PrimaryButton } from "@/src/components/Button";
+import { FormInput } from "@/src/components/Input";
 import { apiPatch } from "@/src/lib/api";
 import { useBusiness } from "@/src/providers/business-context";
-import { theme } from "@/src/theme/theme";
+import { ui } from "@/src/theme/ui";
 import React, { useEffect, useState } from "react";
-import { Alert, Button, TextInput, View } from "react-native";
+import { Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BusinessContactScreen() {
@@ -35,39 +37,25 @@ export default function BusinessContactScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+        <SafeAreaView style={ui.container} edges={["top"]}>
             <TopBar title="Contact" />
-            <View style={{ padding: 16, gap: 12 }}>
-                <TextInput
+            <View style={[ui.contentPadding, { gap: 12 }]}>
+                <FormInput
+                    label="Business phone"
                     value={phone}
                     onChangeText={setPhone}
                     placeholder="Business phone"
-                    placeholderTextColor="#666"
                     keyboardType="phone-pad"
-                    style={{
-                        borderWidth: 1,
-                        borderColor: theme.colors.divider,
-                        borderRadius: 12,
-                        padding: 12,
-                        color: theme.colors.text,
-                    }}
                 />
-                <TextInput
+                <FormInput
+                    label="Business email"
                     value={email}
                     onChangeText={setEmail}
                     placeholder="Business email"
-                    placeholderTextColor="#666"
                     autoCapitalize="none"
                     keyboardType="email-address"
-                    style={{
-                        borderWidth: 1,
-                        borderColor: theme.colors.divider,
-                        borderRadius: 12,
-                        padding: 12,
-                        color: theme.colors.text,
-                    }}
                 />
-                <Button title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
+                <PrimaryButton title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
             </View>
         </SafeAreaView>
     );

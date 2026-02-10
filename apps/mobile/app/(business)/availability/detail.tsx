@@ -1,3 +1,5 @@
+import { DangerButton, PrimaryButton, SecondaryButton } from "@/src/components/Button";
+import { FormInput } from "@/src/components/Input";
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
@@ -10,6 +12,8 @@ import {
   UpdateTemplateData,
 } from "@/src/store/slices/availability-template-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -18,7 +22,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -225,48 +228,49 @@ export default function AvailabilityDetailScreen() {
 
   if (loading && isEditMode) {
     return (
-      <View style={styles.container}>
+      <View style={ui.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.accent} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <SafeAreaView style={ui.container} edges={["top", "bottom"]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.cancelButton}>Cancel</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.title}>
+        <SecondaryButton
+          title="Cancel"
+          onPress={() => router.back()}
+          style={styles.headerButton}
+        />
+        <Text style={[typography.h4, styles.headerTitle]}>
           {isEditMode ? "Edit" : "Create"} Template
         </Text>
-
-        <TouchableOpacity onPress={handleSave}>
-          <Text style={styles.saveButton}>Save</Text>
-        </TouchableOpacity>
+        <PrimaryButton
+          title="Save"
+          onPress={handleSave}
+          style={styles.headerButton}
+        />
       </View>
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.form}
+        style={ui.scrollView}
+        contentContainerStyle={[ui.contentPadding, styles.scrollContent]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {/* Name */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Name *</Text>
-          <TextInput
-            style={[styles.input, errors.name && styles.inputError]}
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g., Weekend Hours"
-          />
-          {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-        </View>
+        <FormInput
+          label="Name *"
+          value={name}
+          onChangeText={setName}
+          placeholder="e.g., Weekend Hours"
+          error={errors.name}
+        />
 
         {/* Days of Week */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Days of Week *</Text>
+        <View style={ui.section}>
+          <Text style={[typography.label, styles.labelSpacing]}>
+            Days of Week *
+          </Text>
           <View style={styles.daySelector}>
             {DAY_NAMES.map((day, index) => {
               const dayNumber = index + 1;
@@ -282,7 +286,7 @@ export default function AvailabilityDetailScreen() {
                 >
                   <Text
                     style={[
-                      styles.dayButtonText,
+                      typography.caption,
                       isSelected && styles.dayButtonTextSelected,
                     ]}
                   >
@@ -292,109 +296,97 @@ export default function AvailabilityDetailScreen() {
               );
             })}
           </View>
-          {errors.days && <Text style={styles.errorText}>{errors.days}</Text>}
+          {errors.days && (
+            <Text style={[typography.captionSmall, styles.errorText]}>
+              {errors.days}
+            </Text>
+          )}
         </View>
 
         {/* Time Range */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Time Range *</Text>
+        <View style={ui.section}>
+          <Text style={[typography.label, styles.labelSpacing]}>
+            Time Range *
+          </Text>
           <View style={styles.timeRow}>
             <View style={styles.timeField}>
-              <Text style={styles.subLabel}>Start</Text>
-              <TextInput
-                style={[styles.input, errors.time && styles.inputError]}
+              <FormInput
+                label="Start"
                 value={startTime}
                 onChangeText={setStartTime}
                 placeholder="HH:MM:SS"
+                error={errors.time}
               />
             </View>
-            <Text style={styles.timeSeparator}>—</Text>
+            <Text style={[typography.body, styles.timeSeparator]}>—</Text>
             <View style={styles.timeField}>
-              <Text style={styles.subLabel}>End</Text>
-              <TextInput
-                style={[styles.input, errors.time && styles.inputError]}
+              <FormInput
+                label="End"
                 value={endTime}
                 onChangeText={setEndTime}
                 placeholder="HH:MM:SS"
               />
             </View>
           </View>
-          {errors.time && <Text style={styles.errorText}>{errors.time}</Text>}
         </View>
 
         {/* Slot Duration */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Slot Duration (minutes) *</Text>
-          <TextInput
-            style={[styles.input, errors.slotDuration && styles.inputError]}
-            value={slotDuration}
-            onChangeText={setSlotDuration}
-            keyboardType="numeric"
-            placeholder="60"
-          />
-          {errors.slotDuration && (
-            <Text style={styles.errorText}>{errors.slotDuration}</Text>
-          )}
-        </View>
+        <FormInput
+          label="Slot Duration (minutes) *"
+          value={slotDuration}
+          onChangeText={setSlotDuration}
+          keyboardType="numeric"
+          placeholder="60"
+          error={errors.slotDuration}
+        />
 
         {/* Capacity */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Capacity *</Text>
-          <TextInput
-            style={[styles.input, errors.capacity && styles.inputError]}
-            value={capacity}
-            onChangeText={setCapacity}
-            keyboardType="numeric"
-            placeholder="1"
-          />
-          {errors.capacity && (
-            <Text style={styles.errorText}>{errors.capacity}</Text>
-          )}
-        </View>
+        <FormInput
+          label="Capacity *"
+          value={capacity}
+          onChangeText={setCapacity}
+          keyboardType="numeric"
+          placeholder="1"
+          error={errors.capacity}
+        />
 
         {/* Image URL (optional) */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Image URL (optional)</Text>
-          <TextInput
-            style={styles.input}
-            value={imageUrl}
-            onChangeText={setImageUrl}
-            placeholder="https://example.com/image.jpg"
-          />
-        </View>
+        <FormInput
+          label="Image URL (optional)"
+          value={imageUrl}
+          onChangeText={setImageUrl}
+          placeholder="https://example.com/image.jpg"
+        />
 
         {/* Exceptions */}
-        <View style={styles.field}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.label}>Exceptions</Text>
-            <TouchableOpacity style={styles.addButton} onPress={addException}>
-              <Text style={styles.addButtonText}>+ Add</Text>
-            </TouchableOpacity>
+        <View style={ui.section}>
+          <View style={[ui.rowBetween, styles.sectionHeader]}>
+            <Text style={[typography.label, styles.labelSpacing]}>
+              Exceptions
+            </Text>
+            <SecondaryButton
+              title="+ Add"
+              onPress={addException}
+              style={styles.addButton}
+            />
           </View>
           {exceptions.map((exception, index) => (
             <View key={index} style={styles.exceptionCard}>
               <View style={styles.exceptionRow}>
                 <View style={styles.exceptionField}>
-                  <Text style={styles.subLabel}>Start Date</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      errors[`exception${index}`] && styles.inputError,
-                    ]}
+                  <FormInput
+                    label="Start Date"
                     value={exception.startDate}
                     onChangeText={(val) =>
                       updateException(index, "startDate", val)
                     }
                     placeholder="YYYY-MM-DD"
+                    error={errors[`exception${index}`]}
                   />
                 </View>
                 <View style={styles.exceptionField}>
-                  <Text style={styles.subLabel}>End Date</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      errors[`exception${index}`] && styles.inputError,
-                    ]}
+                  <FormInput
+                    label="End Date"
                     value={exception.endDate}
                     onChangeText={(val) =>
                       updateException(index, "endDate", val)
@@ -403,20 +395,19 @@ export default function AvailabilityDetailScreen() {
                   />
                 </View>
               </View>
-              <TextInput
-                style={styles.input}
+              <FormInput
+                label="Reason"
                 value={exception.reason || ""}
                 onChangeText={(val) => updateException(index, "reason", val)}
-                placeholder="Reason (optional)"
+                placeholder="Optional"
               />
-              <TouchableOpacity
-                style={styles.removeButton}
+              <DangerButton
+                title="Remove"
                 onPress={() => removeException(index)}
-              >
-                <Text style={styles.removeButtonText}>Remove</Text>
-              </TouchableOpacity>
+                style={styles.removeButton}
+              />
               {errors[`exception${index}`] && (
-                <Text style={styles.errorText}>
+                <Text style={[typography.captionSmall, styles.errorText]}>
                   {errors[`exception${index}`]}
                 </Text>
               )}
@@ -429,10 +420,7 @@ export default function AvailabilityDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-  },
+  scrollContent: { paddingBottom: theme.spacing.xxl },
 
   header: {
     flexDirection: "row",
@@ -444,157 +432,79 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.divider,
     backgroundColor: theme.colors.bg,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: theme.colors.text,
-  },
-  cancelButton: {
-    color: theme.colors.muted,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  saveButton: {
-    color: theme.colors.accent,
-    fontSize: 14,
-    fontWeight: "800",
+  headerTitle: { flex: 1, textAlign: "center" as const },
+  headerButton: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    minWidth: 70,
   },
 
-  scroll: { flex: 1 },
-  form: {
-    padding: theme.spacing.lg,
-  },
-  field: {
-    marginBottom: theme.spacing.lg,
-  },
-
-  label: {
-    fontSize: 12,
-    fontWeight: "800",
-    marginBottom: 8,
-    color: theme.colors.muted,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  subLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    marginBottom: 6,
-    color: theme.colors.muted,
-  },
-
-  input: {
-    borderWidth: 1,
-    borderColor: theme.colors.divider,
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 15,
-    backgroundColor: theme.colors.surface,
-    color: theme.colors.text,
-  },
-  inputError: {
-    borderColor: theme.colors.danger,
-  },
+  labelSpacing: { marginBottom: theme.spacing.sm },
   errorText: {
     color: theme.colors.danger,
-    fontSize: 12,
-    marginTop: 6,
-    fontWeight: "700",
+    marginTop: theme.spacing.sm,
   },
 
   daySelector: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    gap: theme.spacing.sm,
   },
   dayButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: theme.colors.divider,
+    backgroundColor: theme.colors.surface,
   },
   dayButtonSelected: {
     backgroundColor: theme.colors.accent,
     borderColor: theme.colors.accent,
   },
-  dayButtonText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: theme.colors.text,
-  },
   dayButtonTextSelected: {
-    color: theme.colors.bg,
+    color: theme.colors.buttonTextOnAccent,
   },
 
   timeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
+    flexDirection: "row" as const,
+    alignItems: "flex-end" as const,
+    gap: theme.spacing.md,
   },
-  timeField: {
-    flex: 1,
-  },
+  timeField: { flex: 1 },
   timeSeparator: {
-    fontSize: 18,
     color: theme.colors.muted,
-    marginTop: 18,
+    marginBottom: theme.spacing.lg,
   },
 
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
+  sectionHeader: { marginBottom: theme.spacing.md },
   addButton: {
     height: 34,
-    paddingHorizontal: 12,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
     borderRadius: 17,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.divider,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  addButtonText: {
-    color: theme.colors.text,
-    fontSize: 13,
-    fontWeight: "800",
   },
 
   exceptionCard: {
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    gap: 10,
+    borderColor: theme.colors.divider,
+    gap: theme.spacing.md,
   },
   exceptionRow: {
-    flexDirection: "row",
-    gap: 10,
+    flexDirection: "row" as const,
+    gap: theme.spacing.md,
   },
-  exceptionField: {
-    flex: 1,
-  },
+  exceptionField: { flex: 1 },
 
   removeButton: {
     height: 36,
-    paddingHorizontal: 14,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
     borderRadius: 18,
-    backgroundColor: theme.colors.danger,
     alignSelf: "flex-start",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 2,
-  },
-  removeButtonText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "800",
   },
 });

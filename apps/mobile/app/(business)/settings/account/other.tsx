@@ -1,10 +1,12 @@
 // apps/mobile/app/(business)/settings/account/other.tsx
 import { TopBar } from "@/src/components/TopBar";
+import { PrimaryButton } from "@/src/components/Button";
 import { apiPatch } from "@/src/lib/api";
 import { useAuth } from "@/src/providers/auth-context";
 import { theme } from "@/src/theme/theme";
+import { ui } from "@/src/theme/ui";
 import React, { useState } from "react";
-import { Alert, Button, Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function OtherScreen() {
@@ -38,15 +40,15 @@ export default function OtherScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+        <SafeAreaView style={ui.container} edges={["top"]}>
             <TopBar title="Other" />
-            <View style={{ flex: 1, padding: 20, backgroundColor: theme.colors.bg, gap: 12 }}>
+            <View style={[ui.container, ui.contentPadding, { gap: 12 }]}>
                 <Text style={{ color: theme.colors.muted }}>
                     Deactivation hides your business from users and stops new bookings.
                 </Text>
 
-                <Button title={busy ? "Deactivating..." : "Deactivate account"} onPress={onDeactivate} disabled={busy} color="#ff4d4d" />
-                <Button title="Sign out" onPress={signOut} disabled={busy} color="#ff4d4d" />
+                <PrimaryButton title={busy ? "Deactivating..." : "Deactivate account"} onPress={onDeactivate} disabled={busy} />
+                <PrimaryButton title="Sign out" onPress={signOut} disabled={busy} />
             </View>
         </SafeAreaView>
     );

@@ -1,10 +1,13 @@
 // apps/mobile/app/(business)/settings/account/phone.tsx
 import { TopBar } from "@/src/components/TopBar";
+import { PrimaryButton } from "@/src/components/Button";
+import { FormInput } from "@/src/components/Input";
 import { apiPatch } from "@/src/lib/api";
 import { useAuth } from "@/src/providers/auth-context";
 import { theme } from "@/src/theme/theme";
+import { ui } from "@/src/theme/ui";
 import React, { useEffect, useState } from "react";
-import { Alert, Button, Text, TextInput, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditPhoneScreen() {
@@ -28,21 +31,20 @@ export default function EditPhoneScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+        <SafeAreaView style={ui.container} edges={["top"]}>
             <TopBar title="Phone" />
-            <View style={{ flex: 1, padding: 20, gap: 12 }}>
+            <View style={[ui.container, ui.contentPadding, { gap: 12 }]}>
                 <Text style={{ color: theme.colors.text, fontSize: 22, fontWeight: "800" }}>Phone number</Text>
 
-                <TextInput
+                <FormInput
+                    label="Phone number"
                     value={value}
                     onChangeText={setValue}
                     placeholder="Phone number"
-                    placeholderTextColor="#666"
                     keyboardType="phone-pad"
-                    style={{ borderWidth: 1, borderColor: "#333", borderRadius: 12, padding: 12, color: theme.colors.text }}
                 />
 
-                <Button title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
+                <PrimaryButton title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
             </View>
         </SafeAreaView>
     );

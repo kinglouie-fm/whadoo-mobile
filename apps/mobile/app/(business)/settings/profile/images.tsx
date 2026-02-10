@@ -1,10 +1,13 @@
 // apps/mobile/app/(business)/settings/profile/images.tsx
 import { TopBar } from "@/src/components/TopBar";
+import { PrimaryButton } from "@/src/components/Button";
+import { FormInput } from "@/src/components/Input";
 import { apiPatch } from "@/src/lib/api";
 import { useBusiness } from "@/src/providers/business-context";
 import { theme } from "@/src/theme/theme";
+import { ui } from "@/src/theme/ui";
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Pressable, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BusinessImagesScreen() {
@@ -34,28 +37,21 @@ export default function BusinessImagesScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+        <SafeAreaView style={ui.container} edges={["top"]}>
             <TopBar title="Images" />
-            <View style={{ padding: 16, gap: 12 }}>
+            <View style={[ui.contentPadding, { gap: 12 }]}>
                 {images.length === 0 ? (
                     <Text style={{ color: theme.colors.muted }}>No images yet. Add at least one.</Text>
                 ) : null}
 
                 {images.map((url, idx) => (
                     <View key={idx} style={{ gap: 8 }}>
-                        <TextInput
+                        <FormInput
+                            label={`Image URL ${idx + 1}`}
                             value={url}
                             onChangeText={(v) => update(idx, v)}
                             placeholder="https://..."
-                            placeholderTextColor="#666"
                             autoCapitalize="none"
-                            style={{
-                                borderWidth: 1,
-                                borderColor: theme.colors.divider,
-                                borderRadius: 12,
-                                padding: 12,
-                                color: theme.colors.text,
-                            }}
                         />
                         <Pressable
                             onPress={() => remove(idx)}
@@ -76,8 +72,8 @@ export default function BusinessImagesScreen() {
                     </View>
                 ))}
 
-                <Button title="Add image" onPress={add} />
-                <Button title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
+                <PrimaryButton title="Add image" onPress={add} />
+                <PrimaryButton title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
             </View>
         </SafeAreaView>
     );

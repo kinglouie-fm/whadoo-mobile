@@ -1,3 +1,6 @@
+import { Avatar } from "@/src/components/Avatar";
+import { IconButton, PrimaryButton } from "@/src/components/Button";
+import { EmptyState } from "@/src/components/EmptyState";
 import { SwipeCard } from "@/src/components/SwipeCard";
 import { useAuth } from "@/src/providers/auth-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -9,24 +12,16 @@ import {
 } from "@/src/store/slices/grouped-card-slice";
 import { saveActivity } from "@/src/store/slices/saved-activity-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useLayoutEffect, useRef } from "react";
-import {
-  ActivityIndicator,
-  Dimensions,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Swiper from "react-native-deck-swiper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-
-const { height } = Dimensions.get("window");
 
 export default function DiscoverySwipeScreen() {
   const router = useRouter();
@@ -41,12 +36,9 @@ export default function DiscoverySwipeScreen() {
     loadCards();
   }, []);
 
-  const getInitials = () => {
-    if (!appUser) return "U";
-    const first = appUser.firstName?.charAt(0) || "";
-    const last = appUser.lastName?.charAt(0) || "";
-    return (first + last).toUpperCase() || "U";
-  };
+  const avatarName = appUser
+    ? [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || "User"
+    : "User";
 
   const getLocation = () => {
     return appUser?.city || "Select location";
@@ -61,9 +53,11 @@ export default function DiscoverySwipeScreen() {
       },
       headerLeft: () => (
         <View style={styles.headerLeft}>
-          <View style={styles.profileCircle}>
-            <Text style={styles.profileInitials}>{getInitials()}</Text>
-          </View>
+          <Avatar
+            name={avatarName}
+            photoUrl={appUser?.photoUrl}
+            size={40}
+          />
         </View>
       ),
       headerTitle: () => (
@@ -81,13 +75,11 @@ export default function DiscoverySwipeScreen() {
       ),
       headerRight: () => (
         <View style={styles.headerRight}>
-          <Pressable style={styles.headerIconBtn}>
-            <MaterialIcons
-              name="more-horiz"
-              size={22}
-              color={theme.colors.text}
-            />
-          </Pressable>
+          <IconButton
+            icon="more-horiz"
+            size={22}
+            onPress={() => {}}
+          />
         </View>
       ),
     });
@@ -219,44 +211,45 @@ export default function DiscoverySwipeScreen() {
 
   if (loading && groups.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.accent} />
-          <Text style={styles.loadingText}>Loading activities...</Text>
-        </View>
+      <SafeAreaView style={ui.container} edges={["top", "bottom"]}>
+        <EmptyState
+          icon="sync"
+          title="Loading activities..."
+          action={
+            <ActivityIndicator size="large" color={theme.colors.accent} />
+          }
+        />
       </SafeAreaView>
     );
   }
 
   if (error && groups.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Failed to load activities</Text>
-          <Text style={styles.errorSubtext}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadCards}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
+      <SafeAreaView style={ui.container} edges={["top", "bottom"]}>
+        <EmptyState
+          icon="error-outline"
+          title="Failed to load activities"
+          subtitle={error}
+          action={<PrimaryButton title="Retry" onPress={loadCards} />}
+        />
       </SafeAreaView>
     );
   }
 
   if (groups.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No activities found</Text>
-          <Text style={styles.emptySubtext}>
-            Check back later for new activities!
-          </Text>
-        </View>
+      <SafeAreaView style={ui.container} edges={["top", "bottom"]}>
+        <EmptyState
+          icon="explore-off"
+          title="No activities found"
+          subtitle="Check back later for new activities!"
+        />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <SafeAreaView style={ui.container} edges={["top", "bottom"]}>
       <View style={styles.swipeContainer}>
         <Swiper
           ref={swiperRef}
@@ -269,7 +262,7 @@ export default function DiscoverySwipeScreen() {
           cardIndex={currentIndex}
           backgroundColor="transparent"
           stackSize={3}
-          stackSeparation={15}
+          stackSeparation={theme.spacing.md}
           animateOverlayLabelsOpacity
           animateCardOpacity
           verticalSwipe
@@ -277,7 +270,7 @@ export default function DiscoverySwipeScreen() {
           disableBottomSwipe={false}
           disableTopSwipe={false}
           cardVerticalMargin={0}
-          containerStyle={{ transform: [{ translateY: -40 }] }}
+          containerStyle={{ transform: [{ translateY: -theme.spacing.xxl }] }}
         />
       </View>
     </SafeAreaView>
@@ -285,115 +278,31 @@ export default function DiscoverySwipeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-  },
   headerLeft: {
-    marginLeft: 16,
-  },
-  profileCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  profileInitials: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: theme.colors.text,
+    marginLeft: theme.spacing.lg,
   },
   headerCenter: {
     alignItems: "center",
   },
   locationLabel: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    marginBottom: 2,
+    ...typography.captionSmall,
+    marginBottom: theme.spacing.sm,
   },
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: theme.spacing.sm,
   },
   locationText: {
-    fontSize: 15,
-    fontWeight: "700",
+    ...typography.body,
     color: theme.colors.text,
   },
   headerRight: {
-    marginRight: 16,
-  },
-  headerIconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surface,
+    marginRight: theme.spacing.lg,
   },
   swipeContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: "600",
-    color: theme.colors.muted,
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: theme.colors.danger,
-    marginBottom: 8,
-  },
-  errorSubtext: {
-    fontSize: 14,
-    color: theme.colors.muted,
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: theme.colors.accent,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: theme.colors.bg,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 15,
-    color: theme.colors.muted,
-    textAlign: "center",
   },
 });

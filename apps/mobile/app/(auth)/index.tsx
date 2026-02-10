@@ -1,48 +1,13 @@
+import { PrimaryButton, SecondaryButton } from "@/src/components/Button";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { theme } from "@/src/theme/theme";
 import { GoogleAuthProvider, getAuth, signInWithCredential } from "@react-native-firebase/auth";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
-
-function PrimaryButton({ title, onPress, disabled }: { title: string; onPress: () => void; disabled?: boolean }) {
-    return (
-        <Pressable
-            onPress={onPress}
-            disabled={disabled}
-            style={{
-                height: 54,
-                borderRadius: 999,
-                backgroundColor: theme.colors.accent,
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: disabled ? 0.6 : 1,
-            }}
-        >
-            <Text style={{ fontFamily: theme.fonts.bold, color: theme.colors.buttonTextOnAccent, fontSize: 16 }}>{title}</Text>
-        </Pressable>
-    );
-}
-
-function OutlineButton({ title, onPress, disabled }: { title: string; onPress: () => void; disabled?: boolean }) {
-    return (
-        <Pressable
-            onPress={onPress}
-            disabled={disabled}
-            style={{
-                height: 54,
-                borderRadius: 999,
-                borderWidth: 1,
-                borderColor: "#5a5a5a",
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: disabled ? 0.6 : 1,
-            }}
-        >
-            <Text style={{ fontFamily: theme.fonts.medium, color: theme.colors.text, fontSize: 16 }}>{title}</Text>
-        </Pressable>
-    );
-}
+import { Alert, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 
 export default function AuthHomeScreen() {
     const router = useRouter();
@@ -66,20 +31,37 @@ export default function AuthHomeScreen() {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.bg, padding: 24, justifyContent: "flex-end", gap: 12 }}>
-            <View style={{ flex: 1 }} />
+        <View style={[ui.container, styles.container]}>
+            <View style={styles.spacer} />
 
-            <Text style={{ fontFamily: theme.fonts.bold, color: theme.colors.text, fontSize: 28, textAlign: "center" }}>
-                Welcome
-            </Text>
-            <Text style={{ fontFamily: theme.fonts.regular, color: theme.colors.muted, textAlign: "center", marginBottom: 12 }}>
-                Sign in to continue
-            </Text>
+            <Text style={[typography.h2, styles.title]}>Welcome</Text>
+            <Text style={[typography.bodyMuted, styles.subtitle]}>Sign in to continue</Text>
 
             <PrimaryButton title="Continue with Email" onPress={() => router.push("/(auth)/login")} disabled={busy} />
-            <OutlineButton title="Continue with Google" onPress={signInGoogle} disabled={busy} />
+            <SecondaryButton title="Continue with Google" onPress={signInGoogle} disabled={busy} />
 
-            <View style={{ height: 22 }} />
+            <View style={styles.bottomSpacer} />
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        padding: theme.spacing.xl,
+        justifyContent: "flex-end",
+        gap: theme.spacing.md,
+    },
+    spacer: {
+        flex: 1,
+    },
+    title: {
+        textAlign: "center",
+    },
+    subtitle: {
+        textAlign: "center",
+        marginBottom: theme.spacing.md,
+    },
+    bottomSpacer: {
+        height: theme.spacing.lg,
+    },
+});
