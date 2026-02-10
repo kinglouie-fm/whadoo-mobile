@@ -124,31 +124,8 @@ export default function BusinessProfileHome() {
       headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
       headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       headerShadowVisible: false,
-
-      // ✅ if you want NO back button in a tab:
       headerLeft: () => null,
-
-      // ✅ optional 3-dots button like activities/availability
       headerRight: () => null,
-      // headerRight: () => (
-      //     <View style={{ flexDirection: "row", gap: theme.spacing.sm, marginRight: theme.spacing.md }}>
-      //         <Pressable
-      //             style={{
-      //                 width: 36,
-      //                 height: 36,
-      //                 borderRadius: 18,
-      //                 alignItems: "center",
-      //                 justifyContent: "center",
-      //                 backgroundColor: theme.colors.surface,
-      //             }}
-      //             onPress={() => {
-      //                 // open menu modal / actions
-      //             }}
-      //         >
-      //             <MaterialIcons name="more-horiz" size={22} color={theme.colors.text} />
-      //         </Pressable>
-      //     </View>
-      // ),
     });
   }, [navigation, router]);
 

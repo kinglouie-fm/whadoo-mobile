@@ -10,9 +10,9 @@ function iconFor(routeName: string): keyof typeof MaterialIcons.glyphMap {
     case "index":
       return "home";
     case "activities":
-      return "sports-basketball";
+      return "grid-view";
     case "availability":
-      return "event-available";
+      return "timeline";
     case "profile":
       return "person";
     default:

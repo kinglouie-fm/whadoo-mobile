@@ -32,7 +32,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const stylesVars = {
-  cardBg: "rgba(255,255,255,0.08)", // like saved.tsx
+  cardBg: "rgba(255,255,255,0.08)",
   inputBg: "rgba(255,255,255,0.06)",
   border: "rgba(255,255,255,0.12)",
   subText: "rgba(255,255,255,0.78)",
@@ -627,7 +627,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.md,
     backgroundColor: theme.colors.bg,
     borderBottomWidth: 1,
-    borderBottomColor: stylesVars.border,
+    borderBottomColor: theme.colors.divider,
   },
   headerTitle: {
     fontSize: 16,
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
   cancelButton: {
     fontSize: 14,
     fontWeight: "800",
-    color: stylesVars.subText,
+    color: theme.colors.muted,
   },
   saveButton: {
     fontSize: 14,
@@ -651,26 +651,26 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: "900",
-    color: stylesVars.subText2,
+    color: theme.colors.muted,
     marginBottom: 8,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   helperText: {
     fontSize: 12,
-    color: stylesVars.subText2,
+    color: theme.colors.muted,
     marginTop: 6,
     fontWeight: "700",
   },
 
   input: {
     borderWidth: 1,
-    borderColor: stylesVars.border,
+    borderColor: theme.colors.divider,
     borderRadius: theme.radius.lg,
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 15,
-    backgroundColor: stylesVars.inputBg,
+    backgroundColor: theme.colors.surface,
     color: theme.colors.text,
   },
   textArea: { height: 110, textAlignVertical: "top" },
@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   typeOptionTextSelected: {
-    color: "#0B0B0B", // ✅ always readable (no “blue on blue” issues)
+    color: "#0B0B0B",
   },
 
   templatePicker: { marginTop: 8, gap: 10 },
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
   templateOptionTextSelected: { color: theme.colors.text },
   templateDetails: {
     fontSize: 12,
-    color: stylesVars.subText2,
+    color: theme.colors.muted,
     marginTop: 6,
     fontWeight: "700",
   },
@@ -733,16 +733,16 @@ const styles = StyleSheet.create({
   templateClearButton: {
     height: 40,
     borderRadius: 20,
-    backgroundColor: stylesVars.cardBg,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: stylesVars.border,
+    borderColor: theme.colors.divider,
     alignItems: "center",
     justifyContent: "center",
   },
   templateClearText: {
     fontSize: 13,
     fontWeight: "900",
-    color: stylesVars.subText,
+    color: theme.colors.muted,
   },
 
   labelRow: {
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: stylesVars.border,
+    borderBottomColor: theme.colors.divider,
   },
   sectionTitle: {
     fontSize: 18,
@@ -796,7 +796,7 @@ const styles = StyleSheet.create({
   },
   sectionSubtitle: {
     fontSize: 13,
-    color: stylesVars.subText,
+    color: theme.colors.muted,
     lineHeight: 18,
   },
 });
