@@ -83,7 +83,7 @@ export default function SavedActivitiesScreen() {
       headerShown: true,
       headerTitle: multiSelectMode ? `${selectedIds.length} Selected` : "Saved",
       headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
-      headerStyle: { backgroundColor: theme.colors.bg },
+      headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       headerShadowVisible: false,
       headerLeft: () => null,
       headerRight: () => (
@@ -370,7 +370,7 @@ export default function SavedActivitiesScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.container}>
         <FlatList
           data={sortedItems}
           renderItem={renderItem}
@@ -466,7 +466,7 @@ export default function SavedActivitiesScreen() {
             </Pressable>
           </View>
         )}
-      </SafeAreaView>
+      </View>
     </GestureHandlerRootView>
   );
 }

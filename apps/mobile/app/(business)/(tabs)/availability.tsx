@@ -191,9 +191,9 @@ export default function AvailabilityScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
+      headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       title: selectMode ? `${selectedCount} Selected` : "Manage Availabilities",
       headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
-      headerStyle: { backgroundColor: theme.colors.bg },
       headerShadowVisible: false,
       headerLeft: () => null,
       headerRight: () => (
@@ -483,7 +483,7 @@ export default function AvailabilityScreen() {
               }}
             >
               <MaterialIcons
-                name="check-box-outline-blank"
+                name="check-box"
                 size={18}
                 color={theme.colors.text}
               />

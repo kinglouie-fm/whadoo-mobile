@@ -19,7 +19,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BusinessHomeScreen() {
   const router = useRouter();
@@ -61,7 +60,7 @@ export default function BusinessHomeScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "",
-      headerStyle: { backgroundColor: theme.colors.bg },
+      headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       headerLeft: () => (
         <View style={styles.headerLeft}>
           <View style={styles.profileCircle}>
@@ -103,7 +102,7 @@ export default function BusinessHomeScreen() {
   const upcomingBookings = bookings.slice(0, 5); // Show first 5
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <View style={styles.screen}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -156,7 +155,7 @@ export default function BusinessHomeScreen() {
           />
 
           <ActionTile
-            title="Availability"
+            title="Manage availability"
             subtitle="Opening hours, slot duration, templates"
             icon="timeline"
             onPress={() => router.push("/(business)/(tabs)/availability")}
@@ -214,7 +213,7 @@ export default function BusinessHomeScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -339,6 +338,7 @@ function ActionTile({
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: theme.colors.bg },
   container: {
     flex: 1,
     backgroundColor: theme.colors.bg,
@@ -348,7 +348,6 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
   },
 
-  // header styles (same vibe as consumer)
   headerLeft: {
     marginLeft: 16,
   },

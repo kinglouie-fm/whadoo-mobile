@@ -453,6 +453,7 @@ export default function ActivitiesScreen() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       title: selectMode ? `${selectedCount} Selected` : "Manage Activities",
       headerLeft: () => null,
       headerRight: () => (
@@ -478,7 +479,6 @@ export default function ActivitiesScreen() {
           </Pressable>
         </View>
       ),
-      headerStyle: { backgroundColor: theme.colors.bg },
       headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
       headerShadowVisible: false,
     });
@@ -666,7 +666,7 @@ export default function ActivitiesScreen() {
               }}
             >
               <MaterialIcons
-                name="check-box-outline-blank"
+                name="check-box"
                 size={18}
                 color={theme.colors.text}
               />

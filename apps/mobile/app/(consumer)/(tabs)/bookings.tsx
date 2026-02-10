@@ -17,7 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 type TabType = "upcoming" | "past";
 type StatusFilter = "all" | "active" | "cancelled" | "completed";
@@ -51,9 +50,9 @@ export default function MyBookingsScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
+      headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       title: "My Bookings",
       headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
-      headerStyle: { backgroundColor: theme.colors.bg },
       headerShadowVisible: false,
       headerLeft: () => null,
       headerRight: () => (
@@ -225,7 +224,7 @@ export default function MyBookingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <View style={styles.container}>
       {/* Tabs */}
       <View style={styles.tabsContainer}>
         <TouchableOpacity
@@ -316,7 +315,7 @@ export default function MyBookingsScreen() {
           </View>
         </Pressable>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -336,7 +335,7 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: "row",
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingVertical: 12,
     gap: 12,
   },
   tab: {

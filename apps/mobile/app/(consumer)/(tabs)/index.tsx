@@ -57,6 +57,7 @@ export default function DiscoverySwipeScreen() {
       title: "",
       headerStyle: {
         backgroundColor: theme.colors.bg,
+        height: 120,
       },
       headerLeft: () => (
         <View style={styles.headerLeft}>

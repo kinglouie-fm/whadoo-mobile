@@ -122,7 +122,7 @@ export default function BusinessProfileHome() {
       headerShown: true,
       headerTitle: "Profile",
       headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
-      headerStyle: { backgroundColor: theme.colors.bg },
+      headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       headerShadowVisible: false,
 
       // ✅ if you want NO back button in a tab:

@@ -120,7 +120,7 @@ export default function ConsumerProfileHome() {
       headerShown: true,
       headerTitle: "Profile",
       headerTitleStyle: { color: theme.colors.text, fontWeight: "800" },
-      headerStyle: { backgroundColor: theme.colors.bg },
+      headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       headerShadowVisible: false,
 
       // ✅ tab screen => no back button

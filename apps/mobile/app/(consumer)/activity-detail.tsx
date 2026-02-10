@@ -1,28 +1,28 @@
 import { TopBar } from "@/src/components/TopBar";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
-    clearCurrentActivity,
-    clearCurrentGroup,
-    fetchActivityGroup,
-    fetchConsumerActivity,
+  clearCurrentActivity,
+  clearCurrentGroup,
+  fetchActivityGroup,
+  fetchConsumerActivity,
 } from "@/src/store/slices/consumer-activity-slice";
 import {
-    saveActivity,
-    unsaveActivity,
+  saveActivity,
+  unsaveActivity,
 } from "@/src/store/slices/saved-activity-slice";
 import { theme } from "@/src/theme/theme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Animated,
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
