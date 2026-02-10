@@ -462,7 +462,6 @@ const styles = StyleSheet.create({
 
   scroll: { flex: 1 },
   form: {
-    paddingBottom: theme.spacing.xl,
     padding: theme.spacing.lg,
   },
   field: {
