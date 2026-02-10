@@ -48,3 +48,5 @@ GoogleService-Info.plist
 *.mobileprovision
 ios/Pods/
 ios/Podfile.lock
+
+docs/

@@ -1,0 +1,292 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  user
+  business
+}
+
+enum BusinessStatus {
+  active
+  inactive
+}
+
+enum AvailabilityTemplateStatus {
+  active
+  inactive
+}
+
+enum ActivityStatus {
+  draft
+  published
+  inactive
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  firebaseUid String   @unique
+  role        UserRole @default(user)
+  email       String?
+  firstName   String?
+  lastName    String?
+  city        String?
+  phoneNumber String?
+  photoUrl    String?
+
+  deletedAt   DateTime?
+
+  businesses      Business[]
+  swipes          UserSwipe[]
+  savedActivities SavedActivity[]
+  bookings        Booking[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Business {
+  id           String         @id @default(uuid()) @db.Uuid
+  ownerUserId  String         @db.Uuid
+  owner        User           @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+
+  name         String
+  description  String?
+  category     String?
+  contactPhone String?
+  contactEmail String?
+  address      String?
+  city         String?
+  lat          Decimal?
+  lng          Decimal?
+  images       String[]       @default([])
+  status       BusinessStatus @default(active)
+
+  availabilityTemplates AvailabilityTemplate[]
+  activities            Activity[]
+  bookings              Booking[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([ownerUserId])
+  @@index([status])
+}
+
+model AvailabilityTemplate {
+  id                   String                       @id @default(uuid()) @db.Uuid
+  businessId           String                       @map("business_id") @db.Uuid
+  business             Business                     @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  
+  name                 String
+  daysOfWeek           Int[]                        @map("days_of_week") @db.SmallInt
+  startTime            DateTime                     @map("start_time") @db.Time
+  endTime              DateTime                     @map("end_time") @db.Time
+  slotDurationMinutes  Int                          @map("slot_duration_minutes")
+  capacity             Int
+  imageUrl             String?                      @map("image_url")
+  status               AvailabilityTemplateStatus   @default(active)
+
+  exceptions           AvailabilityException[]
+  activities           Activity[]
+
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("availability_templates")
+  @@index([businessId, updatedAt(sort: Desc)])
+  @@index([status])
+}
+
+model AvailabilityException {
+  id         String               @id @default(uuid()) @db.Uuid
+  templateId String               @map("template_id") @db.Uuid
+  template   AvailabilityTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  startDate  DateTime             @map("start_date") @db.Date
+  endDate    DateTime             @map("end_date") @db.Date
+  reason     String?
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("availability_exceptions")
+  @@index([templateId, startDate, endDate])
+}
+
+model Activity {
+  id                     String         @id @default(uuid()) @db.Uuid
+  businessId             String         @map("business_id") @db.Uuid
+  business               Business       @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  status                 ActivityStatus @default(draft)
+  typeId                 String         @map("type_id")
+  schemaVersion          Int            @default(1) @map("schema_version")
+  title                  String
+  description            String?
+  category               String?
+  address                String?
+  city                   String?
+  lat                    Decimal?       @db.Decimal(10, 8)
+  lng                    Decimal?       @db.Decimal(11, 8)
+  priceFrom              Decimal?       @map("price_from") @db.Decimal(10, 2)
+  config                 Json           @default("{}")
+  pricing                Json           @default("{}")
+
+  catalogGroupId         String?        @map("catalog_group_id")
+  catalogGroupTitle      String?        @map("catalog_group_title")
+  catalogGroupKind       String?        @map("catalog_group_kind")
+
+  availabilityTemplateId String?                  @map("availability_template_id") @db.Uuid
+  availabilityTemplate   AvailabilityTemplate?    @relation(fields: [availabilityTemplateId], references: [id], onDelete: SetNull)
+
+  images                 ActivityImage[]
+  savedBy                SavedActivity[]
+  slotCapacities         SlotCapacity[]
+  bookings               Booking[]
+
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@map("activities")
+  @@index([businessId, updatedAt(sort: Desc)])
+  @@index([status, city, updatedAt(sort: Desc)])
+  @@index([availabilityTemplateId])
+  @@index([businessId, catalogGroupId, updatedAt(sort: Desc)], map: "activities_business_catalog_group_idx")
+  @@index([status, catalogGroupId], map: "activities_status_catalog_group_idx")
+}
+
+model ActivityImage {
+  id          String   @id @default(uuid()) @db.Uuid
+  activityId  String   @map("activity_id") @db.Uuid
+  activity    Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  imageUrl    String   @map("image_url")
+  isThumbnail Boolean  @default(false) @map("is_thumbnail")
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("activity_images")
+  @@index([activityId])
+}
+
+model ActivityTypeDefinition {
+  typeId        String   @map("type_id")
+  schemaVersion Int      @default(1) @map("schema_version")
+  displayName   String   @map("display_name")
+  configSchema  Json     @map("config_schema")
+  pricingSchema Json     @map("pricing_schema")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@id([typeId, schemaVersion])
+  @@map("activity_type_definitions")
+  @@index([typeId])
+}
+
+model UserSwipe {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  catalogGroupId   String?  @map("catalog_group_id")
+  activityId       String?  @map("activity_id") @db.Uuid
+  
+  direction        String   // "left", "right", "up", "down"
+  city             String?
+  typeId           String?  @map("type_id")
+  
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("user_swipes")
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([catalogGroupId])
+  @@index([activityId])
+}
+
+model SavedActivity {
+  userId           String   @map("user_id") @db.Uuid
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  activityId       String   @map("activity_id") @db.Uuid
+  activity         Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  
+  savedAt          DateTime @default(now()) @map("saved_at")
+  activitySnapshot Json?    @map("activity_snapshot")
+
+  @@id([userId, activityId])
+  @@map("saved_activities")
+  @@index([userId, savedAt(sort: Desc)])
+}
+
+enum SlotCapacityStatus {
+  active
+  inactive
+}
+
+enum BookingStatus {
+  active
+  cancelled
+  completed
+}
+
+model SlotCapacity {
+  id           String              @id
+  activityId   String              @map("activity_id") @db.Uuid
+  activity     Activity            @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  
+  slotStart    DateTime            @map("slot_start")
+  capacity     Int
+  bookedSeats  Int                 @default(0) @map("booked_seats")
+  status       SlotCapacityStatus  @default(active)
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([activityId, slotStart])
+  @@map("slot_capacity")
+  @@index([activityId, slotStart])
+  @@index([activityId, slotStart, status])
+}
+
+model Booking {
+  id                  String        @id @default(uuid()) @db.Uuid
+  userId              String        @map("user_id") @db.Uuid
+  user                User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  
+  businessId          String        @map("business_id") @db.Uuid
+  business            Business      @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  
+  activityId          String        @map("activity_id") @db.Uuid
+  activity            Activity      @relation(fields: [activityId], references: [id], onDelete: Restrict)
+  
+  slotStart           DateTime      @map("slot_start")
+  participantsCount   Int           @map("participants_count")
+  status              BookingStatus @default(active)
+  
+  activitySnapshot    Json          @map("activity_snapshot")
+  businessSnapshot    Json?         @map("business_snapshot")
+  selectionSnapshot   Json          @map("selection_snapshot")
+  priceSnapshot       Json          @map("price_snapshot")
+  
+  paymentAmount       Decimal?      @map("payment_amount") @db.Decimal(10, 2)
+  paymentCurrency     String?       @map("payment_currency")
+  
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("bookings")
+  @@index([userId, slotStart(sort: Desc)])
+  @@index([activityId, slotStart])
+  @@index([businessId, slotStart])
+}
