@@ -374,12 +374,10 @@ export default function ActivityDetailScreen() {
             placeholder="0.00"
             keyboardType="decimal-pad"
             error={errors.priceFrom}
+            containerStyle={{ marginBottom: theme.spacing.sm }}
           />
           <Text style={[typography.captionSmall, styles.helperText]}>
-            {["karting", "cooking_class", "escape_room"].includes(typeId) &&
-            config.packages?.length > 0
-              ? "Auto-calculated from packages"
-              : "Display price for discovery feed"}
+            {"Display price for discovery feed."}
           </Text>
         </View>
 
@@ -399,7 +397,7 @@ export default function ActivityDetailScreen() {
           onChangeText={setCatalogGroupId}
           placeholder="e.g., businessname-escape-room"
           error={errors.catalogGroupId}
-          containerStyle={ui.section}
+          containerStyle={{ marginBottom: theme.spacing.sm }}
         />
         <Text style={[typography.captionSmall, styles.helperText]}>
           Unique ID for grouping related activities.
@@ -411,23 +409,22 @@ export default function ActivityDetailScreen() {
           onChangeText={setCatalogGroupTitle}
           placeholder="e.g., Escape Room at YourBusiness"
           error={errors.catalogGroupTitle}
-          containerStyle={ui.section}
+          containerStyle={{ marginBottom: theme.spacing.sm }}
         />
         <Text style={[typography.captionSmall, styles.helperText]}>
           Display name shown in discovery feed.
         </Text>
 
-        <View style={ui.section}>
-          <FormInput
-            label="Catalog Group Kind"
-            value={catalogGroupKind}
-            onChangeText={setCatalogGroupKind}
-            placeholder={typeId || "activity_type"}
-          />
-          <Text style={[typography.captionSmall, styles.helperText]}>
-            Activity type identifier.
-          </Text>
-        </View>
+        <FormInput
+          label="Catalog Group Kind"
+          value={catalogGroupKind}
+          onChangeText={setCatalogGroupKind}
+          placeholder={typeId || "activity_type"}
+          containerStyle={{ marginBottom: theme.spacing.sm }}
+        />
+        <Text style={[typography.captionSmall, styles.helperText]}>
+          Activity type identifier.
+        </Text>
 
         {/* Dynamic Config / Packages */}
         {currentTypeDefinition && (
@@ -563,7 +560,7 @@ const styles = StyleSheet.create({
 
   labelSpacing: { marginBottom: theme.spacing.sm },
   helperText: {
-    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
     color: theme.colors.muted,
   },
   errorText: {
@@ -575,6 +572,7 @@ const styles = StyleSheet.create({
     flexDirection: "row" as const,
     flexWrap: "wrap" as const,
     gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
   },
   typeOption: {
     paddingVertical: theme.spacing.md,
@@ -613,6 +611,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
     alignSelf: "flex-start",
   },
 

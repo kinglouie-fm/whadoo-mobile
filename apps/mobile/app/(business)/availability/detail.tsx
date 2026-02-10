@@ -1,4 +1,8 @@
-import { DangerButton, PrimaryButton, SecondaryButton } from "@/src/components/Button";
+import {
+  DangerButton,
+  PrimaryButton,
+  SecondaryButton,
+} from "@/src/components/Button";
 import { FormInput } from "@/src/components/Input";
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -47,7 +51,6 @@ export default function AvailabilityDetailScreen() {
   const [endTime, setEndTime] = useState("17:00:00");
   const [slotDuration, setSlotDuration] = useState("60");
   const [capacity, setCapacity] = useState("1");
-  const [imageUrl, setImageUrl] = useState("");
   const [exceptions, setExceptions] = useState<
     Omit<AvailabilityException, "id">[]
   >([]);
@@ -72,7 +75,6 @@ export default function AvailabilityDetailScreen() {
       setEndTime(formatTimeForInput(currentTemplate.endTime));
       setSlotDuration(currentTemplate.slotDurationMinutes.toString());
       setCapacity(currentTemplate.capacity.toString());
-      setImageUrl(currentTemplate.imageUrl || "");
       setExceptions(
         currentTemplate.exceptions.map((ex) => ({
           startDate: ex.startDate,
@@ -174,7 +176,6 @@ export default function AvailabilityDetailScreen() {
           endTime,
           slotDurationMinutes: parseInt(slotDuration),
           capacity: parseInt(capacity),
-          imageUrl: imageUrl || undefined,
           exceptions: exceptions.length > 0 ? exceptions : undefined,
         };
         await dispatch(updateTemplate({ templateId: id, data })).unwrap();
@@ -192,7 +193,6 @@ export default function AvailabilityDetailScreen() {
           endTime,
           slotDurationMinutes: parseInt(slotDuration),
           capacity: parseInt(capacity),
-          imageUrl: imageUrl || undefined,
           exceptions: exceptions.length > 0 ? exceptions : undefined,
         };
         await dispatch(createTemplate(data)).unwrap();
@@ -318,7 +318,6 @@ export default function AvailabilityDetailScreen() {
                 error={errors.time}
               />
             </View>
-            <Text style={[typography.body, styles.timeSeparator]}>—</Text>
             <View style={styles.timeField}>
               <FormInput
                 label="End"
@@ -348,14 +347,6 @@ export default function AvailabilityDetailScreen() {
           keyboardType="numeric"
           placeholder="1"
           error={errors.capacity}
-        />
-
-        {/* Image URL (optional) */}
-        <FormInput
-          label="Image URL (optional)"
-          value={imageUrl}
-          onChangeText={setImageUrl}
-          placeholder="https://example.com/image.jpg"
         />
 
         {/* Exceptions */}
@@ -472,14 +463,10 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
   timeField: { flex: 1 },
-  timeSeparator: {
-    color: theme.colors.muted,
-    marginBottom: theme.spacing.lg,
-  },
 
   sectionHeader: { marginBottom: theme.spacing.md },
   addButton: {
-    height: 34,
+    height: 40,
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
     borderRadius: 17,

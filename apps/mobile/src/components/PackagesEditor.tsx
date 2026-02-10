@@ -702,6 +702,7 @@ const styles = StyleSheet.create({
   trackTypeRow: {
     flexDirection: "row",
     gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
   },
   trackTypeOption: {
     flex: 1,
@@ -726,5 +727,6 @@ const styles = StyleSheet.create({
   fieldHint: {
     ...typography.captionSmall,
     marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
   },
 });

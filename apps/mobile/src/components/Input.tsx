@@ -83,6 +83,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.md,
     padding: theme.spacing.md,
     ...typography.body,
+    marginBottom: 0,
   },
   textArea: {
     minHeight: 100,
