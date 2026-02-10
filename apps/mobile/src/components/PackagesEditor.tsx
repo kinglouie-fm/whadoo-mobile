@@ -1,16 +1,17 @@
 import { theme } from "@/src/theme/theme";
 import React, { useMemo, useState } from "react";
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Package {
   code: string;
@@ -260,346 +261,352 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <ScrollView
-          style={styles.modalContainer}
-          contentContainerStyle={{ paddingBottom: 40 }}
+        <SafeAreaView
+          style={{ flex: 1, backgroundColor: theme.colors.bg }}
+          edges={["top"]}
         >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
+          <View style={styles.modalHeaderBar}>
+            <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.modalHeaderTitle}>
               {editingIndex !== null ? "Edit Package" : "Add Package"}
             </Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.closeButton}>✕</Text>
+
+            <TouchableOpacity onPress={handleSave}>
+              <Text style={styles.modalSaveText}>Save</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>
-              Package Code <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              {...inputProps}
-              style={styles.input}
-              value={editingPackage?.code || ""}
-              onChangeText={(text) =>
-                setEditingPackage((prev) => ({ ...prev!, code: text }))
-              }
-              placeholder="e.g., standard, mini-gp, grand-gp"
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>
-              Package Title <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              {...inputProps}
-              style={styles.input}
-              value={editingPackage?.title || ""}
-              onChangeText={(text) =>
-                setEditingPackage((prev) => ({ ...prev!, title: text }))
-              }
-              placeholder="e.g., Standard Session, Mini GP"
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>
-              Track Type <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.trackTypeRow}>
-              <TouchableOpacity
-                style={[
-                  styles.trackTypeOption,
-                  editingPackage?.track_type === "indoor" &&
-                    styles.trackTypeOptionSelected,
-                ]}
-                onPress={() =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    track_type: "indoor",
-                  }))
-                }
-              >
-                <Text
-                  style={[
-                    styles.trackTypeText,
-                    editingPackage?.track_type === "indoor" &&
-                      styles.trackTypeTextSelected,
-                  ]}
-                >
-                  Indoor
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.trackTypeOption,
-                  editingPackage?.track_type === "outdoor" &&
-                    styles.trackTypeOptionSelected,
-                ]}
-                onPress={() =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    track_type: "outdoor",
-                  }))
-                }
-              >
-                <Text
-                  style={[
-                    styles.trackTypeText,
-                    editingPackage?.track_type === "outdoor" &&
-                      styles.trackTypeTextSelected,
-                  ]}
-                >
-                  Outdoor
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-              {...inputProps}
-              style={[styles.input, styles.textArea]}
-              value={editingPackage?.description || ""}
-              onChangeText={(text) =>
-                setEditingPackage((prev) => ({ ...prev!, description: text }))
-              }
-              placeholder="Describe this package..."
-              multiline
-              numberOfLines={3}
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Format Details (one per line)</Text>
-            <TextInput
-              {...inputProps}
-              style={[styles.input, styles.textArea]}
-              value={editingPackage?.format_lines || ""}
-              onChangeText={(text) =>
-                setEditingPackage((prev) => ({ ...prev!, format_lines: text }))
-              }
-              placeholder={"e.g., 8 min qualifying\n16 min race"}
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-          <View style={styles.formRow}>
-            <View style={[styles.formGroup, styles.formGroupHalf]}>
-              <Text style={styles.label}>Base Price</Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.base_price?.toString() || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    base_price: text ? parseFloat(text) : undefined,
-                  }))
-                }
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            <View style={[styles.formGroup, styles.formGroupHalf]}>
-              <Text style={styles.label}>Currency</Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.currency || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({ ...prev!, currency: text }))
-                }
-                placeholder="EUR"
-              />
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>
-              Pricing Model <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.trackTypeRow}>
-              <TouchableOpacity
-                style={[
-                  styles.trackTypeOption,
-                  (editingPackage?.pricing_type || "per_person") === "per_person" &&
-                    styles.trackTypeOptionSelected,
-                ]}
-                onPress={() =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    pricing_type: "per_person",
-                  }))
-                }
-              >
-                <Text
-                  style={[
-                    styles.trackTypeText,
-                    (editingPackage?.pricing_type || "per_person") === "per_person" &&
-                      styles.trackTypeTextSelected,
-                  ]}
-                >
-                  Per Person
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.trackTypeOption,
-                  editingPackage?.pricing_type === "fixed" &&
-                    styles.trackTypeOptionSelected,
-                ]}
-                onPress={() =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    pricing_type: "fixed",
-                  }))
-                }
-              >
-                <Text
-                  style={[
-                    styles.trackTypeText,
-                    editingPackage?.pricing_type === "fixed" &&
-                      styles.trackTypeTextSelected,
-                  ]}
-                >
-                  Fixed (Group Rate)
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.fieldHint}>
-              {(editingPackage?.pricing_type || "per_person") === "per_person"
-                ? "Price multiplied by number of participants"
-                : "Fixed price regardless of participant count"}
-            </Text>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Minimum Participants</Text>
-            <TextInput
-              {...inputProps}
-              style={styles.input}
-              value={editingPackage?.min_participants?.toString() || ""}
-              onChangeText={(text) =>
-                setEditingPackage((prev) => ({
-                  ...prev!,
-                  min_participants: text ? parseInt(text) : undefined,
-                }))
-              }
-              placeholder="e.g., 5"
-              keyboardType="number-pad"
-            />
-          </View>
-
-          <View style={styles.formRow}>
-            <View style={[styles.formGroup, styles.formGroupHalf]}>
-              <Text style={styles.label}>Minimum Age</Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.age_min?.toString() || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    age_min: text ? parseInt(text) : undefined,
-                  }))
-                }
-                placeholder="e.g., 8"
-                keyboardType="number-pad"
-              />
-            </View>
-
-            <View style={[styles.formGroup, styles.formGroupHalf]}>
-              <Text style={styles.label}>Maximum Age</Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.age_max?.toString() || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    age_max: text ? parseInt(text) : undefined,
-                  }))
-                }
-                placeholder="e.g., 12"
-                keyboardType="number-pad"
-              />
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Schedule Note</Text>
-            <TextInput
-              {...inputProps}
-              style={styles.input}
-              value={editingPackage?.schedule_note || ""}
-              onChangeText={(text) =>
-                setEditingPackage((prev) => ({ ...prev!, schedule_note: text }))
-              }
-              placeholder="e.g., First Wednesday of month at 17:15"
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <View style={styles.switchRow}>
-              <Text style={styles.label}>Default Package</Text>
-              <Switch
-                value={editingPackage?.is_default || false}
-                onValueChange={(value) =>
-                  setEditingPackage((prev) => ({ ...prev!, is_default: value }))
-                }
-                trackColor={{
-                  false: "rgba(255,255,255,0.18)",
-                  true: theme.colors.accent,
-                }}
-                thumbColor={"#fff"}
-              />
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <View style={styles.switchRow}>
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={styles.modalScrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.formGroup}>
               <Text style={styles.label}>
-                Request Only (not bookable online)
+                Package Code <Text style={styles.required}>*</Text>
               </Text>
-              <Switch
-                value={editingPackage?.request_only || false}
-                onValueChange={(value) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    request_only: value,
-                  }))
+              <TextInput
+                {...inputProps}
+                style={styles.input}
+                value={editingPackage?.code || ""}
+                onChangeText={(text) =>
+                  setEditingPackage((prev) => ({ ...prev!, code: text }))
                 }
-                trackColor={{
-                  false: "rgba(255,255,255,0.18)",
-                  true: theme.colors.accent,
-                }}
-                thumbColor={"#fff"}
+                placeholder="e.g., standard, mini-gp, grand-gp"
               />
             </View>
-          </View>
 
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
-              onPress={handleSave}
-            >
-              <Text style={styles.buttonText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>
+                Package Title <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                {...inputProps}
+                style={styles.input}
+                value={editingPackage?.title || ""}
+                onChangeText={(text) =>
+                  setEditingPackage((prev) => ({ ...prev!, title: text }))
+                }
+                placeholder="e.g., Standard Session, Mini GP"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>
+                Track Type <Text style={styles.required}>*</Text>
+              </Text>
+              <View style={styles.trackTypeRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.trackTypeOption,
+                    editingPackage?.track_type === "indoor" &&
+                      styles.trackTypeOptionSelected,
+                  ]}
+                  onPress={() =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      track_type: "indoor",
+                    }))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.trackTypeText,
+                      editingPackage?.track_type === "indoor" &&
+                        styles.trackTypeTextSelected,
+                    ]}
+                  >
+                    Indoor
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.trackTypeOption,
+                    editingPackage?.track_type === "outdoor" &&
+                      styles.trackTypeOptionSelected,
+                  ]}
+                  onPress={() =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      track_type: "outdoor",
+                    }))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.trackTypeText,
+                      editingPackage?.track_type === "outdoor" &&
+                        styles.trackTypeTextSelected,
+                    ]}
+                  >
+                    Outdoor
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Description</Text>
+              <TextInput
+                {...inputProps}
+                style={[styles.input, styles.textArea]}
+                value={editingPackage?.description || ""}
+                onChangeText={(text) =>
+                  setEditingPackage((prev) => ({ ...prev!, description: text }))
+                }
+                placeholder="Describe this package..."
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Format Details (one per line)</Text>
+              <TextInput
+                {...inputProps}
+                style={[styles.input, styles.textArea]}
+                value={editingPackage?.format_lines || ""}
+                onChangeText={(text) =>
+                  setEditingPackage((prev) => ({
+                    ...prev!,
+                    format_lines: text,
+                  }))
+                }
+                placeholder={"e.g., 8 min qualifying\n16 min race"}
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, styles.formGroupHalf]}>
+                <Text style={styles.label}>Base Price</Text>
+                <TextInput
+                  {...inputProps}
+                  style={styles.input}
+                  value={editingPackage?.base_price?.toString() || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      base_price: text ? parseFloat(text) : undefined,
+                    }))
+                  }
+                  placeholder="0.00"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+
+              <View style={[styles.formGroup, styles.formGroupHalf]}>
+                <Text style={styles.label}>Currency</Text>
+                <TextInput
+                  {...inputProps}
+                  style={styles.input}
+                  value={editingPackage?.currency || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({ ...prev!, currency: text }))
+                  }
+                  placeholder="EUR"
+                />
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>
+                Pricing Model <Text style={styles.required}>*</Text>
+              </Text>
+              <View style={styles.trackTypeRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.trackTypeOption,
+                    (editingPackage?.pricing_type || "per_person") ===
+                      "per_person" && styles.trackTypeOptionSelected,
+                  ]}
+                  onPress={() =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      pricing_type: "per_person",
+                    }))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.trackTypeText,
+                      (editingPackage?.pricing_type || "per_person") ===
+                        "per_person" && styles.trackTypeTextSelected,
+                    ]}
+                  >
+                    Per Person
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.trackTypeOption,
+                    editingPackage?.pricing_type === "fixed" &&
+                      styles.trackTypeOptionSelected,
+                  ]}
+                  onPress={() =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      pricing_type: "fixed",
+                    }))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.trackTypeText,
+                      editingPackage?.pricing_type === "fixed" &&
+                        styles.trackTypeTextSelected,
+                    ]}
+                  >
+                    Fixed (Group Rate)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.fieldHint}>
+                {(editingPackage?.pricing_type || "per_person") === "per_person"
+                  ? "Price multiplied by number of participants"
+                  : "Fixed price regardless of participant count"}
+              </Text>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Minimum Participants</Text>
+              <TextInput
+                {...inputProps}
+                style={styles.input}
+                value={editingPackage?.min_participants?.toString() || ""}
+                onChangeText={(text) =>
+                  setEditingPackage((prev) => ({
+                    ...prev!,
+                    min_participants: text ? parseInt(text) : undefined,
+                  }))
+                }
+                placeholder="e.g., 5"
+                keyboardType="number-pad"
+              />
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, styles.formGroupHalf]}>
+                <Text style={styles.label}>Minimum Age</Text>
+                <TextInput
+                  {...inputProps}
+                  style={styles.input}
+                  value={editingPackage?.age_min?.toString() || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      age_min: text ? parseInt(text) : undefined,
+                    }))
+                  }
+                  placeholder="e.g., 8"
+                  keyboardType="number-pad"
+                />
+              </View>
+
+              <View style={[styles.formGroup, styles.formGroupHalf]}>
+                <Text style={styles.label}>Maximum Age</Text>
+                <TextInput
+                  {...inputProps}
+                  style={styles.input}
+                  value={editingPackage?.age_max?.toString() || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      age_max: text ? parseInt(text) : undefined,
+                    }))
+                  }
+                  placeholder="e.g., 12"
+                  keyboardType="number-pad"
+                />
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Schedule Note</Text>
+              <TextInput
+                {...inputProps}
+                style={styles.input}
+                value={editingPackage?.schedule_note || ""}
+                onChangeText={(text) =>
+                  setEditingPackage((prev) => ({
+                    ...prev!,
+                    schedule_note: text,
+                  }))
+                }
+                placeholder="e.g., First Wednesday of month at 17:15"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <View style={styles.switchRow}>
+                <Text style={styles.label}>Default Package</Text>
+                <Switch
+                  value={editingPackage?.is_default || false}
+                  onValueChange={(value) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      is_default: value,
+                    }))
+                  }
+                  trackColor={{
+                    false: "rgba(255,255,255,0.18)",
+                    true: theme.colors.accent,
+                  }}
+                  thumbColor={"#fff"}
+                />
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <View style={styles.switchRow}>
+                <Text style={styles.label}>
+                  Request Only (not bookable online)
+                </Text>
+                <Switch
+                  value={editingPackage?.request_only || false}
+                  onValueChange={(value) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      request_only: value,
+                    }))
+                  }
+                  trackColor={{
+                    false: "rgba(255,255,255,0.18)",
+                    true: theme.colors.accent,
+                  }}
+                  thumbColor={"#fff"}
+                />
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
       </Modal>
     </View>
   );
@@ -719,6 +726,34 @@ const styles = StyleSheet.create({
   },
   removeButtonText: { color: "#fff", fontSize: 12, fontWeight: "900" },
 
+  modalHeaderBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.bg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.divider,
+  },
+  modalHeaderTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  modalCancelText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: theme.colors.muted,
+  },
+  modalSaveText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: theme.colors.accent,
+  },
+  modalScroll: { flex: 1, backgroundColor: theme.colors.bg },
+  modalScrollContent: { padding: theme.spacing.lg, paddingBottom: 40 },
+
   modalContainer: {
     flex: 1,
     backgroundColor: theme.colors.bg,
@@ -766,23 +801,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
-
-  modalActions: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 16,
-    marginBottom: 30,
-  },
-  button: {
-    flex: 1,
-    height: 46,
-    borderRadius: 23,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cancelButton: { backgroundColor: "#2A2A2A" },
-  saveButton: { backgroundColor: theme.colors.accent },
-  buttonText: { color: "#fff", fontSize: 13, fontWeight: "900" },
 
   trackTypeRow: { flexDirection: "row", gap: 10 },
   trackTypeOption: {

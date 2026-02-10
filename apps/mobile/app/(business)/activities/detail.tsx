@@ -277,330 +277,329 @@ export default function ActivityDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.cancelButton}>Cancel</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>
+          {isEditMode ? "Edit" : "Create"} Activity
+        </Text>
+
+        <TouchableOpacity onPress={handleSave}>
+          <Text style={styles.saveButton}>Save</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.form, styles.scrollContent]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.cancelButton}>Cancel</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>
-            {isEditMode ? "Edit" : "Create"} Activity
-          </Text>
-
-          <TouchableOpacity onPress={handleSave}>
-            <Text style={styles.saveButton}>Save</Text>
-          </TouchableOpacity>
+        {/* Title */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Title *</Text>
+          <TextInput
+            {...textInputCommonProps}
+            style={[styles.input, errors.title && styles.inputError]}
+            value={title}
+            onChangeText={setTitle}
+            placeholder="e.g., Go-Kart Racing"
+          />
+          {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
         </View>
 
-        <View style={styles.form}>
-          {/* Title */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Title *</Text>
-            <TextInput
-              {...textInputCommonProps}
-              style={[styles.input, errors.title && styles.inputError]}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="e.g., Go-Kart Racing"
-            />
-            {errors.title && (
-              <Text style={styles.errorText}>{errors.title}</Text>
-            )}
-          </View>
-
-          {/* Type Dropdown */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Type *</Text>
-            <View style={styles.typeDropdown}>
-              {typeDefinitions.map((type) => (
-                <TouchableOpacity
-                  key={type.typeId}
+        {/* Type Dropdown */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Type *</Text>
+          <View style={styles.typeDropdown}>
+            {typeDefinitions.map((type) => (
+              <TouchableOpacity
+                key={type.typeId}
+                style={[
+                  styles.typeOption,
+                  typeId === type.typeId && styles.typeOptionSelected,
+                ]}
+                onPress={() => setTypeId(type.typeId)}
+                disabled={isEditMode}
+              >
+                <Text
                   style={[
-                    styles.typeOption,
-                    typeId === type.typeId && styles.typeOptionSelected,
+                    styles.typeOptionText,
+                    typeId === type.typeId && styles.typeOptionTextSelected,
                   ]}
-                  onPress={() => setTypeId(type.typeId)}
-                  disabled={isEditMode}
                 >
-                  <Text
-                    style={[
-                      styles.typeOptionText,
-                      typeId === type.typeId && styles.typeOptionTextSelected,
-                    ]}
-                  >
-                    {type.displayName}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {errors.typeId && (
-              <Text style={styles.errorText}>{errors.typeId}</Text>
-            )}
-            {isEditMode && (
-              <Text style={styles.helperText}>
-                Type cannot be changed after creation
-              </Text>
-            )}
+                  {type.displayName}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
-          {/* Description */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Description *</Text>
-            <TextInput
-              {...textInputCommonProps}
-              style={[
-                styles.input,
-                styles.textArea,
-                errors.description && styles.inputError,
-              ]}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Describe your activity..."
-              multiline
-              numberOfLines={4}
-            />
-            {errors.description && (
-              <Text style={styles.errorText}>{errors.description}</Text>
-            )}
-          </View>
-
-          {/* City */}
-          <View style={styles.field}>
-            <Text style={styles.label}>City *</Text>
-            <TextInput
-              {...textInputCommonProps}
-              style={[styles.input, errors.city && styles.inputError]}
-              value={city}
-              onChangeText={setCity}
-              placeholder="e.g., Amsterdam"
-            />
-            {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
-          </View>
-
-          {/* Address */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Address *</Text>
-            <TextInput
-              {...textInputCommonProps}
-              style={[styles.input, errors.address && styles.inputError]}
-              value={address}
-              onChangeText={setAddress}
-              placeholder="Street address"
-            />
-            {errors.address && (
-              <Text style={styles.errorText}>{errors.address}</Text>
-            )}
-          </View>
-
-          {/* Category */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Category *</Text>
-            <TextInput
-              {...textInputCommonProps}
-              style={[styles.input, errors.category && styles.inputError]}
-              value={category}
-              onChangeText={setCategory}
-              placeholder="e.g., Sports, Food, Entertainment"
-            />
-            {errors.category && (
-              <Text style={styles.errorText}>{errors.category}</Text>
-            )}
-          </View>
-
-          {/* Price From */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Price From (€) *</Text>
-            <TextInput
-              {...textInputCommonProps}
-              style={[styles.input, errors.priceFrom && styles.inputError]}
-              value={priceFrom}
-              onChangeText={setPriceFrom}
-              placeholder="0.00"
-              keyboardType="decimal-pad"
-            />
-            {errors.priceFrom && (
-              <Text style={styles.errorText}>{errors.priceFrom}</Text>
-            )}
+          {errors.typeId && (
+            <Text style={styles.errorText}>{errors.typeId}</Text>
+          )}
+          {isEditMode && (
             <Text style={styles.helperText}>
-              {["karting", "cooking_class", "escape_room"].includes(typeId) &&
-              config.packages?.length > 0
-                ? "Auto-calculated from packages"
-                : "Display price for discovery feed"}
+              Type cannot be changed after creation
             </Text>
-          </View>
+          )}
+        </View>
 
-          {/* Catalog Group Fields */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Discovery Settings</Text>
-            <Text style={styles.sectionSubtitle}>
-              Required for customers to find your activity.
-            </Text>
-          </View>
+        {/* Description */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            {...textInputCommonProps}
+            style={[
+              styles.input,
+              styles.textArea,
+              errors.description && styles.inputError,
+            ]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Describe your activity..."
+            multiline
+            numberOfLines={4}
+          />
+          {errors.description && (
+            <Text style={styles.errorText}>{errors.description}</Text>
+          )}
+        </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Catalog Group ID *</Text>
-            <TextInput
-              {...textInputCommonProps}
-              style={[styles.input, errors.catalogGroupId && styles.inputError]}
-              value={catalogGroupId}
-              onChangeText={setCatalogGroupId}
-              placeholder="e.g., businessname-escape-room"
-            />
-            {errors.catalogGroupId && (
-              <Text style={styles.errorText}>{errors.catalogGroupId}</Text>
-            )}
-            <Text style={styles.helperText}>
-              Unique ID for grouping related activities.
-            </Text>
-          </View>
+        {/* City */}
+        <View style={styles.field}>
+          <Text style={styles.label}>City *</Text>
+          <TextInput
+            {...textInputCommonProps}
+            style={[styles.input, errors.city && styles.inputError]}
+            value={city}
+            onChangeText={setCity}
+            placeholder="e.g., Amsterdam"
+          />
+          {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
+        </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Catalog Group Title *</Text>
-            <TextInput
-              {...textInputCommonProps}
-              style={[
-                styles.input,
-                errors.catalogGroupTitle && styles.inputError,
-              ]}
-              value={catalogGroupTitle}
-              onChangeText={setCatalogGroupTitle}
-              placeholder="e.g., Escape Room at YourBusiness"
-            />
-            {errors.catalogGroupTitle && (
-              <Text style={styles.errorText}>{errors.catalogGroupTitle}</Text>
-            )}
-            <Text style={styles.helperText}>
-              Display name shown in discovery feed.
-            </Text>
-          </View>
+        {/* Address */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Address *</Text>
+          <TextInput
+            {...textInputCommonProps}
+            style={[styles.input, errors.address && styles.inputError]}
+            value={address}
+            onChangeText={setAddress}
+            placeholder="Street address"
+          />
+          {errors.address && (
+            <Text style={styles.errorText}>{errors.address}</Text>
+          )}
+        </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Catalog Group Kind</Text>
-            <TextInput
-              {...textInputCommonProps}
-              style={styles.input}
-              value={catalogGroupKind}
-              onChangeText={setCatalogGroupKind}
-              placeholder={typeId || "activity_type"}
-            />
-            <Text style={styles.helperText}>Activity type identifier.</Text>
-          </View>
+        {/* Category */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Category *</Text>
+          <TextInput
+            {...textInputCommonProps}
+            style={[styles.input, errors.category && styles.inputError]}
+            value={category}
+            onChangeText={setCategory}
+            placeholder="e.g., Sports, Food, Entertainment"
+          />
+          {errors.category && (
+            <Text style={styles.errorText}>{errors.category}</Text>
+          )}
+        </View>
 
-          {/* Dynamic Config / Packages */}
-          {currentTypeDefinition && (
-            <>
-              {["karting", "cooking_class", "escape_room"].includes(typeId) ? (
-                <PackagesEditor
-                  packages={config.packages || []}
-                  onChange={(packages) => {
-                    setConfig({ ...config, packages });
-                    const prices = packages
-                      .map((pkg) => pkg.base_price)
-                      .filter((p) => p !== undefined && p !== null);
-                    if (prices.length > 0)
-                      setPriceFrom(Math.min(...prices).toString());
-                  }}
-                />
-              ) : (
-                <ConfigSchemaRenderer
-                  typeDefinition={currentTypeDefinition}
-                  currentConfig={config}
-                  onConfigChange={setConfig}
-                  errors={errors}
-                />
-              )}
+        {/* Price From */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Price From (€) *</Text>
+          <TextInput
+            {...textInputCommonProps}
+            style={[styles.input, errors.priceFrom && styles.inputError]}
+            value={priceFrom}
+            onChangeText={setPriceFrom}
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+          />
+          {errors.priceFrom && (
+            <Text style={styles.errorText}>{errors.priceFrom}</Text>
+          )}
+          <Text style={styles.helperText}>
+            {["karting", "cooking_class", "escape_room"].includes(typeId) &&
+            config.packages?.length > 0
+              ? "Auto-calculated from packages"
+              : "Display price for discovery feed"}
+          </Text>
+        </View>
 
-              <PricingSchemaRenderer
+        {/* Catalog Group Fields */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Discovery Settings</Text>
+          <Text style={styles.sectionSubtitle}>
+            Required for customers to find your activity.
+          </Text>
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Catalog Group ID *</Text>
+          <TextInput
+            {...textInputCommonProps}
+            style={[styles.input, errors.catalogGroupId && styles.inputError]}
+            value={catalogGroupId}
+            onChangeText={setCatalogGroupId}
+            placeholder="e.g., businessname-escape-room"
+          />
+          {errors.catalogGroupId && (
+            <Text style={styles.errorText}>{errors.catalogGroupId}</Text>
+          )}
+          <Text style={styles.helperText}>
+            Unique ID for grouping related activities.
+          </Text>
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Catalog Group Title *</Text>
+          <TextInput
+            {...textInputCommonProps}
+            style={[
+              styles.input,
+              errors.catalogGroupTitle && styles.inputError,
+            ]}
+            value={catalogGroupTitle}
+            onChangeText={setCatalogGroupTitle}
+            placeholder="e.g., Escape Room at YourBusiness"
+          />
+          {errors.catalogGroupTitle && (
+            <Text style={styles.errorText}>{errors.catalogGroupTitle}</Text>
+          )}
+          <Text style={styles.helperText}>
+            Display name shown in discovery feed.
+          </Text>
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Catalog Group Kind</Text>
+          <TextInput
+            {...textInputCommonProps}
+            style={styles.input}
+            value={catalogGroupKind}
+            onChangeText={setCatalogGroupKind}
+            placeholder={typeId || "activity_type"}
+          />
+          <Text style={styles.helperText}>Activity type identifier.</Text>
+        </View>
+
+        {/* Dynamic Config / Packages */}
+        {currentTypeDefinition && (
+          <>
+            {["karting", "cooking_class", "escape_room"].includes(typeId) ? (
+              <PackagesEditor
+                packages={config.packages || []}
+                onChange={(packages) => {
+                  setConfig({ ...config, packages });
+                  const prices = packages
+                    .map((pkg) => pkg.base_price)
+                    .filter((p) => p !== undefined && p !== null);
+                  if (prices.length > 0)
+                    setPriceFrom(Math.min(...prices).toString());
+                }}
+              />
+            ) : (
+              <ConfigSchemaRenderer
                 typeDefinition={currentTypeDefinition}
-                currentPricing={pricing}
-                onPricingChange={setPricing}
+                currentConfig={config}
+                onConfigChange={setConfig}
                 errors={errors}
               />
-            </>
-          )}
-
-          {/* Availability Template Picker */}
-          <View style={styles.field}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Availability Template *</Text>
-              {!availabilityTemplateId && (
-                <View style={styles.requiredIndicator}>
-                  <Text style={styles.requiredText}>⚠️ Required</Text>
-                </View>
-              )}
-            </View>
-            {errors.availabilityTemplateId && (
-              <Text style={styles.errorText}>
-                {errors.availabilityTemplateId}
-              </Text>
             )}
 
-            {templates.length > 0 ? (
-              <View style={styles.templatePicker}>
-                {templates
-                  .filter((t) => t.status === "active")
-                  .map((template) => (
-                    <TouchableOpacity
-                      key={template.id}
-                      style={[
-                        styles.templateOption,
-                        availabilityTemplateId === template.id &&
-                          styles.templateOptionSelected,
-                      ]}
-                      onPress={() => setAvailabilityTemplateId(template.id)}
-                      disabled={
-                        isEditMode && currentActivity?.status === "published"
-                      }
-                    >
-                      <Text
-                        style={[
-                          styles.templateOptionText,
-                          availabilityTemplateId === template.id &&
-                            styles.templateOptionTextSelected,
-                        ]}
-                      >
-                        {template.name}
-                      </Text>
-                      <Text style={styles.templateDetails}>
-                        {template.daysOfWeek?.length || 0} days •{" "}
-                        {template.capacity} capacity
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+            <PricingSchemaRenderer
+              typeDefinition={currentTypeDefinition}
+              currentPricing={pricing}
+              onPricingChange={setPricing}
+              errors={errors}
+            />
+          </>
+        )}
 
-                {availabilityTemplateId &&
-                  currentActivity?.status !== "published" && (
-                    <TouchableOpacity
-                      style={styles.templateClearButton}
-                      onPress={() => setAvailabilityTemplateId("")}
-                    >
-                      <Text style={styles.templateClearText}>
-                        Clear Selection
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-              </View>
-            ) : (
-              <View style={styles.warningBox}>
-                <Text style={styles.warningText}>
-                  ⚠️ No active templates found. Create one in the Availability
-                  tab first.
-                </Text>
-              </View>
-            )}
-
-            {isEditMode && currentActivity?.status === "published" && (
-              <View style={styles.infoBox}>
-                <Text style={styles.infoText}>
-                  ✓ Template is linked and cannot be changed while published
-                </Text>
+        {/* Availability Template Picker */}
+        <View style={styles.field}>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Availability Template *</Text>
+            {!availabilityTemplateId && (
+              <View style={styles.requiredIndicator}>
+                <Text style={styles.requiredText}>⚠️ Required</Text>
               </View>
             )}
           </View>
+
+          {errors.availabilityTemplateId && (
+            <Text style={styles.errorText}>
+              {errors.availabilityTemplateId}
+            </Text>
+          )}
+
+          {templates.length > 0 ? (
+            <View style={styles.templatePicker}>
+              {templates
+                .filter((t) => t.status === "active")
+                .map((template) => (
+                  <TouchableOpacity
+                    key={template.id}
+                    style={[
+                      styles.templateOption,
+                      availabilityTemplateId === template.id &&
+                        styles.templateOptionSelected,
+                    ]}
+                    onPress={() => setAvailabilityTemplateId(template.id)}
+                    disabled={
+                      isEditMode && currentActivity?.status === "published"
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.templateOptionText,
+                        availabilityTemplateId === template.id &&
+                          styles.templateOptionTextSelected,
+                      ]}
+                    >
+                      {template.name}
+                    </Text>
+                    <Text style={styles.templateDetails}>
+                      {template.daysOfWeek?.length || 0} days •{" "}
+                      {template.capacity} capacity
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+
+              {availabilityTemplateId &&
+                currentActivity?.status !== "published" && (
+                  <TouchableOpacity
+                    style={styles.templateClearButton}
+                    onPress={() => setAvailabilityTemplateId("")}
+                  >
+                    <Text style={styles.templateClearText}>
+                      Clear Selection
+                    </Text>
+                  </TouchableOpacity>
+                )}
+            </View>
+          ) : (
+            <View style={styles.warningBox}>
+              <Text style={styles.warningText}>
+                ⚠️ No active templates found. Create one in the Availability tab
+                first.
+              </Text>
+            </View>
+          )}
+
+          {isEditMode && currentActivity?.status === "published" && (
+            <View style={styles.infoBox}>
+              <Text style={styles.infoText}>
+                ✓ Template is linked and cannot be changed while published
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
