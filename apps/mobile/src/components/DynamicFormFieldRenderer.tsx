@@ -1,12 +1,12 @@
 import { theme } from "@/src/theme/theme";
 import React, { useMemo } from "react";
 import {
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { FieldDefinition } from "../store/slices/activity-type-slice";
 
@@ -33,7 +33,7 @@ export function DynamicFormFieldRenderer({
 }: DynamicFormFieldRendererProps) {
   const inputProps = useMemo(
     () => ({
-      underlineColorAndroid: "transparent" as const, // ✅ kills blue underline on Android
+      underlineColorAndroid: "transparent" as const, //  kills blue underline on Android
       selectionColor: theme.colors.accent,
       cursorColor: theme.colors.accent,
       placeholderTextColor: stylesVars.label,
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
 
-  // ✅ readable on accent
+  //  readable on accent
   selectOptionTextSelected: {
     color: "#0B0B0B",
   },

@@ -171,7 +171,7 @@ export default function ActivityDetailScreen() {
       placeholderTextColor: stylesVars.subText2,
       selectionColor: theme.colors.accent,
       cursorColor: theme.colors.accent,
-      underlineColorAndroid: "transparent" as const, // ✅ kills Android blue underline
+      underlineColorAndroid: "transparent" as const, //  kills Android blue underline
       keyboardAppearance: "dark" as const,
     }),
     [],

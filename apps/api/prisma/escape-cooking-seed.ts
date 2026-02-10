@@ -11,7 +11,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 /**
- * ✅ Set these before running
+ * Set these before running
  */
 const BUSINESS_ID = '1065dafa-d46d-41cb-84ba-f6efbc602a73'; // required
 const CITY = 'Luxembourg'; // optional but nice for discovery

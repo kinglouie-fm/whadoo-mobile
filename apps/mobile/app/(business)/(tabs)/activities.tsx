@@ -38,7 +38,7 @@ type FilterStatus = "all" | "draft" | "published" | "inactive";
 const FILTERS: FilterStatus[] = ["all", "draft", "published", "inactive"];
 
 const stylesVars = {
-  cardBg: "rgba(255,255,255,0.08)", // ✅ same as saved.tsx
+  cardBg: "rgba(255,255,255,0.08)", //  same as saved.tsx
   text: "#FFFFFF",
   subText: "rgba(255,255,255,0.78)",
 };
@@ -381,7 +381,7 @@ export default function ActivitiesScreen() {
     setMenuVisible(true);
   };
 
-  // ✅ KEEP status exactly like you already had it (not a pill)
+  //  KEEP status exactly like you already had it (not a pill)
   const statusBadge = (item: Activity) => {
     if (item.status === "published")
       return { label: "Published", color: theme.colors.accent };
@@ -795,10 +795,10 @@ const styles = StyleSheet.create({
 
   listContent: {
     padding: 16,
-    paddingBottom: 130,
+    paddingBottom: 10,
   },
 
-  // ✅ NEW card style (match saved.tsx)
+  //  NEW card style (match saved.tsx)
   card: {
     flexDirection: "row",
     alignItems: "center",

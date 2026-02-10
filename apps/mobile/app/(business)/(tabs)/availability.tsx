@@ -61,7 +61,7 @@ function formatDays(days: number[]) {
 }
 
 const stylesVars = {
-  cardBg: "rgba(255,255,255,0.08)", // ✅ same vibe as saved.tsx
+  cardBg: "rgba(255,255,255,0.08)", //  same vibe as saved.tsx
   text: "#FFFFFF",
   subText: "rgba(255,255,255,0.78)",
   iconBg: "rgba(255,255,255,0.25)",
@@ -90,7 +90,7 @@ export default function AvailabilityScreen() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const selectedCount = selectedIds.size;
 
-  // ✅ keep only one swipe row open at a time (same pattern as saved/activities)
+  //  keep only one swipe row open at a time (same pattern as saved/activities)
   const openSwipeIdRef = useRef<string | null>(null);
   const swipeRefs = useRef<Record<string, Swipeable | null>>({});
 
@@ -342,7 +342,7 @@ export default function AvailabilityScreen() {
               </Text>
             </View>
 
-            {/* ✅ status stays as simple text line (no pill) */}
+            {/*  status stays as simple text line (no pill) */}
             <Text
               style={[styles.statusText, { color: statusColor }]}
               numberOfLines={1}
@@ -436,7 +436,7 @@ export default function AvailabilityScreen() {
         }
       />
 
-      {/* ✅ Select-mode bottom bar: only Deactivate + Cancel */}
+      {/*  Select-mode bottom bar: only Deactivate + Cancel */}
       {selectMode && (
         <View style={styles.bottomBar}>
           <Pressable
@@ -549,9 +549,9 @@ const styles = StyleSheet.create({
   errorText: { color: theme.colors.danger, flex: 1, marginRight: 12 },
   retryText: { color: theme.colors.accent, fontWeight: "700" },
 
-  listContent: { padding: 16, paddingBottom: 130 },
+  listContent: { padding: 16, paddingBottom: 10 },
 
-  // ✅ card matches saved.tsx style, but with icon instead of image
+  //  card matches saved.tsx style, but with icon instead of image
   card: {
     flexDirection: "row",
     alignItems: "center",

@@ -59,7 +59,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
 
   const inputProps = useMemo(
     () => ({
-      underlineColorAndroid: "transparent" as const, // ✅ remove Android blue underline
+      underlineColorAndroid: "transparent" as const, //  remove Android blue underline
       selectionColor: theme.colors.accent,
       cursorColor: theme.colors.accent,
       placeholderTextColor: stylesVars.subText2,
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.accent,
   },
   trackTypeText: { fontSize: 13, fontWeight: "900", color: theme.colors.text },
-  trackTypeTextSelected: { color: "#0B0B0B" }, // ✅ readable on accent
+  trackTypeTextSelected: { color: "#0B0B0B" }, //  readable on accent
   fieldHint: {
     fontSize: 12,
     color: stylesVars.subText2,

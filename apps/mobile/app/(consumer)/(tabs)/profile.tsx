@@ -123,10 +123,10 @@ export default function ConsumerProfileHome() {
       headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       headerShadowVisible: false,
 
-      // ✅ tab screen => no back button
+      //  tab screen => no back button
       headerLeft: () => null,
 
-      // ✅ optional 3-dots (same pattern as other tabs)
+      //  optional 3-dots (same pattern as other tabs)
       headerRight: () => null,
       // headerRight: () => (
       //   <View style={{ flexDirection: "row", gap: theme.spacing.sm, marginRight: theme.spacing.md }}>
