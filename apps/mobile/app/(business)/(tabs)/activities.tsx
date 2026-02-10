@@ -1,35 +1,35 @@
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
-    Activity,
-    deactivateActivity,
-    fetchActivities,
-    publishActivity,
-    unpublishActivity,
+  Activity,
+  deactivateActivity,
+  fetchActivities,
+  publishActivity,
+  unpublishActivity,
 } from "@/src/store/slices/activity-slice";
 import { theme } from "@/src/theme/theme";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, {
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Image,
-    Modal,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
@@ -445,7 +445,7 @@ export default function ActivitiesScreen() {
             confirmDeactivate(item.id, item.title);
           }}
         >
-          <Ionicons name="trash" size={20} color="#fff" />
+          <MaterialIcons name="delete" size={20} color="#fff" />
         </Pressable>
       </View>
     );
@@ -462,7 +462,7 @@ export default function ActivitiesScreen() {
               style={styles.headerIconBtn}
               onPress={() => router.push("/(business)/activities/detail")}
             >
-              <Ionicons name="add" size={22} color={theme.colors.text} />
+              <MaterialIcons name="add" size={22} color={theme.colors.text} />
             </Pressable>
           )}
 
@@ -470,8 +470,8 @@ export default function ActivitiesScreen() {
             style={styles.headerIconBtn}
             onPress={selectMode ? exitSelectMode : openHeaderMenu}
           >
-            <Ionicons
-              name={selectMode ? "close" : "ellipsis-horizontal"}
+            <MaterialIcons
+              name="more-horiz"
               size={22}
               color={theme.colors.text}
             />
@@ -530,7 +530,7 @@ export default function ActivitiesScreen() {
               hitSlop={10}
             >
               {checked ? (
-                <Ionicons name="checkmark" size={16} color={theme.colors.bg} />
+                <MaterialIcons name="check" size={16} color={theme.colors.bg} />
               ) : null}
             </Pressable>
           )}
@@ -551,8 +551,8 @@ export default function ActivitiesScreen() {
             </Text>
 
             <View style={styles.infoRow}>
-              <Ionicons
-                name="location-outline"
+              <MaterialIcons
+                name="location-on"
                 size={16}
                 color={stylesVars.subText}
               />
@@ -561,13 +561,15 @@ export default function ActivitiesScreen() {
               </Text>
             </View>
 
-            {/* ✅ status stays as text line, not a pill */}
-            <Text
-              style={[styles.statusText, { color: badge.color }]}
-              numberOfLines={1}
-            >
-              {badge.label}
-            </Text>
+            <View style={styles.infoRow}>
+              <MaterialIcons name="info" size={16} color={stylesVars.subText} />
+              <Text
+                style={[styles.subText, { color: badge.color }]}
+                numberOfLines={1}
+              >
+                {badge.label}
+              </Text>
+            </View>
           </View>
 
           {/* actions + chevron */}
@@ -582,16 +584,12 @@ export default function ActivitiesScreen() {
                 selectMode ? styles.disabled : null,
               ]}
             >
-              <Ionicons
-                name="sync-outline"
-                size={18}
-                color={stylesVars.subText}
-              />
+              <MaterialIcons name="sync" size={18} color={stylesVars.subText} />
             </Pressable>
 
             <View style={styles.chevronWrap}>
-              <Ionicons
-                name="chevron-forward"
+              <MaterialIcons
+                name="chevron-right"
                 size={18}
                 color={stylesVars.subText}
               />
@@ -619,9 +617,9 @@ export default function ActivitiesScreen() {
       <View style={styles.screen}>
         <ActivityIndicator size="large" color={theme.colors.accent} />
         <Text style={styles.emptySubtext}>Loading business information…</Text>
-        </View>
+      </View>
     );
-}
+  }
 
   return (
     <View style={styles.screen}>
@@ -667,8 +665,8 @@ export default function ActivitiesScreen() {
                 setSelectedIds(new Set());
               }}
             >
-              <Ionicons
-                name="checkbox-outline"
+              <MaterialIcons
+                name="check-box-outline-blank"
                 size={18}
                 color={theme.colors.text}
               />
@@ -690,8 +688,10 @@ export default function ActivitiesScreen() {
                     setMenuVisible(false);
                   }}
                 >
-                  <Ionicons
-                    name={active ? "radio-button-on" : "radio-button-off"}
+                  <MaterialIcons
+                    name={
+                      active ? "radio-button-checked" : "radio-button-unchecked"
+                    }
                     size={18}
                     color={theme.colors.text}
                   />
@@ -718,7 +718,7 @@ export default function ActivitiesScreen() {
               disabled={publishableIds.length === 0}
               onPress={bulkPublishSelected}
             >
-              <Ionicons name="cloud-upload-outline" size={18} color="#fff" />
+              <MaterialIcons name="cloud-upload" size={18} color="#fff" />
             </Pressable>
           ) : (
             <Pressable
@@ -730,7 +730,7 @@ export default function ActivitiesScreen() {
               disabled={unpublishableIds.length === 0}
               onPress={bulkUnpublishSelected}
             >
-              <Ionicons name="cloud-download-outline" size={18} color="#fff" />
+              <MaterialIcons name="cloud-download" size={18} color="#fff" />
             </Pressable>
           )}
 
@@ -744,7 +744,7 @@ export default function ActivitiesScreen() {
               disabled={activatableIds.length === 0}
               onPress={bulkActivateSelected}
             >
-              <Ionicons name="play-outline" size={18} color="#fff" />
+              <MaterialIcons name="play-arrow" size={18} color="#fff" />
             </Pressable>
           ) : (
             <Pressable
@@ -756,7 +756,7 @@ export default function ActivitiesScreen() {
               disabled={deactivatableIds.length === 0}
               onPress={bulkDeactivateSelected}
             >
-              <Ionicons name="pause-outline" size={18} color="#fff" />
+              <MaterialIcons name="pause" size={18} color="#fff" />
             </Pressable>
           )}
 
@@ -764,14 +764,14 @@ export default function ActivitiesScreen() {
             style={[styles.bottomAction, styles.actionDelete]}
             onPress={bulkDeleteSelected}
           >
-            <Ionicons name="trash" size={18} color="#fff" />
+            <MaterialIcons name="delete" size={18} color="#fff" />
           </Pressable>
 
           <Pressable
             style={[styles.bottomAction, styles.actionCancel]}
             onPress={exitSelectMode}
           >
-            <Ionicons name="close" size={18} color="#fff" />
+            <MaterialIcons name="close" size={18} color="#fff" />
           </Pressable>
         </View>
       )}
@@ -840,18 +840,14 @@ const styles = StyleSheet.create({
   placeholderText: { fontSize: 28 },
 
   cardContent: { flex: 1, minHeight: 64, justifyContent: "center" },
-  title: { color: stylesVars.text, fontSize: 16, fontWeight: "800" },
+  title: { color: stylesVars.text, fontSize: 16, fontWeight: "600" },
 
   infoRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
   subText: {
     color: stylesVars.subText,
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 12,
     flex: 1,
   },
-
-  // ✅ status is still just text (no pill)
-  statusText: { marginTop: 6, fontSize: 13, fontWeight: "700" },
 
   trailing: { flexDirection: "row", alignItems: "center" },
   trailingIconBtn: {

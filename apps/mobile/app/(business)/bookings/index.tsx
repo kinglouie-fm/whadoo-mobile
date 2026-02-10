@@ -1,9 +1,12 @@
 import { TopBar } from "@/src/components/TopBar";
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { clearBusinessBookings, fetchBusinessBookings } from "@/src/store/slices/business-bookings-slice";
+import {
+  clearBusinessBookings,
+  fetchBusinessBookings,
+} from "@/src/store/slices/business-bookings-slice";
 import { theme } from "@/src/theme/theme";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -21,7 +24,9 @@ type TabKind = "upcoming" | "past" | "all";
 export default function BusinessBookingsScreen() {
   const { business } = useBusiness();
   const dispatch = useAppDispatch();
-  const { bookings, loading, cursor, hasMore } = useAppSelector((state) => state.businessBookings);
+  const { bookings, loading, cursor, hasMore } = useAppSelector(
+    (state) => state.businessBookings,
+  );
   const [selectedTab, setSelectedTab] = useState<TabKind>("upcoming");
   const [refreshing, setRefreshing] = useState(false);
 
@@ -45,7 +50,13 @@ export default function BusinessBookingsScreen() {
   const handleLoadMore = () => {
     if (!business?.id || !hasMore || loading) return;
     const kind = selectedTab === "all" ? undefined : selectedTab;
-    dispatch(fetchBusinessBookings({ businessId: business.id, kind, cursor: cursor || undefined }));
+    dispatch(
+      fetchBusinessBookings({
+        businessId: business.id,
+        kind,
+        cursor: cursor || undefined,
+      }),
+    );
   };
 
   const renderBookingCard = ({ item }: { item: any }) => {
@@ -74,7 +85,12 @@ export default function BusinessBookingsScreen() {
           <Text style={styles.bookingTitle} numberOfLines={1}>
             {item.activitySnapshot?.title || "Activity"}
           </Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: statusColor + "20" },
+            ]}
+          >
             <Text style={[styles.statusText, { color: statusColor }]}>
               {item.status}
             </Text>
@@ -83,27 +99,40 @@ export default function BusinessBookingsScreen() {
 
         <View style={styles.bookingDetails}>
           <View style={styles.detailRow}>
-            <Ionicons name="calendar-outline" size={14} color={theme.colors.muted} />
+            <MaterialIcons
+              name="calendar-month"
+              size={14}
+              color={theme.colors.muted}
+            />
             <Text style={styles.detailText}>
               {dateStr} at {timeStr}
             </Text>
           </View>
           <View style={styles.detailRow}>
-            <Ionicons name="people-outline" size={14} color={theme.colors.muted} />
+            <MaterialIcons name="people" size={14} color={theme.colors.muted} />
             <Text style={styles.detailText}>
-              {item.participantsCount} {item.participantsCount === 1 ? "person" : "people"}
+              {item.participantsCount}{" "}
+              {item.participantsCount === 1 ? "person" : "people"}
             </Text>
           </View>
           {item.selectionSnapshot?.packageName && (
             <View style={styles.detailRow}>
-              <Ionicons name="pricetag-outline" size={14} color={theme.colors.muted} />
-              <Text style={styles.detailText}>{item.selectionSnapshot.packageName}</Text>
+              <MaterialIcons
+                name="price-change"
+                size={14}
+                color={theme.colors.muted}
+              />
+              <Text style={styles.detailText}>
+                {item.selectionSnapshot.packageName}
+              </Text>
             </View>
           )}
         </View>
 
         {item.paymentAmount && (
-          <Text style={styles.bookingPrice}>€{Number(item.paymentAmount).toFixed(2)}</Text>
+          <Text style={styles.bookingPrice}>
+            €{Number(item.paymentAmount).toFixed(2)}
+          </Text>
         )}
 
         <Text style={styles.bookingId}>ID: {item.id.substring(0, 8)}</Text>
@@ -113,7 +142,11 @@ export default function BusinessBookingsScreen() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="calendar-outline" size={64} color={theme.colors.muted} />
+      <MaterialIcons
+        name="calendar-month"
+        size={64}
+        color={theme.colors.muted}
+      />
       <Text style={styles.emptyTitle}>No bookings found</Text>
       <Text style={styles.emptyText}>
         {selectedTab === "upcoming"
@@ -135,7 +168,12 @@ export default function BusinessBookingsScreen() {
           style={[styles.tab, selectedTab === "upcoming" && styles.tabActive]}
           onPress={() => setSelectedTab("upcoming")}
         >
-          <Text style={[styles.tabText, selectedTab === "upcoming" && styles.tabTextActive]}>
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === "upcoming" && styles.tabTextActive,
+            ]}
+          >
             Upcoming
           </Text>
         </TouchableOpacity>
@@ -143,7 +181,12 @@ export default function BusinessBookingsScreen() {
           style={[styles.tab, selectedTab === "past" && styles.tabActive]}
           onPress={() => setSelectedTab("past")}
         >
-          <Text style={[styles.tabText, selectedTab === "past" && styles.tabTextActive]}>
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === "past" && styles.tabTextActive,
+            ]}
+          >
             Past
           </Text>
         </TouchableOpacity>
@@ -151,7 +194,12 @@ export default function BusinessBookingsScreen() {
           style={[styles.tab, selectedTab === "all" && styles.tabActive]}
           onPress={() => setSelectedTab("all")}
         >
-          <Text style={[styles.tabText, selectedTab === "all" && styles.tabTextActive]}>
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === "all" && styles.tabTextActive,
+            ]}
+          >
             All
           </Text>
         </TouchableOpacity>
@@ -165,13 +213,21 @@ export default function BusinessBookingsScreen() {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={loading ? null : renderEmptyState}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.colors.accent} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.accent}
+          />
         }
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
           loading && bookings.length > 0 ? (
-            <ActivityIndicator size="small" color={theme.colors.accent} style={{ marginVertical: 20 }} />
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.accent}
+              style={{ marginVertical: 20 }}
+            />
           ) : null
         }
       />

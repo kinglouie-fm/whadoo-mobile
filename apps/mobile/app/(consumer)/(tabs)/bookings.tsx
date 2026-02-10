@@ -6,16 +6,16 @@ import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    Modal,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -158,9 +158,9 @@ export default function MyBookingsScreen() {
               {activity?.title || "Untitled"}
             </Text>
 
-            <Text style={styles.statusText}>
-              {String(booking.status).toUpperCase()}
-            </Text>
+            {status !== "active" ? (
+              <Text style={styles.statusText}>{status.toUpperCase()}</Text>
+            ) : null}
           </View>
 
           <View style={styles.infoRow}>
@@ -220,7 +220,7 @@ export default function MyBookingsScreen() {
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={theme.colors.accent} />
-        </View>
+      </View>
     );
   };
 
@@ -383,13 +383,12 @@ const styles = StyleSheet.create({
   cardContent: { flex: 1, minHeight: 64, justifyContent: "center" },
 
   titleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  title: { flex: 1, fontSize: 16, fontWeight: "800", color: stylesVars.text },
+  title: { flex: 1, fontSize: 16, fontWeight: "600", color: stylesVars.text },
 
   infoRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
   subText: {
     color: stylesVars.subText,
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 12,
     flex: 1,
   },
 

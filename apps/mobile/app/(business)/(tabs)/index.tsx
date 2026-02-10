@@ -1,13 +1,24 @@
 import { useAuth } from "@/src/providers/auth-context";
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { fetchBusinessBookings, fetchBusinessStats } from "@/src/store/slices/business-bookings-slice";
+import {
+  fetchBusinessBookings,
+  fetchBusinessStats,
+} from "@/src/store/slices/business-bookings-slice";
 import { theme } from "@/src/theme/theme";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useLayoutEffect, useMemo } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BusinessHomeScreen() {
@@ -16,19 +27,25 @@ export default function BusinessHomeScreen() {
   const { appUser } = useAuth();
   const { business, loading: businessLoading } = useBusiness();
   const dispatch = useAppDispatch();
-  const { stats, bookings, loading } = useAppSelector((state) => state.businessBookings);
+  const { stats, bookings, loading } = useAppSelector(
+    (state) => state.businessBookings,
+  );
 
   useEffect(() => {
     if (business?.id) {
       dispatch(fetchBusinessStats(business.id));
-      dispatch(fetchBusinessBookings({ businessId: business.id, kind: "upcoming" }));
+      dispatch(
+        fetchBusinessBookings({ businessId: business.id, kind: "upcoming" }),
+      );
     }
   }, [business?.id, dispatch]);
 
   const handleRefresh = () => {
     if (business?.id) {
       dispatch(fetchBusinessStats(business.id));
-      dispatch(fetchBusinessBookings({ businessId: business.id, kind: "upcoming" }));
+      dispatch(
+        fetchBusinessBookings({ businessId: business.id, kind: "upcoming" }),
+      );
     }
   };
 
@@ -56,7 +73,11 @@ export default function BusinessHomeScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.locationLabel}>Business</Text>
           <View style={styles.locationRow}>
-            <Ionicons name="location" size={16} color={theme.colors.text} />
+            <MaterialIcons
+              name="location-on"
+              size={16}
+              color={theme.colors.text}
+            />
             <Text style={styles.locationText}>{location}</Text>
           </View>
         </View>
@@ -67,7 +88,11 @@ export default function BusinessHomeScreen() {
             style={styles.headerIconBtn}
             onPress={() => router.push("/(business)/settings")}
           >
-            <Ionicons name="cog-outline" size={22} color={theme.colors.text} />
+            <MaterialIcons
+              name="settings"
+              size={22}
+              color={theme.colors.text}
+            />
           </Pressable>
         </View>
       ),
@@ -83,27 +108,31 @@ export default function BusinessHomeScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} tintColor={theme.colors.accent} />
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.accent}
+          />
         }
       >
         {/* Top KPIs */}
         <View style={styles.kpiRow}>
-          <KpiCard 
-            label="Today" 
-            value={stats?.todayCount?.toString() || "0"} 
-            icon="calendar-outline"
+          <KpiCard
+            label="Today"
+            value={stats?.todayCount?.toString() || "0"}
+            icon="calendar-month"
             loading={loading}
           />
-          <KpiCard 
-            label="Upcoming" 
-            value={stats?.upcomingCount?.toString() || "0"} 
-            icon="time-outline"
+          <KpiCard
+            label="Upcoming"
+            value={stats?.upcomingCount?.toString() || "0"}
+            icon="timeline"
             loading={loading}
           />
-          <KpiCard 
-            label="Revenue" 
-            value={`€${stats?.totalRevenue?.toFixed(2) || "0.00"}`} 
-            icon="cash-outline"
+          <KpiCard
+            label="Revenue"
+            value={`€${stats?.totalRevenue?.toFixed(2) || "0.00"}`}
+            icon="attach-money"
             loading={loading}
           />
         </View>
@@ -122,21 +151,21 @@ export default function BusinessHomeScreen() {
           <ActionTile
             title="Manage bookings"
             subtitle="See upcoming bookings & cancellations"
-            icon="list-outline"
+            icon="list"
             onPress={() => router.push("/(business)/bookings")}
           />
 
           <ActionTile
             title="Availability"
             subtitle="Opening hours, slot duration, templates"
-            icon="time-outline"
+            icon="timeline"
             onPress={() => router.push("/(business)/(tabs)/availability")}
           />
 
           <ActionTile
             title="Analytics"
             subtitle="Views, swipes, conversion"
-            icon="bar-chart-outline"
+            icon="pie-chart-outline"
             onPress={() => router.push("/(business)/analytics")}
           />
         </View>
@@ -197,14 +226,18 @@ function KpiCard({
 }: {
   label: string;
   value: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: keyof typeof MaterialIcons.glyphMap;
   loading?: boolean;
 }) {
   return (
     <View style={styles.kpiCard}>
-      <Ionicons name={icon} size={18} color={theme.colors.text} />
+      <MaterialIcons name={icon} size={18} color={theme.colors.text} />
       {loading ? (
-        <ActivityIndicator size="small" color={theme.colors.accent} style={{ marginVertical: 6 }} />
+        <ActivityIndicator
+          size="small"
+          color={theme.colors.accent}
+          style={{ marginVertical: 6 }}
+        />
       ) : (
         <Text style={styles.kpiValue}>{value}</Text>
       )}
@@ -238,24 +271,31 @@ function BookingPreviewCard({ booking }: { booking: any }) {
         <Text style={styles.bookingTitle} numberOfLines={1}>
           {booking.activitySnapshot?.title || "Activity"}
         </Text>
-        <View style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}>
+        <View
+          style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}
+        >
           <Text style={[styles.statusText, { color: statusColor }]}>
             {booking.status}
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.bookingDetails}>
         <View style={styles.bookingDetailRow}>
-          <Ionicons name="calendar-outline" size={14} color={theme.colors.muted} />
+          <MaterialIcons
+            name="calendar-month"
+            size={14}
+            color={theme.colors.muted}
+          />
           <Text style={styles.bookingDetailText}>
             {dateStr} at {timeStr}
           </Text>
         </View>
         <View style={styles.bookingDetailRow}>
-          <Ionicons name="people-outline" size={14} color={theme.colors.muted} />
+          <MaterialIcons name="people" size={14} color={theme.colors.muted} />
           <Text style={styles.bookingDetailText}>
-            {booking.participantsCount} {booking.participantsCount === 1 ? "person" : "people"}
+            {booking.participantsCount}{" "}
+            {booking.participantsCount === 1 ? "person" : "people"}
           </Text>
         </View>
       </View>
@@ -277,19 +317,23 @@ function ActionTile({
 }: {
   title: string;
   subtitle: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: keyof typeof MaterialIcons.glyphMap;
   onPress: () => void;
 }) {
   return (
     <Pressable style={styles.tile} onPress={onPress}>
       <View style={styles.tileIcon}>
-        <Ionicons name={icon} size={22} color={theme.colors.text} />
+        <MaterialIcons name={icon} size={22} color={theme.colors.text} />
       </View>
       <View style={styles.tileText}>
         <Text style={styles.tileTitle}>{title}</Text>
         <Text style={styles.tileSubtitle}>{subtitle}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={theme.colors.muted} />
+      <MaterialIcons
+        name="chevron-right"
+        size={18}
+        color={theme.colors.muted}
+      />
     </Pressable>
   );
 }
@@ -318,7 +362,7 @@ const styles = StyleSheet.create({
   },
   profileInitials: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "600",
     color: theme.colors.text,
   },
   headerCenter: {
@@ -367,7 +411,7 @@ const styles = StyleSheet.create({
   },
   kpiValue: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: "600",
     color: theme.colors.text,
   },
   kpiLabel: {
@@ -387,13 +431,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 10,
   },
   linkText: {
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "600",
     color: theme.colors.accent,
   },
 
@@ -418,14 +462,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tileTitle: {
-    fontSize: 14,
-    fontWeight: "900",
+    fontSize: 16,
+    fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 2,
   },
   tileSubtitle: {
     fontSize: 12,
-    fontWeight: "600",
     color: theme.colors.muted,
   },
 
@@ -436,7 +479,7 @@ const styles = StyleSheet.create({
   },
   listEmptyTitle: {
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 4,
   },
@@ -453,7 +496,7 @@ const styles = StyleSheet.create({
   },
   tipTitle: {
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 6,
   },
@@ -472,7 +515,7 @@ const styles = StyleSheet.create({
   },
   tipBtnText: {
     fontSize: 13,
-    fontWeight: "900",
+    fontWeight: "600",
     color: theme.colors.bg,
   },
 
@@ -490,7 +533,7 @@ const styles = StyleSheet.create({
   },
   bookingTitle: {
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: "600",
     color: theme.colors.text,
     flex: 1,
     marginRight: 8,
@@ -502,7 +545,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "600",
     textTransform: "capitalize",
   },
   bookingDetails: {
@@ -521,7 +564,7 @@ const styles = StyleSheet.create({
   },
   bookingPrice: {
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: "600",
     color: theme.colors.accent,
     marginTop: 4,
   },

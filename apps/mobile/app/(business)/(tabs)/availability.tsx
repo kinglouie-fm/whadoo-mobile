@@ -1,31 +1,31 @@
 import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
-    AvailabilityTemplate,
-    deactivateTemplate,
-    fetchTemplates,
+  AvailabilityTemplate,
+  deactivateTemplate,
+  fetchTemplates,
 } from "@/src/store/slices/availability-template-slice";
 import { theme } from "@/src/theme/theme";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, {
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Modal,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 
@@ -203,7 +203,7 @@ export default function AvailabilityScreen() {
               style={styles.headerIconBtn}
               onPress={() => router.push("/(business)/availability/detail")}
             >
-              <Ionicons name="add" size={22} color={theme.colors.text} />
+              <MaterialIcons name="add" size={22} color={theme.colors.text} />
             </Pressable>
           )}
 
@@ -211,8 +211,8 @@ export default function AvailabilityScreen() {
             style={styles.headerIconBtn}
             onPress={selectMode ? exitSelectMode : openHeaderMenu}
           >
-            <Ionicons
-              name={selectMode ? "close" : "ellipsis-horizontal"}
+            <MaterialIcons
+              name="more-horiz"
               size={22}
               color={theme.colors.text}
             />
@@ -235,7 +235,7 @@ export default function AvailabilityScreen() {
             confirmDeactivate([item.id], true);
           }}
         >
-          <Ionicons name="pause-outline" size={20} color="#fff" />
+          <MaterialIcons name="pause" size={20} color="#fff" />
         </Pressable>
       </View>
     );
@@ -291,15 +291,14 @@ export default function AvailabilityScreen() {
               hitSlop={10}
             >
               {isSelected ? (
-                <Ionicons name="checkmark" size={16} color={theme.colors.bg} />
+                <MaterialIcons name="check" size={16} color={theme.colors.bg} />
               ) : null}
             </Pressable>
           )}
 
-          {/* ✅ ICON instead of image (as requested) */}
           <View style={styles.iconBox}>
-            <Ionicons
-              name="calendar-outline"
+            <MaterialIcons
+              name="calendar-month"
               size={22}
               color={stylesVars.text}
             />
@@ -311,8 +310,8 @@ export default function AvailabilityScreen() {
             </Text>
 
             <View style={styles.infoRow}>
-              <Ionicons
-                name="repeat-outline"
+              <MaterialIcons
+                name="repeat"
                 size={16}
                 color={stylesVars.subText}
               />
@@ -322,8 +321,8 @@ export default function AvailabilityScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <Ionicons
-                name="time-outline"
+              <MaterialIcons
+                name="access-time"
                 size={16}
                 color={stylesVars.subText}
               />
@@ -333,8 +332,8 @@ export default function AvailabilityScreen() {
             </View>
 
             <View style={[styles.infoRow, { marginTop: 6 }]}>
-              <Ionicons
-                name="timer-outline"
+              <MaterialIcons
+                name="timer"
                 size={16}
                 color={stylesVars.subText}
               />
@@ -367,8 +366,8 @@ export default function AvailabilityScreen() {
                   selectMode ? styles.disabled : null,
                 ]}
               >
-                <Ionicons
-                  name="sync-outline"
+                <MaterialIcons
+                  name="sync"
                   size={18}
                   color={stylesVars.subText}
                 />
@@ -378,8 +377,8 @@ export default function AvailabilityScreen() {
             )}
 
             <View style={styles.chevronWrap}>
-              <Ionicons
-                name="chevron-forward"
+              <MaterialIcons
+                name="chevron-right"
                 size={18}
                 color={stylesVars.subText}
               />
@@ -449,14 +448,14 @@ export default function AvailabilityScreen() {
             disabled={deactivatableIds.length === 0}
             onPress={() => confirmDeactivate(deactivatableIds, false)}
           >
-            <Ionicons name="pause-outline" size={18} color="#fff" />
+            <MaterialIcons name="pause" size={18} color="#fff" />
           </Pressable>
 
           <Pressable
             style={[styles.bottomAction, styles.actionCancel]}
             onPress={exitSelectMode}
           >
-            <Ionicons name="close" size={18} color="#fff" />
+            <MaterialIcons name="close" size={18} color="#fff" />
           </Pressable>
         </View>
       )}
@@ -483,8 +482,8 @@ export default function AvailabilityScreen() {
                 setSelectedIds(new Set());
               }}
             >
-              <Ionicons
-                name="checkbox-outline"
+              <MaterialIcons
+                name="check-box-outline-blank"
                 size={18}
                 color={theme.colors.text}
               />
@@ -506,8 +505,8 @@ export default function AvailabilityScreen() {
                     setMenuVisible(false);
                   }}
                 >
-                  <Ionicons
-                    name={active ? "radio-button-on" : "radio-button-off"}
+                  <MaterialIcons
+                    name="radio-button-off"
                     size={18}
                     color={theme.colors.text}
                   />
@@ -598,17 +597,16 @@ const styles = StyleSheet.create({
   },
 
   cardContent: { flex: 1, minHeight: 64, justifyContent: "center" },
-  title: { fontSize: 16, fontWeight: "800", color: stylesVars.text },
+  title: { fontSize: 16, fontWeight: "600", color: stylesVars.text },
 
   infoRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
   subText: {
     color: stylesVars.subText,
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 12,
     flex: 1,
   },
 
-  statusText: { marginTop: 6, fontSize: 13, fontWeight: "700" },
+  statusText: { marginTop: 6, fontSize: 12 },
 
   trailing: { flexDirection: "row", alignItems: "center" },
   trailingIconBtn: {

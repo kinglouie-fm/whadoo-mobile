@@ -18,8 +18,18 @@ export class MeService {
       picture ?? undefined
     );
 
-    // bookings aren’t built yet — keep 0 for now
-    const stats = { totalBookings: 0 };
+    // Calculate completed bookings count
+    const bookingsCompleted = await this.prisma.booking.count({
+      where: {
+        userId: user.id,
+        status: 'completed',
+      },
+    });
+
+    const stats = { 
+      totalBookings: bookingsCompleted,
+      bookingsCompleted,
+    };
 
     return { user, stats };
   }
@@ -66,7 +76,7 @@ export class MeService {
 
     if (user.role === "business") {
       throw new ForbiddenException(
-        "Business accounts can’t be deleted in-app. Please email support."
+        "Business accounts can't be deleted in-app. Please email support."
       );
     }
 

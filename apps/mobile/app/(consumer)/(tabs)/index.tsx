@@ -9,7 +9,7 @@ import {
 } from "@/src/store/slices/grouped-card-slice";
 import { saveActivity } from "@/src/store/slices/saved-activity-slice";
 import { theme } from "@/src/theme/theme";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useLayoutEffect, useRef } from "react";
@@ -69,7 +69,11 @@ export default function DiscoverySwipeScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.locationLabel}>Your Location</Text>
           <View style={styles.locationRow}>
-            <Ionicons name="location" size={16} color={theme.colors.text} />
+            <MaterialIcons
+              name="location-on"
+              size={16}
+              color={theme.colors.text}
+            />
             <Text style={styles.locationText}>{getLocation()}</Text>
           </View>
         </View>
@@ -77,8 +81,8 @@ export default function DiscoverySwipeScreen() {
       headerRight: () => (
         <View style={styles.headerRight}>
           <Pressable style={styles.headerIconBtn}>
-            <Ionicons
-              name="options-outline"
+            <MaterialIcons
+              name="more-horiz"
               size={22}
               color={theme.colors.text}
             />

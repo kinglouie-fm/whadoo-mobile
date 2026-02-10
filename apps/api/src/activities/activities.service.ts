@@ -325,7 +325,7 @@ export class ActivitiesService {
       const catalogGroupTitle = representativeActivity.catalogGroupTitle;
       const typeLabel =
         catalogGroupTitle ||
-        `${representativeActivity.typeId} at ${businessName}`;
+        `${representativeActivity.typeId}, ${businessName}`;
 
       groups.push({
         catalogGroupId: groupKey,

@@ -18,6 +18,7 @@ export type AppUser = {
 
 type AppStats = {
     totalBookings: number;
+    bookingsCompleted: number;
 };
 
 type AuthContextValue = {

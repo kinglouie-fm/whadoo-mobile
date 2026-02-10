@@ -11,7 +11,13 @@ import { theme } from "@/src/theme/theme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -51,9 +57,8 @@ export default function SavedActivitiesScreen() {
   const router = useRouter();
   const navigation = useNavigation();
 
-  const { items, loading, error, nextCursor, multiSelectMode, selectedIds } = useAppSelector(
-    (state) => state.savedActivities
-  );
+  const { items, loading, error, nextCursor, multiSelectMode, selectedIds } =
+    useAppSelector((state) => state.savedActivities);
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("recent");
@@ -84,7 +89,9 @@ export default function SavedActivitiesScreen() {
       headerRight: () => (
         <Pressable
           style={styles.headerIconBtn}
-          onPress={multiSelectMode ? exitSelectMode : () => setMenuVisible(true)}
+          onPress={
+            multiSelectMode ? exitSelectMode : () => setMenuVisible(true)
+          }
         >
           <MaterialIcons
             name={multiSelectMode ? "close" : "more-horiz"}
@@ -114,7 +121,10 @@ export default function SavedActivitiesScreen() {
     dispatch(unsaveActivity(activityId));
   };
 
-  const handleCardPress = (activityId: string, catalogGroupId: string | null | undefined) => {
+  const handleCardPress = (
+    activityId: string,
+    catalogGroupId: string | null | undefined,
+  ) => {
     if (multiSelectMode) {
       dispatch(toggleSelectActivity(activityId));
       return;
@@ -138,16 +148,22 @@ export default function SavedActivitiesScreen() {
 
     if (sortMode === "title") {
       return arr.sort((a, b) =>
-        String(a.snapshot?.title ?? "").localeCompare(String(b.snapshot?.title ?? ""))
+        String(a.snapshot?.title ?? "").localeCompare(
+          String(b.snapshot?.title ?? ""),
+        ),
       );
     }
 
     if (sortMode === "price") {
       return arr.sort((a, b) => {
         const pa =
-          a.snapshot?.priceFrom != null ? Number(a.snapshot.priceFrom) : Number.POSITIVE_INFINITY;
+          a.snapshot?.priceFrom != null
+            ? Number(a.snapshot.priceFrom)
+            : Number.POSITIVE_INFINITY;
         const pb =
-          b.snapshot?.priceFrom != null ? Number(b.snapshot.priceFrom) : Number.POSITIVE_INFINITY;
+          b.snapshot?.priceFrom != null
+            ? Number(b.snapshot.priceFrom)
+            : Number.POSITIVE_INFINITY;
         return pa - pb;
       });
     }
@@ -156,23 +172,35 @@ export default function SavedActivitiesScreen() {
   }, [items, sortMode]);
 
   const confirmUnsave = (activityId: string, title?: string) => {
-    Alert.alert("Remove saved", `Remove "${title || "this activity"}" from saved?`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: () => handleUnsave(activityId) },
-    ]);
+    Alert.alert(
+      "Remove saved",
+      `Remove "${title || "this activity"}" from saved?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => handleUnsave(activityId),
+        },
+      ],
+    );
   };
 
   const confirmBulkDelete = () => {
     if (selectedIds.length === 0) return;
 
-    Alert.alert("Remove selected", `Remove ${selectedIds.length} saved activities?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: () => dispatch(bulkDeleteSavedActivities(selectedIds)),
-      },
-    ]);
+    Alert.alert(
+      "Remove selected",
+      `Remove ${selectedIds.length} saved activities?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => dispatch(bulkDeleteSavedActivities(selectedIds)),
+        },
+      ],
+    );
   };
 
   const renderRightActions = (activityId: string, title?: string) => {
@@ -196,7 +224,9 @@ export default function SavedActivitiesScreen() {
 
     const locationText = item.snapshot?.address || item.snapshot?.city || "—";
     const priceText =
-      item.snapshot?.priceFrom != null ? `From €${Number(item.snapshot.priceFrom).toFixed(2)}` : "";
+      item.snapshot?.priceFrom != null
+        ? `From €${Number(item.snapshot.priceFrom).toFixed(2)}`
+        : "";
 
     return (
       <Swipeable
@@ -205,18 +235,25 @@ export default function SavedActivitiesScreen() {
         }}
         enabled={!multiSelectMode}
         onSwipeableWillOpen={() => {
-          if (openSwipeIdRef.current && openSwipeIdRef.current !== item.activityId) {
+          if (
+            openSwipeIdRef.current &&
+            openSwipeIdRef.current !== item.activityId
+          ) {
             swipeRefs.current[openSwipeIdRef.current]?.close?.();
           }
           openSwipeIdRef.current = item.activityId;
         }}
         renderRightActions={() =>
-          !multiSelectMode ? renderRightActions(item.activityId, item.snapshot?.title) : null
+          !multiSelectMode
+            ? renderRightActions(item.activityId, item.snapshot?.title)
+            : null
         }
       >
         <Pressable
           style={[styles.card, isSelected && styles.cardSelected]}
-          onPress={() => handleCardPress(item.activityId, item.snapshot?.catalogGroupId)}
+          onPress={() =>
+            handleCardPress(item.activityId, item.snapshot?.catalogGroupId)
+          }
           onLongPress={() => {
             if (!multiSelectMode) {
               dispatch(toggleMultiSelectMode());
@@ -225,7 +262,6 @@ export default function SavedActivitiesScreen() {
             }
           }}
         >
-
           {multiSelectMode && (
             <Pressable
               onPress={() => dispatch(toggleSelectActivity(item.activityId))}
@@ -239,7 +275,10 @@ export default function SavedActivitiesScreen() {
           )}
 
           {item.snapshot?.thumbnailUrl ? (
-            <Image source={{ uri: item.snapshot.thumbnailUrl }} style={styles.thumbnail} />
+            <Image
+              source={{ uri: item.snapshot.thumbnailUrl }}
+              style={styles.thumbnail}
+            />
           ) : (
             <View style={[styles.thumbnail, styles.placeholderThumbnail]}>
               <Text style={styles.placeholderText}>📸</Text>
@@ -252,7 +291,11 @@ export default function SavedActivitiesScreen() {
             </Text>
 
             <View style={styles.infoRow}>
-              <MaterialIcons name="place" size={16} color={stylesVars.subText} />
+              <MaterialIcons
+                name="place"
+                size={16}
+                color={stylesVars.subText}
+              />
               <Text style={styles.subText} numberOfLines={1}>
                 {locationText}
               </Text>
@@ -260,7 +303,11 @@ export default function SavedActivitiesScreen() {
 
             {priceText ? (
               <View style={[styles.infoRow, { marginTop: 6 }]}>
-                <MaterialIcons name="local-offer" size={16} color={stylesVars.subText} />
+                <MaterialIcons
+                  name="local-offer"
+                  size={16}
+                  color={stylesVars.subText}
+                />
                 <Text style={styles.subText} numberOfLines={1}>
                   {priceText}
                 </Text>
@@ -269,7 +316,11 @@ export default function SavedActivitiesScreen() {
           </View>
 
           <View style={styles.chevronWrap}>
-            <MaterialIcons name="chevron-right" size={24} color={stylesVars.subText} />
+            <MaterialIcons
+              name="chevron-right"
+              size={24}
+              color={stylesVars.subText}
+            />
           </View>
         </Pressable>
       </Swipeable>
@@ -303,9 +354,15 @@ export default function SavedActivitiesScreen() {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.emptyContainer}>
-          <MaterialIcons name="favorite-border" size={64} color={theme.colors.muted} />
+          <MaterialIcons
+            name="favorite-border"
+            size={64}
+            color={theme.colors.muted}
+          />
           <Text style={styles.emptyTitle}>No saved activities yet</Text>
-          <Text style={styles.emptySubtitle}>Swipe down on activities to save them</Text>
+          <Text style={styles.emptySubtitle}>
+            Swipe down on activities to save them
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -332,7 +389,10 @@ export default function SavedActivitiesScreen() {
           animationType="fade"
           onRequestClose={() => setMenuVisible(false)}
         >
-          <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setMenuVisible(false)}
+          >
             <View style={styles.menuSheet}>
               <Text style={styles.menuTitle}>Manage saved</Text>
 
@@ -344,7 +404,11 @@ export default function SavedActivitiesScreen() {
                   dispatch(clearSelection());
                 }}
               >
-                <MaterialIcons name="check-box" size={18} color={theme.colors.text} />
+                <MaterialIcons
+                  name="check-box"
+                  size={18}
+                  color={theme.colors.text}
+                />
                 <Text style={styles.menuItemText}>Select</Text>
               </Pressable>
 
@@ -364,7 +428,11 @@ export default function SavedActivitiesScreen() {
                     }}
                   >
                     <MaterialIcons
-                      name={active ? "radio-button-checked" : "radio-button-unchecked"}
+                      name={
+                        active
+                          ? "radio-button-checked"
+                          : "radio-button-unchecked"
+                      }
                       size={18}
                       color={theme.colors.text}
                     />
@@ -390,7 +458,10 @@ export default function SavedActivitiesScreen() {
               <MaterialIcons name="delete" size={18} color="#fff" />
             </Pressable>
 
-            <Pressable style={[styles.bottomAction, styles.actionCancel]} onPress={exitSelectMode}>
+            <Pressable
+              style={[styles.bottomAction, styles.actionCancel]}
+              onPress={exitSelectMode}
+            >
               <MaterialIcons name="close" size={18} color="#fff" />
             </Pressable>
           </View>
@@ -427,7 +498,12 @@ const styles = StyleSheet.create({
 
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
 
-  errorContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
+  errorContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
   errorText: {
     fontSize: 18,
     fontWeight: "700",
@@ -442,8 +518,18 @@ const styles = StyleSheet.create({
   },
   retryButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 
-  emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
-  emptyTitle: { fontSize: 20, fontWeight: "700", color: theme.colors.text, marginTop: 16 },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: theme.colors.text,
+    marginTop: 16,
+  },
   emptySubtitle: {
     fontSize: 15,
     color: theme.colors.muted,
@@ -504,10 +590,14 @@ const styles = StyleSheet.create({
   placeholderText: { fontSize: 28 },
 
   cardContent: { flex: 1, minHeight: 64, justifyContent: "center" },
-  title: { fontSize: 16, fontWeight: "800", color: stylesVars.text },
+  title: { fontSize: 16, fontWeight: "600", color: stylesVars.text },
 
   infoRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
-  subText: { color: stylesVars.subText, fontSize: 13, fontWeight: "600", flex: 1 },
+  subText: {
+    color: stylesVars.subText,
+    fontSize: 12,
+    flex: 1,
+  },
 
   chevronWrap: {
     width: 28,
@@ -555,7 +645,11 @@ const styles = StyleSheet.create({
   actionDisabled: { opacity: 0.35 },
 
   // menu sheet
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
   menuSheet: {
     backgroundColor: theme.colors.card,
     padding: 16,
@@ -564,10 +658,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.divider,
   },
-  menuTitle: { color: theme.colors.text, fontSize: 16, fontWeight: "800", marginBottom: 12 },
-  menuSectionTitle: { color: theme.colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 8 },
-  menuItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12 },
+  menuTitle: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 12,
+  },
+  menuSectionTitle: {
+    color: theme.colors.muted,
+    fontSize: 12,
+    fontWeight: "800",
+    marginBottom: 8,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+  },
   menuItemActive: { opacity: 0.9 },
   menuItemText: { color: theme.colors.text, fontSize: 14, fontWeight: "700" },
-  menuDivider: { height: 1, backgroundColor: theme.colors.divider, marginVertical: 10 },
+  menuDivider: {
+    height: 1,
+    backgroundColor: theme.colors.divider,
+    marginVertical: 10,
+  },
 });
