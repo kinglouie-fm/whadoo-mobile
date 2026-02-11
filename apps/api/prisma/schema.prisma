@@ -44,12 +44,16 @@ model User {
   phoneNumber String?
   photoUrl    String?
 
+  photoAssetId String? @unique @map("photo_asset_id") @db.Uuid
+  photoAsset   Asset?  @relation("UserPhotoAsset", fields: [photoAssetId], references: [id], onDelete: SetNull)
+
   deletedAt   DateTime?
 
   businesses      Business[]
   swipes          UserSwipe[]
   savedActivities SavedActivity[]
   bookings        Booking[]
+  assets          Asset[] @relation("UserAssets")
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -72,9 +76,13 @@ model Business {
   images       String[]       @default([])
   status       BusinessStatus @default(active)
 
+  logoAssetId  String? @unique @map("logo_asset_id") @db.Uuid
+  logoAsset    Asset?  @relation("BusinessLogoAsset", fields: [logoAssetId], references: [id], onDelete: SetNull)
+
   availabilityTemplates AvailabilityTemplate[]
   activities            Activity[]
   bookings              Booking[]
+  assets                Asset[] @relation("BusinessAssets")
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -173,6 +181,9 @@ model ActivityImage {
   imageUrl    String   @map("image_url")
   isThumbnail Boolean  @default(false) @map("is_thumbnail")
   sortOrder   Int      @default(0) @map("sort_order")
+
+  assetId     String?  @map("asset_id") @db.Uuid
+  asset       Asset?   @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now()) @map("created_at")
 
@@ -289,4 +300,36 @@ model Booking {
   @@index([userId, slotStart(sort: Desc)])
   @@index([activityId, slotStart])
   @@index([businessId, slotStart])
+}
+
+model Asset {
+  id            String   @id @default(uuid()) @db.Uuid
+  
+  provider      String   @default("firebase")
+  storageKey    String   @map("storage_key")
+  downloadToken String?  @map("download_token")
+  
+  contentType   String?  @map("content_type")
+  sizeBytes     Int?     @map("size_bytes")
+  width         Int?
+  height        Int?
+  
+  variants      Json?
+  
+  userId        String?  @map("user_id") @db.Uuid
+  user          User?    @relation("UserAssets", fields: [userId], references: [id], onDelete: Cascade)
+  
+  businessId    String?  @map("business_id") @db.Uuid
+  business      Business? @relation("BusinessAssets", fields: [businessId], references: [id], onDelete: Cascade)
+  
+  userPhotoFor  User?    @relation("UserPhotoAsset")
+  businessLogoFor Business? @relation("BusinessLogoAsset")
+  activityImages ActivityImage[]
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  @@map("assets")
+  @@index([userId])
+  @@index([businessId])
 }

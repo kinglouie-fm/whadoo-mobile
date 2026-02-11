@@ -11,6 +11,9 @@ PODS:
     - PromisesObjC (~> 2.4)
   - EXConstants (18.0.13):
     - ExpoModulesCore
+  - EXImageLoader (6.0.0):
+    - ExpoModulesCore
+    - React-Core
   - Expo (54.0.32):
     - ExpoModulesCore
     - hermes-engine
@@ -58,7 +61,11 @@ PODS:
     - SDWebImageAVIFCoder (~> 0.11.0)
     - SDWebImageSVGCoder (~> 1.7.0)
     - SDWebImageWebPCoder (~> 0.14.6)
+  - ExpoImagePicker (17.0.10):
+    - ExpoModulesCore
   - ExpoKeepAwake (15.0.8):
+    - ExpoModulesCore
+  - ExpoLinearGradient (15.0.8):
     - ExpoModulesCore
   - ExpoLinking (8.0.11):
     - ExpoModulesCore
@@ -99,6 +106,9 @@ PODS:
     - FirebaseAuth (~> 12.8.0)
   - Firebase/CoreOnly (12.8.0):
     - FirebaseCore (~> 12.8.0)
+  - Firebase/Storage (12.8.0):
+    - Firebase/CoreOnly
+    - FirebaseStorage (~> 12.8.0)
   - FirebaseAppCheckInterop (12.8.0)
   - FirebaseAuth (12.8.0):
     - FirebaseAppCheckInterop (~> 12.8.0)
@@ -118,6 +128,13 @@ PODS:
     - FirebaseCore (~> 12.8.0)
   - FirebaseCoreInternal (12.8.0):
     - "GoogleUtilities/NSData+zlib (~> 8.1)"
+  - FirebaseStorage (12.8.0):
+    - FirebaseAppCheckInterop (~> 12.8.0)
+    - FirebaseAuthInterop (~> 12.8.0)
+    - FirebaseCore (~> 12.8.0)
+    - FirebaseCoreExtension (~> 12.8.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GTMSessionFetcher/Core (< 6.0, >= 3.4)
   - GoogleSignIn (9.1.0):
     - AppAuth (~> 2.0)
     - AppCheckCore (~> 11.0)
@@ -1918,6 +1935,30 @@ PODS:
     - ReactNativeDependencies
     - RNFBApp
     - Yoga
+  - RNFBStorage (23.8.6):
+    - Firebase/Storage (= 12.8.0)
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - RNFBApp
+    - Yoga
   - RNGestureHandler (2.28.0):
     - hermes-engine
     - RCTRequired
@@ -2171,20 +2212,23 @@ PODS:
 
 DEPENDENCIES:
   - "EXConstants (from `../../../node_modules/.pnpm/expo-constants@18.0.13_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0_/node_modules/expo-constants/ios`)"
+  - "EXImageLoader (from `../../../node_modules/.pnpm/expo-image-loader@6.0.0_expo@54.0.32/node_modules/expo-image-loader/ios`)"
   - "Expo (from `../../../node_modules/.pnpm/expo@54.0.32_@babel+core@7.28.6_@expo+metro-runtime@6.1.2_expo-router@6.0.22_react-nati_18ad48ba284ee86e6eb1cb0f939697b0/node_modules/expo`)"
   - "ExpoAdapterGoogleSignIn (from `../../../node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.1_expo@54.0.32_react-native@0.81.5_@babe_a885f72e25f6cead7a5bb96e601c6775/node_modules/@react-native-google-signin/google-signin/expo/ios`)"
   - "ExpoAsset (from `../../../node_modules/.pnpm/expo-asset@12.0.12_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-asset/ios`)"
   - "ExpoFileSystem (from `../../../node_modules/.pnpm/expo-file-system@19.0.21_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0_/node_modules/expo-file-system/ios`)"
   - "ExpoFont (from `../../../node_modules/.pnpm/expo-font@14.0.11_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-font/ios`)"
   - "ExpoHaptics (from `../../../node_modules/.pnpm/expo-haptics@15.0.8_expo@54.0.32/node_modules/expo-haptics/ios`)"
-  - "ExpoHead (from `../../../node_modules/.pnpm/expo-router@6.0.22_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_4fba47341fed895c625c58b8d4b43a28/node_modules/expo-router/ios`)"
-  - "ExpoImage (from `../../../node_modules/.pnpm/expo-image@3.0.11_expo@54.0.32_react-native-web@0.21.2_react-dom@19.1.0_react@19.1.0__r_6071024ea67682411c168cf6c224c9fe/node_modules/expo-image/ios`)"
+  - "ExpoHead (from `../../../node_modules/.pnpm/expo-router@6.0.22_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_d021f73b157698c4fac3332e4ac0db63/node_modules/expo-router/ios`)"
+  - "ExpoImage (from `../../../node_modules/.pnpm/expo-image@3.0.11_expo@54.0.32_react-native-web@0.21.2_encoding@0.1.13_react-dom@19.1.0_eacd7044c9f1a649de318938e5915cf3/node_modules/expo-image/ios`)"
+  - "ExpoImagePicker (from `../../../node_modules/.pnpm/expo-image-picker@17.0.10_expo@54.0.32/node_modules/expo-image-picker/ios`)"
   - "ExpoKeepAwake (from `../../../node_modules/.pnpm/expo-keep-awake@15.0.8_expo@54.0.32_react@19.1.0/node_modules/expo-keep-awake/ios`)"
+  - "ExpoLinearGradient (from `../../../node_modules/.pnpm/expo-linear-gradient@15.0.8_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+_53aef72480df9baa4504f4743d9c64bb/node_modules/expo-linear-gradient/ios`)"
   - "ExpoLinking (from `../../../node_modules/.pnpm/expo-linking@8.0.11_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-linking/ios`)"
   - "ExpoModulesCore (from `../../../node_modules/.pnpm/expo-modules-core@3.0.29_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-modules-core`)"
   - "ExpoSplashScreen (from `../../../node_modules/.pnpm/expo-splash-screen@31.0.13_expo@54.0.32/node_modules/expo-splash-screen/ios`)"
   - "ExpoSymbols (from `../../../node_modules/.pnpm/expo-symbols@1.0.8_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0_/node_modules/expo-symbols/ios`)"
-  - "ExpoSystemUI (from `../../../node_modules/.pnpm/expo-system-ui@6.0.9_expo@54.0.32_react-native-web@0.21.2_react-dom@19.1.0_react@19.1.0_f50a4c3429b0e4ab285136ba1e1e78df/node_modules/expo-system-ui/ios`)"
+  - "ExpoSystemUI (from `../../../node_modules/.pnpm/expo-system-ui@6.0.9_expo@54.0.32_react-native-web@0.21.2_encoding@0.1.13_react-dom@19._6e850a88cb482ba9f33021dc35f14da4/node_modules/expo-system-ui/ios`)"
   - "ExpoWebBrowser (from `../../../node_modules/.pnpm/expo-web-browser@15.0.10_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0_/node_modules/expo-web-browser/ios`)"
   - "FBLazyVector (from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0/node_modules/react-native/Libraries/FBLazyVector`)"
   - "hermes-engine (from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)"
@@ -2256,6 +2300,7 @@ DEPENDENCIES:
   - "ReactNativeDependencies (from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0/node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)"
   - "RNFBApp (from `../../../node_modules/.pnpm/@react-native-firebase+app@23.8.4_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@_7965e8819c24b3388c87aed0b1fdb94a/node_modules/@react-native-firebase/app`)"
   - "RNFBAuth (from `../../../node_modules/.pnpm/@react-native-firebase+auth@23.8.4_@react-native-firebase+app@23.8.4_expo@54.0.32_react_5a7f0d29ca1123f21232a18cf4fd3ce2/node_modules/@react-native-firebase/auth`)"
+  - "RNFBStorage (from `../../../node_modules/.pnpm/@react-native-firebase+storage@23.8.6_@react-native-firebase+app@23.8.4_expo@54.0.32_re_9c0d08b9adeb2c4d71a00185ec6a4f62/node_modules/@react-native-firebase/storage`)"
   - "RNGestureHandler (from `../../../node_modules/.pnpm/react-native-gesture-handler@2.28.0_react-native@0.81.5_@babel+core@7.28.6_@types+react_d46c38bfd6a30a92726fb77a1f1e6887/node_modules/react-native-gesture-handler`)"
   - "RNGoogleSignin (from `../../../node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.1_expo@54.0.32_react-native@0.81.5_@babe_a885f72e25f6cead7a5bb96e601c6775/node_modules/@react-native-google-signin/google-signin`)"
   - "RNReanimated (from `../../../node_modules/.pnpm/react-native-reanimated@4.1.6_@babel+core@7.28.6_react-native-worklets@0.5.1_@babel+cor_c7c888bd389fb93c9cfe2d3c1c8b0777/node_modules/react-native-reanimated`)"
@@ -2274,6 +2319,7 @@ SPEC REPOS:
     - FirebaseCore
     - FirebaseCoreExtension
     - FirebaseCoreInternal
+    - FirebaseStorage
     - GoogleSignIn
     - GoogleUtilities
     - GTMAppAuth
@@ -2291,6 +2337,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   EXConstants:
     :path: "../../../node_modules/.pnpm/expo-constants@18.0.13_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0_/node_modules/expo-constants/ios"
+  EXImageLoader:
+    :path: "../../../node_modules/.pnpm/expo-image-loader@6.0.0_expo@54.0.32/node_modules/expo-image-loader/ios"
   Expo:
     :path: "../../../node_modules/.pnpm/expo@54.0.32_@babel+core@7.28.6_@expo+metro-runtime@6.1.2_expo-router@6.0.22_react-nati_18ad48ba284ee86e6eb1cb0f939697b0/node_modules/expo"
   ExpoAdapterGoogleSignIn:
@@ -2304,11 +2352,15 @@ EXTERNAL SOURCES:
   ExpoHaptics:
     :path: "../../../node_modules/.pnpm/expo-haptics@15.0.8_expo@54.0.32/node_modules/expo-haptics/ios"
   ExpoHead:
-    :path: "../../../node_modules/.pnpm/expo-router@6.0.22_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_4fba47341fed895c625c58b8d4b43a28/node_modules/expo-router/ios"
+    :path: "../../../node_modules/.pnpm/expo-router@6.0.22_@expo+metro-runtime@6.1.2_@types+react@19.1.17_expo-constants@18.0.1_d021f73b157698c4fac3332e4ac0db63/node_modules/expo-router/ios"
   ExpoImage:
-    :path: "../../../node_modules/.pnpm/expo-image@3.0.11_expo@54.0.32_react-native-web@0.21.2_react-dom@19.1.0_react@19.1.0__r_6071024ea67682411c168cf6c224c9fe/node_modules/expo-image/ios"
+    :path: "../../../node_modules/.pnpm/expo-image@3.0.11_expo@54.0.32_react-native-web@0.21.2_encoding@0.1.13_react-dom@19.1.0_eacd7044c9f1a649de318938e5915cf3/node_modules/expo-image/ios"
+  ExpoImagePicker:
+    :path: "../../../node_modules/.pnpm/expo-image-picker@17.0.10_expo@54.0.32/node_modules/expo-image-picker/ios"
   ExpoKeepAwake:
     :path: "../../../node_modules/.pnpm/expo-keep-awake@15.0.8_expo@54.0.32_react@19.1.0/node_modules/expo-keep-awake/ios"
+  ExpoLinearGradient:
+    :path: "../../../node_modules/.pnpm/expo-linear-gradient@15.0.8_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+_53aef72480df9baa4504f4743d9c64bb/node_modules/expo-linear-gradient/ios"
   ExpoLinking:
     :path: "../../../node_modules/.pnpm/expo-linking@8.0.11_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-linking/ios"
   ExpoModulesCore:
@@ -2318,7 +2370,7 @@ EXTERNAL SOURCES:
   ExpoSymbols:
     :path: "../../../node_modules/.pnpm/expo-symbols@1.0.8_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0_/node_modules/expo-symbols/ios"
   ExpoSystemUI:
-    :path: "../../../node_modules/.pnpm/expo-system-ui@6.0.9_expo@54.0.32_react-native-web@0.21.2_react-dom@19.1.0_react@19.1.0_f50a4c3429b0e4ab285136ba1e1e78df/node_modules/expo-system-ui/ios"
+    :path: "../../../node_modules/.pnpm/expo-system-ui@6.0.9_expo@54.0.32_react-native-web@0.21.2_encoding@0.1.13_react-dom@19._6e850a88cb482ba9f33021dc35f14da4/node_modules/expo-system-ui/ios"
   ExpoWebBrowser:
     :path: "../../../node_modules/.pnpm/expo-web-browser@15.0.10_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@types+react@19.1.17_react@19.1.0_/node_modules/expo-web-browser/ios"
   FBLazyVector:
@@ -2460,6 +2512,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/.pnpm/@react-native-firebase+app@23.8.4_expo@54.0.32_react-native@0.81.5_@babel+core@7.28.6_@_7965e8819c24b3388c87aed0b1fdb94a/node_modules/@react-native-firebase/app"
   RNFBAuth:
     :path: "../../../node_modules/.pnpm/@react-native-firebase+auth@23.8.4_@react-native-firebase+app@23.8.4_expo@54.0.32_react_5a7f0d29ca1123f21232a18cf4fd3ce2/node_modules/@react-native-firebase/auth"
+  RNFBStorage:
+    :path: "../../../node_modules/.pnpm/@react-native-firebase+storage@23.8.6_@react-native-firebase+app@23.8.4_expo@54.0.32_re_9c0d08b9adeb2c4d71a00185ec6a4f62/node_modules/@react-native-firebase/storage"
   RNGestureHandler:
     :path: "../../../node_modules/.pnpm/react-native-gesture-handler@2.28.0_react-native@0.81.5_@babel+core@7.28.6_@types+react_d46c38bfd6a30a92726fb77a1f1e6887/node_modules/react-native-gesture-handler"
   RNGoogleSignin:
@@ -2477,6 +2531,7 @@ SPEC CHECKSUMS:
   AppAuth: 1c1a8afa7e12f2ec3a294d9882dfa5ab7d3cb063
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
   EXConstants: fce59a631a06c4151602843667f7cfe35f81e271
+  EXImageLoader: 189e3476581efe3ad4d1d3fb4735b7179eb26f05
   Expo: 58cbcad4f708fc1b41d861586310ac1903282d85
   ExpoAdapterGoogleSignIn: 21ff1daeef3d21cb0b45772d8029102cc728d6b1
   ExpoAsset: f867e55ceb428aab99e1e8c082b5aee7c159ea18
@@ -2485,7 +2540,9 @@ SPEC CHECKSUMS:
   ExpoHaptics: d3a6375d8dcc3a1083d003bc2298ff654fafb536
   ExpoHead: 4425246bc93411f0fe7f6945f95f698e91db8780
   ExpoImage: 686f972bff29525733aa13357f6691dc90aa03d8
+  ExpoImagePicker: 1af3e4e31512d2f34c95c2a3018a3edc40aee748
   ExpoKeepAwake: 55f75eca6499bb9e4231ebad6f3e9cb8f99c0296
+  ExpoLinearGradient: 809102bdb979f590083af49f7fa4805cd931bd58
   ExpoLinking: 8f0aaf69aa56f832913030503b6263dc6f647f37
   ExpoModulesCore: 031cf9b42fab2e84dcf34087dbd12ae666c100e0
   ExpoSplashScreen: bc3cffefca2716e5f22350ca109badd7e50ec14d
@@ -2500,6 +2557,7 @@ SPEC CHECKSUMS:
   FirebaseCore: 0dbad74bda10b8fb9ca34ad8f375fb9dd3ebef7c
   FirebaseCoreExtension: 6605938d51f765d8b18bfcafd2085276a252bee2
   FirebaseCoreInternal: fe5fa466aeb314787093a7dce9f0beeaad5a2a21
+  FirebaseStorage: 7c37558dc72731aa5f0a1a2401d8c6de10a513f5
   GoogleSignIn: fcee2257188d5eda57a5e2b6a715550ffff9206d
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   GTMAppAuth: 217a876b249c3c585a54fd6f73e6b58c4f5c4238
@@ -2577,6 +2635,7 @@ SPEC CHECKSUMS:
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   RNFBApp: 4f45ffec5426079cd552c756b1b1e5ab5dd06de4
   RNFBAuth: 6684273e151d09c0ff547dcc0b97a33128bc845a
+  RNFBStorage: 1311fe78fbfbce0068a7d0d56f114cddcc57fbc8
   RNGestureHandler: c3831b3b1b5014c6afab7fff7e4171394a3419ab
   RNGoogleSignin: 03baad13fc2085cd1bb81a690b63462df4558dc0
   RNReanimated: 7bd936959c632686b37aad1128d97a8c00030f78

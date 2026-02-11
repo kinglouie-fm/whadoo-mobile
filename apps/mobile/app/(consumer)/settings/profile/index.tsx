@@ -1,9 +1,11 @@
 import { TopBar } from "@/src/components/TopBar";
+import { ImageUploadButton } from "@/src/components/ImageUploadButton";
 import { useAuth } from "@/src/providers/auth-context";
 import { theme } from "@/src/theme/theme";
+import { ui } from "@/src/theme/ui";
 import { useRouter } from "expo-router";
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 function Row({ title, value, onPress }: { title: string; value?: string; onPress: () => void }) {
@@ -23,18 +25,26 @@ function Row({ title, value, onPress }: { title: string; value?: string; onPress
 }
 
 export default function ProfileSettingsScreen() {
-    const { appUser } = useAuth();
+    const { appUser, refreshMe } = useAuth();
     const router = useRouter();
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+        <SafeAreaView style={ui.container} edges={["top"]}>
             <TopBar title="Profile" />
 
-            <View style={{ flex: 1, paddingHorizontal: 16 }}>
-                <Row title="First Name" value={appUser?.firstName ?? ""} onPress={() => router.push("/(consumer)/settings/profile/first-name")} />
-                <Row title="Last Name" value={appUser?.lastName ?? ""} onPress={() => router.push("/(consumer)/settings/profile/last-name")} />
-                <Row title="City" value={appUser?.city ?? ""} onPress={() => router.push("/(consumer)/settings/profile/city")} />
-            </View>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={ui.contentPadding}>
+                <ImageUploadButton
+                    currentImageUrl={appUser?.photoUrl}
+                    context={{ type: "user_avatar" }}
+                    onUploadComplete={refreshMe}
+                />
+
+                <View style={{ marginTop: theme.spacing.lg }}>
+                    <Row title="First Name" value={appUser?.firstName ?? ""} onPress={() => router.push("/(consumer)/settings/profile/first-name")} />
+                    <Row title="Last Name" value={appUser?.lastName ?? ""} onPress={() => router.push("/(consumer)/settings/profile/last-name")} />
+                    <Row title="City" value={appUser?.city ?? ""} onPress={() => router.push("/(consumer)/settings/profile/city")} />
+                </View>
+            </ScrollView>
         </SafeAreaView>
     );
 }

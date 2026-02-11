@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ActivitiesModule } from "./activities/activities.module";
 import { ActivityTypeDefinitionsModule } from "./activity-type-definitions/activity-type-definitions.module";
+import { AssetsModule } from "./assets/assets.module";
 import { AuthModule } from "./auth/auth.module";
 import { AvailabilityTemplatesModule } from "./availability-templates/availability-templates.module";
 import { BusinessesModule } from "./businesses/businesses.module";
@@ -30,6 +31,7 @@ import { BookingsModule } from "./bookings/bookings.module";
     SavedActivitiesModule,
     AvailabilityResolutionModule,
     BookingsModule,
+    AssetsModule,
   ],
 })
 export class AppModule {}

@@ -1,6 +1,7 @@
 import { PrimaryButton, SecondaryButton } from "@/src/components/Button";
 import { ConfigSchemaRenderer } from "@/src/components/ConfigSchemaRenderer";
 import { FormInput, TextArea } from "@/src/components/Input";
+import { MultiImageUpload } from "@/src/components/MultiImageUpload";
 import { PackagesEditor } from "@/src/components/PackagesEditor";
 // import { PricingSchemaRenderer } from "@/src/components/PricingSchemaRenderer";
 import { useBusiness } from "@/src/providers/business-context";
@@ -425,6 +426,21 @@ export default function ActivityDetailScreen() {
         <Text style={[typography.captionSmall, styles.helperText]}>
           Activity type identifier.
         </Text>
+
+        {/* Activity Images */}
+        {isEditMode && id && (
+          <MultiImageUpload
+            activityId={id}
+            currentImages={
+              currentActivity?.images?.map((img: any) => ({
+                id: img.id,
+                url: img.imageUrl,
+                isThumbnail: img.isThumbnail,
+              })) || []
+            }
+            onImagesChange={() => dispatch(fetchActivity(id))}
+          />
+        )}
 
         {/* Dynamic Config / Packages */}
         {currentTypeDefinition && (
