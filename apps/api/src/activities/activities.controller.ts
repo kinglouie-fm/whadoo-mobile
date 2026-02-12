@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -119,5 +120,16 @@ export class ActivitiesController {
   async recordSwipe(@Req() req: AuthedRequest, @Body() dto: RecordSwipeDto) {
     const userId = req.appUser!.id;
     return this.service.recordSwipe(userId, dto);
+  }
+
+  @Delete(":activityId/images/:imageId")
+  @UseGuards(FirebaseAuthGuard, AppUserGuard)
+  async deleteActivityImage(
+    @Req() req: AuthedRequest,
+    @Param("activityId") activityId: string,
+    @Param("imageId") imageId: string
+  ) {
+    const userId = req.appUser!.id;
+    return this.service.deleteActivityImage(userId, activityId, imageId);
   }
 }

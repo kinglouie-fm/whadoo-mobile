@@ -10,6 +10,7 @@ export interface GroupedCard {
   city: string;
   locationSummary: string;
   thumbnailUrl?: string;
+  images?: string[]; // All activity image URLs for story format
   priceFrom: number;
   tags: string[];
   activityCount: number;

@@ -5,6 +5,9 @@ import { MultiImageUpload } from "@/src/components/MultiImageUpload";
 import { PackagesEditor } from "@/src/components/PackagesEditor";
 // import { PricingSchemaRenderer } from "@/src/components/PricingSchemaRenderer";
 import { useBusiness } from "@/src/providers/business-context";
+import { useAuth } from "@/src/providers/auth-context";
+import { uploadToStaging } from "@/src/lib/firebase-storage";
+import { apiPost } from "@/src/lib/api";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
   clearCurrentActivity,
@@ -40,6 +43,7 @@ export default function ActivityDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const dispatch = useAppDispatch();
   const { business } = useBusiness();
+  const { appUser } = useAuth();
   const { currentActivity, loading } = useAppSelector(
     (state) => state.activities,
   );
@@ -65,6 +69,13 @@ export default function ActivityDetailScreen() {
   const [config, setConfig] = useState<Record<string, any>>({});
   const [pricing, setPricing] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pendingImages, setPendingImages] = useState<Array<{
+    id: string;
+    uri: string;
+    width: number;
+    height: number;
+  }>>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
     dispatch(fetchTypeDefinitions());
@@ -204,6 +215,9 @@ export default function ActivityDetailScreen() {
     }
 
     try {
+      let activityId = id;
+
+      // Step 1: Save the activity first
       if (isEditMode && id) {
         const updateData: UpdateActivityData = {
           title,
@@ -223,7 +237,6 @@ export default function ActivityDetailScreen() {
         await dispatch(
           updateActivity({ activityId: id, data: updateData }),
         ).unwrap();
-        Alert.alert("Success", "Activity updated successfully");
       } else {
         const createData: CreateActivityData = {
           businessId: business.id,
@@ -241,13 +254,41 @@ export default function ActivityDetailScreen() {
           catalogGroupTitle: catalogGroupTitle || undefined,
           catalogGroupKind: catalogGroupKind || undefined,
         };
-        await dispatch(createActivity(createData)).unwrap();
-        Alert.alert("Success", "Activity created successfully");
+        const result = await dispatch(createActivity(createData)).unwrap();
+        activityId = result.id;
       }
 
+      // Step 2: Upload pending images if any
+      if (pendingImages.length > 0 && activityId && appUser) {
+        setUploadingImages(true);
+        
+        for (const image of pendingImages) {
+          const uploadResult = await uploadToStaging(
+            image.uri,
+            appUser.firebaseUid,
+          );
+
+          await apiPost("/assets/finalize", {
+            storageKey: uploadResult.storageKey,
+            contentType: "image/jpeg",
+            width: image.width,
+            height: image.height,
+            context: {
+              type: "activity_image",
+              entityId: activityId,
+              isThumbnail: false,
+            },
+          });
+        }
+        setUploadingImages(false);
+        setPendingImages([]);
+      }
+
+      Alert.alert("Success", isEditMode ? "Activity updated successfully" : "Activity created successfully");
       router.back();
     } catch (error: any) {
       console.error("Failed to save activity:", error);
+      setUploadingImages(false);
       Alert.alert("Error", error.message || "Failed to save activity");
     }
   };
@@ -272,9 +313,10 @@ export default function ActivityDetailScreen() {
           {isEditMode ? "Edit" : "Create"} Activity
         </Text>
         <PrimaryButton
-          title="Save"
+          title={uploadingImages ? "Uploading..." : "Save"}
           onPress={handleSave}
           style={styles.headerButton}
+          disabled={uploadingImages}
         />
       </View>
 
@@ -427,21 +469,6 @@ export default function ActivityDetailScreen() {
           Activity type identifier.
         </Text>
 
-        {/* Activity Images */}
-        {isEditMode && id && (
-          <MultiImageUpload
-            activityId={id}
-            currentImages={
-              currentActivity?.images?.map((img: any) => ({
-                id: img.id,
-                url: img.imageUrl,
-                isThumbnail: img.isThumbnail,
-              })) || []
-            }
-            onImagesChange={() => dispatch(fetchActivity(id))}
-          />
-        )}
-
         {/* Dynamic Config / Packages */}
         {currentTypeDefinition && (
           <>
@@ -465,6 +492,25 @@ export default function ActivityDetailScreen() {
                 errors={errors}
               />
             )}
+
+            {/* Images Section */}
+            <MultiImageUpload
+              activityId={id}
+              currentImages={
+                currentActivity?.images?.map((img) => ({
+                  id: img.id,
+                  url: img.imageUrl,
+                  isThumbnail: img.isThumbnail,
+                })) || []
+              }
+              pendingImages={pendingImages}
+              onPendingImagesChange={setPendingImages}
+              onImagesChange={() => {
+                // Refresh activity to get updated images
+                if (id) dispatch(fetchActivity(id));
+              }}
+              maxImages={5}
+            />
 
             {/* <PricingSchemaRenderer
               typeDefinition={currentTypeDefinition}

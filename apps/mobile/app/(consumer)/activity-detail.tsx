@@ -1,7 +1,4 @@
-import {
-  PrimaryButton,
-  SecondaryButton,
-} from "@/src/components/Button";
+import { PrimaryButton } from "@/src/components/Button";
 import { EmptyState } from "@/src/components/EmptyState";
 import { TopBar } from "@/src/components/TopBar";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -205,10 +202,7 @@ export default function ActivityDetailScreen() {
         onRightPress={handleToggleSave}
       />
 
-      <ScrollView
-        style={ui.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={ui.scrollView} showsVerticalScrollIndicator={false}>
         {/* Image Carousel with Stories Progress */}
         <View style={styles.imageContainer}>
           {images.length > 0 ? (
@@ -258,10 +252,7 @@ export default function ActivityDetailScreen() {
             </>
           ) : (
             <View style={styles.placeholderImage}>
-              <EmptyState
-                icon="image-not-supported"
-                title="No photos"
-              />
+              <EmptyState icon="image-not-supported" title="No photos" />
             </View>
           )}
         </View>
@@ -304,7 +295,7 @@ export default function ActivityDetailScreen() {
               <Text style={typography.price}>€{lowestPrice.toFixed(2)}</Text>
             </View>
           )}
-
+          {/* 
           {images.length > 0 && (
             <View style={styles.section}>
               <Text style={[typography.h4, { marginBottom: theme.spacing.md }]}>
@@ -326,7 +317,7 @@ export default function ActivityDetailScreen() {
                 ))}
               </View>
             </View>
-          )}
+          )} */}
         </View>
       </ScrollView>
 
@@ -415,22 +406,6 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: theme.spacing.xxl,
-  },
-  photosGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: theme.spacing.sm,
-  },
-  photoCard: {
-    width: (width - theme.spacing.lg * 2 - theme.spacing.sm) / 2,
-    height: 140,
-    borderRadius: theme.radius.md,
-    overflow: "hidden",
-    backgroundColor: theme.colors.surface,
-  },
-  photoThumbnail: {
-    width: "100%",
-    height: "100%",
   },
   bottomBar: {
     position: "absolute",

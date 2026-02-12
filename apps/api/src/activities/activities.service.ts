@@ -241,8 +241,6 @@ export class ActivitiesService {
       },
       include: {
         images: {
-          where: { isThumbnail: true },
-          take: 1,
           orderBy: { sortOrder: 'asc' },
         },
         business: {
@@ -313,8 +311,11 @@ export class ActivitiesService {
         .sort((a, b) => a - b)
         .slice(0, 3);
 
-      // Get thumbnail
+      // Get thumbnail and all images
       const thumbnailUrl = representativeActivity.images[0]?.imageUrl || null;
+      const imageUrls = representativeActivity.images
+        .map((img) => img.imageUrl)
+        .filter(Boolean);
 
       // Extract tags (for now, just use category if available)
       const tags: string[] = [];
@@ -337,6 +338,7 @@ export class ActivitiesService {
         city,
         locationSummary: `${city}${representativeActivity.address ? ', ' + representativeActivity.address : ''}`,
         thumbnailUrl: thumbnailUrl || undefined,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
         priceFrom,
         tags,
         activityCount: groupActivities.length,
@@ -820,6 +822,74 @@ export class ActivitiesService {
     });
 
     return { success: true };
+  }
+
+  async deleteActivityImage(
+    userId: string,
+    activityId: string,
+    imageId: string,
+  ) {
+    // 1. Fetch the activity and verify ownership
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      include: {
+        business: {
+          select: { ownerUserId: true },
+        },
+      },
+    });
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    if (activity.business.ownerUserId !== userId) {
+      throw new ForbiddenException('You do not own this activity');
+    }
+
+    // 2. Fetch the ActivityImage with its Asset
+    const activityImage = await this.prisma.activityImage.findUnique({
+      where: { id: imageId },
+      include: { asset: true },
+    });
+
+    if (!activityImage) {
+      throw new NotFoundException('Image not found');
+    }
+
+    if (activityImage.activityId !== activityId) {
+      throw new BadRequestException('Image does not belong to this activity');
+    }
+
+    // 3. Delete the file from Firebase Storage if asset exists
+    if (activityImage.asset?.storageKey) {
+      try {
+        const bucket = admin.storage().bucket();
+        const file = bucket.file(activityImage.asset.storageKey);
+        await file.delete();
+      } catch (error) {
+        console.warn(
+          'Failed to delete file from storage:',
+          activityImage.asset.storageKey,
+          error,
+        );
+        // Continue with database deletion even if storage deletion fails
+      }
+    }
+
+    // 4. Delete the Asset record (this will cascade delete the ActivityImage via onDelete: Cascade)
+    if (activityImage.assetId) {
+      await this.prisma.asset.delete({
+        where: { id: activityImage.assetId },
+      });
+    } else {
+      // If no asset, delete ActivityImage directly
+      await this.prisma.activityImage.delete({
+        where: { id: imageId },
+      });
+    }
+
+    return { success: true, message: 'Image deleted successfully' };
   }
 
   async debugKartingActivities() {

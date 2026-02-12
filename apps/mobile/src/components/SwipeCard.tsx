@@ -23,15 +23,20 @@ export function SwipeCard({ card }: SwipeCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
-  // For now, we only have one image (thumbnailUrl), but the structure supports multiple
-  const images = card.thumbnailUrl ? [card.thumbnailUrl] : [];
+  // Use images array if available, otherwise fallback to thumbnailUrl
+  const images =
+    card.images && card.images.length > 0
+      ? card.images
+      : card.thumbnailUrl
+        ? [card.thumbnailUrl]
+        : [];
 
   useEffect(() => {
     if (images.length > 0) {
       progressAnim.setValue(0);
       Animated.timing(progressAnim, {
         toValue: 1,
-        duration: 3000,
+        duration: 5000,
         useNativeDriver: false,
       }).start(({ finished }) => {
         if (finished && currentImageIndex < images.length - 1) {
