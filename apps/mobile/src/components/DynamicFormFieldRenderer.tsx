@@ -1,12 +1,12 @@
 import { theme } from "@/src/theme/theme";
 import React, { useMemo } from "react";
 import {
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { FieldDefinition } from "../store/slices/activity-type-slice";
 
@@ -126,7 +126,9 @@ export function DynamicFormFieldRenderer({
       default:
         return (
           <Text style={styles.unsupported}>
-            Unsupported field type: {field.type}
+            {field.type === "array"
+              ? "Please choose an activity type from the list"
+              : `Unsupported field type: ${field.type}`}
           </Text>
         );
     }

@@ -1,4 +1,10 @@
-import storage from "@react-native-firebase/storage";
+import { getApp } from "@react-native-firebase/app";
+import {
+  getDownloadURL,
+  getStorage,
+  putFile,
+  ref,
+} from "@react-native-firebase/storage";
 import * as ImagePicker from "expo-image-picker";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
@@ -51,10 +57,13 @@ export async function uploadToStaging(
   const filename = `${uuidv4()}.jpg`;
   const storageKey = `staging/${firebaseUid}/${filename}`;
 
-  const reference = storage().ref(storageKey);
-  await reference.putFile(imageUri);
+  const app = getApp();
+  const storage = getStorage(app);
 
-  const downloadURL = await reference.getDownloadURL();
+  const storageRef = ref(storage, storageKey);
+
+  await putFile(storageRef, imageUri);
+  const downloadURL = await getDownloadURL(storageRef);
 
   return { storageKey, downloadURL };
 }
