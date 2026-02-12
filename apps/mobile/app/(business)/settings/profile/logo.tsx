@@ -1,18 +1,17 @@
-// apps/mobile/app/(business)/settings/profile/images.tsx
 import { TopBar } from "@/src/components/TopBar";
 import { ImageUploadButton } from "@/src/components/ImageUploadButton";
 import { useBusiness } from "@/src/providers/business-context";
+import { buildImageUrl } from "@/src/lib/image-utils";
 import { ui } from "@/src/theme/ui";
 import { typography } from "@/src/theme/typography";
 import React from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function BusinessImagesScreen() {
+export default function BusinessLogoScreen() {
     const { business, refetch } = useBusiness();
 
-    // Get the first image from the legacy images array as fallback
-    const logoUrl = (business as any)?.images?.[0] || null;
+    const logoUrl = buildImageUrl((business as any)?.logoAsset);
 
     return (
         <SafeAreaView style={ui.container} edges={["top"]}>

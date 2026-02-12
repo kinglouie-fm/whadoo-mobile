@@ -55,7 +55,7 @@ export default function DiscoverySwipeScreen() {
         <View style={styles.headerLeft}>
           <Avatar
             name={avatarName}
-            photoUrl={appUser?.photoUrl}
+            photoAsset={(appUser as any)?.photoAsset}
             size={40}
           />
         </View>

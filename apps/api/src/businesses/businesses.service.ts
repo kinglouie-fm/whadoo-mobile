@@ -17,8 +17,13 @@ export class BusinessesService {
     contactEmail: true,
     address: true,
     city: true,
-    images: true,
     status: true,
+    logoAsset: {
+      select: {
+        storageKey: true,
+        downloadToken: true,
+      },
+    },
     createdAt: true,
     updatedAt: true,
   };
@@ -94,7 +99,6 @@ export class BusinessesService {
         contactEmail: dto.contactEmail ?? undefined,
         address: addressValue ?? undefined,
         city: dto.city ?? undefined,
-        images: dto.images ?? undefined,
       },
       select: this.businessSelect,
     });
@@ -128,7 +132,6 @@ export class BusinessesService {
         contactEmail: dto.contactEmail ?? undefined,
         address: addressValue ?? undefined,
         city: dto.city ?? undefined,
-        images: dto.images ?? undefined,
       },
       select: this.businessSelect,
     });

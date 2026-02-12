@@ -16,8 +16,4 @@ export class UpdateMeDto {
   @IsOptional()
   @IsString()
   city?: string;
-
-  @IsOptional()
-  @IsString()
-  photoUrl?: string;
 }

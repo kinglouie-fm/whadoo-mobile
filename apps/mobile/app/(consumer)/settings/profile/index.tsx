@@ -1,6 +1,7 @@
 import { TopBar } from "@/src/components/TopBar";
 import { ImageUploadButton } from "@/src/components/ImageUploadButton";
 import { useAuth } from "@/src/providers/auth-context";
+import { buildImageUrl } from "@/src/lib/image-utils";
 import { theme } from "@/src/theme/theme";
 import { ui } from "@/src/theme/ui";
 import { useRouter } from "expo-router";
@@ -28,13 +29,15 @@ export default function ProfileSettingsScreen() {
     const { appUser, refreshMe } = useAuth();
     const router = useRouter();
 
+    const photoUrl = buildImageUrl((appUser as any)?.photoAsset);
+
     return (
         <SafeAreaView style={ui.container} edges={["top"]}>
             <TopBar title="Profile" />
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={ui.contentPadding}>
                 <ImageUploadButton
-                    currentImageUrl={appUser?.photoUrl}
+                    currentImageUrl={photoUrl}
                     context={{ type: "user_avatar" }}
                     onUploadComplete={refreshMe}
                 />

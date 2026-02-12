@@ -1,11 +1,11 @@
 // apps/mobile/app/(business)/(tabs)/profile.tsx
-import { useAuth } from "@/src/providers/auth-context";
-import { useBusiness } from "@/src/providers/business-context";
 import { Avatar } from "@/src/components/Avatar";
 import { Card } from "@/src/components/Card";
+import { useAuth } from "@/src/providers/auth-context";
+import { useBusiness } from "@/src/providers/business-context";
 import { theme } from "@/src/theme/theme";
-import { ui } from "@/src/theme/ui";
 import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -36,7 +36,9 @@ function Row({
       />
 
       <View style={{ flex: 1 }}>
-        <Text style={[typography.body, danger && { color: theme.colors.danger }]}>
+        <Text
+          style={[typography.body, danger && { color: theme.colors.danger }]}
+        >
           {title}
         </Text>
         {subtitle && (
@@ -76,18 +78,11 @@ export default function BusinessProfileHome() {
 
   const name = useMemo(() => business?.name || "Business", [business?.name]);
 
-  // Try a few common image keys without breaking if missing
-  const photoUrl =
-    (business as any)?.imageUrl ||
-    (business as any)?.logoUrl ||
-    (business as any)?.photoUrl ||
-    null;
-
   return (
     <SafeAreaView style={ui.container} edges={["top"]}>
       <View style={styles.content}>
         <Card style={styles.profileCard}>
-          <Avatar name={name} photoUrl={photoUrl} />
+          <Avatar name={name} logoAsset={(business as any)?.logoAsset} />
           <View style={{ flex: 1 }}>
             <Text style={typography.h4}>{name}</Text>
             <Text style={[typography.captionMuted, styles.subtitle]}>

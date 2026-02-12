@@ -23,9 +23,4 @@ export class AssetsController {
     const user = await this.currentDbUser(req);
     return this.assetsService.finalizeUpload(user.id, body);
   }
-
-  @Post(":assetId/update-variants")
-  async updateVariants(@Param("assetId") assetId: string) {
-    return this.assetsService.updateVariants(assetId);
-  }
 }

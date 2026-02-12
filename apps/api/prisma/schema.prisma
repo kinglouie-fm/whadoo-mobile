@@ -42,7 +42,6 @@ model User {
   lastName    String?
   city        String?
   phoneNumber String?
-  photoUrl    String?
 
   photoAssetId String? @unique @map("photo_asset_id") @db.Uuid
   photoAsset   Asset?  @relation("UserPhotoAsset", fields: [photoAssetId], references: [id], onDelete: SetNull)
@@ -73,7 +72,6 @@ model Business {
   city         String?
   lat          Decimal?
   lng          Decimal?
-  images       String[]       @default([])
   status       BusinessStatus @default(active)
 
   logoAssetId  String? @unique @map("logo_asset_id") @db.Uuid

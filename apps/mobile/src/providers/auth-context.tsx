@@ -13,7 +13,10 @@ export type AppUser = {
     lastName?: string | null;
     phoneNumber?: string | null;
     city?: string | null;
-    photoUrl?: string | null;
+    photoAsset?: {
+        storageKey?: string | null;
+        downloadToken?: string | null;
+    } | null;
 };
 
 type AppStats = {

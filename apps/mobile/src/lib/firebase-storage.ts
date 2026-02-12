@@ -1,5 +1,6 @@
 import storage from "@react-native-firebase/storage";
 import * as ImagePicker from "expo-image-picker";
+import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 
 export interface UploadResult {
@@ -14,7 +15,7 @@ export async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> 
   }
 
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
+    mediaTypes: ["images"],
     allowsEditing: true,
     quality: 0.9,
     exif: false,
@@ -24,14 +25,16 @@ export async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> 
   return result.assets[0];
 }
 
-export async function pickMultipleImages(): Promise<ImagePicker.ImagePickerAsset[]> {
+export async function pickMultipleImages(): Promise<
+  ImagePicker.ImagePickerAsset[]
+> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") {
     throw new Error("Permission to access media library denied");
   }
 
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
+    mediaTypes: ["images"],
     allowsMultipleSelection: true,
     quality: 0.9,
     exif: false,

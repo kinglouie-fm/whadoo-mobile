@@ -12,6 +12,7 @@ import {
   PublishValidationError,
 } from '../common/error-responses';
 import { PrismaService } from '../prisma/prisma.service';
+import { admin } from '../auth/firebase-admin';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import {
   GroupedCardDto,
@@ -705,6 +706,13 @@ export class ActivitiesService {
     });
   }
 
+  private buildAssetUrl(asset?: { storageKey?: string; downloadToken?: string } | null): string[] {
+    if (!asset?.storageKey || !asset?.downloadToken) return [];
+    const bucket = admin.storage().bucket();
+    const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(asset.storageKey)}?alt=media&token=${asset.downloadToken}`;
+    return [url];
+  }
+
   private validateKartingPackages(config: any) {
     const packages = config?.packages;
 
@@ -880,7 +888,12 @@ export class ActivitiesService {
             name: true,
             city: true,
             address: true,
-            images: true,
+            logoAsset: {
+              select: {
+                storageKey: true,
+                downloadToken: true,
+              },
+            },
           },
         },
         availabilityTemplate: {
@@ -904,7 +917,7 @@ export class ActivitiesService {
       businessName: activities[0].business?.name,
       businessCity: activities[0].business?.city,
       businessAddress: activities[0].business?.address,
-      businessImages: activities[0].business?.images || [],
+      businessImages: this.buildAssetUrl(activities[0].business?.logoAsset),
       activities: activities.map((activity) => ({
         id: activity.id,
         title: activity.title,

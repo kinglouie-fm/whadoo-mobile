@@ -1,4 +1,10 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { apiGet } from "../lib/api";
 
 interface Business {
@@ -10,7 +16,10 @@ interface Business {
   contactEmail?: string;
   address?: string;
   city?: string;
-  images?: string[];
+  logoAsset?: {
+    storageKey?: string | null;
+    downloadToken?: string | null;
+  } | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -34,7 +43,9 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiGet<{ business: Business | null }>("/businesses/my");
+      const data = await apiGet<{ business: Business | null }>(
+        "/businesses/my",
+      );
       setBusiness(data.business);
     } catch (err: any) {
       setError(err.message || "Failed to fetch business");
@@ -49,7 +60,9 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   }, [fetchBusiness]);
 
   return (
-    <BusinessContext.Provider value={{ business, loading, error, refetch: fetchBusiness }}>
+    <BusinessContext.Provider
+      value={{ business, loading, error, refetch: fetchBusiness }}
+    >
       {children}
     </BusinessContext.Provider>
   );

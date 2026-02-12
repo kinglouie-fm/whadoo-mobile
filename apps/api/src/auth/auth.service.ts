@@ -20,11 +20,9 @@ export class AuthService {
       create: {
         firebaseUid,
         email: email ?? null,
-        photoUrl: photoUrl ?? null,
       },
       update: {
         email: email ?? undefined,
-        photoUrl: photoUrl ?? undefined,
       },
       select: {
         id: true,
@@ -35,7 +33,12 @@ export class AuthService {
         lastName: true,
         city: true,
         phoneNumber: true,
-        photoUrl: true,
+        photoAsset: {
+          select: {
+            storageKey: true,
+            downloadToken: true,
+          },
+        },
       },
     });
   }

@@ -109,7 +109,7 @@ export default function ConsumerProfileHome() {
     <SafeAreaView style={ui.container} edges={["top"]}>
       <View style={styles.content}>
         <Card style={styles.profileCard}>
-          <Avatar name={name} photoUrl={appUser?.photoUrl} />
+          <Avatar name={name} photoAsset={(appUser as any)?.photoAsset} />
 
           <View style={{ flex: 1 }}>
             <Text style={typography.h4}>{name}</Text>

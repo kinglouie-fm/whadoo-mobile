@@ -49,7 +49,6 @@ export class MeService {
         lastName: dto.lastName ?? undefined,
         phoneNumber: dto.phoneNumber ?? undefined,
         city: dto.city ?? undefined,
-        photoUrl: dto.photoUrl ?? undefined,
       },
       select: {
         id: true,
@@ -60,7 +59,12 @@ export class MeService {
         lastName: true,
         city: true,
         phoneNumber: true,
-        photoUrl: true,
+        photoAsset: {
+          select: {
+            storageKey: true,
+            downloadToken: true,
+          },
+        },
       },
     });
   }
@@ -100,7 +104,6 @@ export class MeService {
         lastName: null,
         city: null,
         phoneNumber: null,
-        photoUrl: null,
       },
     });
   }

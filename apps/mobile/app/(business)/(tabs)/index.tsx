@@ -69,7 +69,7 @@ export default function BusinessHomeScreen() {
       headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       headerLeft: () => (
         <View style={styles.headerLeft}>
-          <Avatar name={avatarName} photoUrl={appUser?.photoUrl} size={40} />
+          <Avatar name={avatarName} logoAsset={(business as any)?.logoAsset} size={40} />
         </View>
       ),
       headerTitle: () => (
@@ -95,7 +95,7 @@ export default function BusinessHomeScreen() {
         </View>
       ),
     });
-  }, [navigation, router, avatarName, location, appUser?.photoUrl]);
+  }, [navigation, router, avatarName, location, business]);
 
   const isLoading = businessLoading || loading;
   const upcomingBookings = bookings.slice(0, 5); // Show first 5
