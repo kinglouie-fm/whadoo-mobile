@@ -134,26 +134,31 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
     );
   };
 
+  const withSortOrders = (list: Package[]) =>
+    list.map((pkg, idx) => ({ ...pkg, sort_order: idx }));
+
   const handleMoveUp = (index: number) => {
     if (index === 0) return;
-    const updatedPackages = [...packages];
-    [updatedPackages[index - 1], updatedPackages[index]] = [
-      updatedPackages[index],
-      updatedPackages[index - 1],
+
+    const reordered = [...packages];
+    [reordered[index - 1], reordered[index]] = [
+      reordered[index],
+      reordered[index - 1],
     ];
-    updatedPackages.forEach((pkg, idx) => (pkg.sort_order = idx));
-    onChange(updatedPackages);
+
+    onChange(withSortOrders(reordered));
   };
 
   const handleMoveDown = (index: number) => {
     if (index === packages.length - 1) return;
-    const updatedPackages = [...packages];
-    [updatedPackages[index], updatedPackages[index + 1]] = [
-      updatedPackages[index + 1],
-      updatedPackages[index],
+
+    const reordered = [...packages];
+    [reordered[index], reordered[index + 1]] = [
+      reordered[index + 1],
+      reordered[index],
     ];
-    updatedPackages.forEach((pkg, idx) => (pkg.sort_order = idx));
-    onChange(updatedPackages);
+
+    onChange(withSortOrders(reordered));
   };
 
   return (
@@ -186,7 +191,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                   <Text style={typography.captionSmall}>Code: {pkg.code}</Text>
                   {pkg.track_type && (
                     <Text style={typography.caption}>
-                      {pkg.track_type === "indoor" ? "🏢 Indoor" : "🌳 Outdoor"}
+                      {pkg.track_type === "indoor" ? "Indoor" : "Outdoor"}
                     </Text>
                   )}
                 </View>

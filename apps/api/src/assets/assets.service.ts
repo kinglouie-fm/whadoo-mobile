@@ -58,7 +58,9 @@ export class AssetsService {
     }
 
     // Validate file size (10MB max)
-    const sizeBytes = metadata.size ? parseInt(String(metadata.size)) : dto.sizeBytes;
+    const sizeBytes = metadata.size
+      ? parseInt(String(metadata.size))
+      : dto.sizeBytes;
     if (sizeBytes && sizeBytes > 10 * 1024 * 1024) {
       throw new BadRequestException('File size must be less than 10MB');
     }
@@ -91,7 +93,11 @@ export class AssetsService {
     const [fileBuffer] = await stagingFile.download();
 
     // 6. Validate metadata
-    const sizeInBytes = metadata.size ? parseInt(String(metadata.size)) : dto.sizeBytes;
+    const sizeInBytes = metadata.size
+      ? parseInt(String(metadata.size))
+      : dto.sizeBytes;
+
+    console.log('We are in line 96');
 
     // 7. Process image: resize, crop, compress
     const processedBuffer = await sharp(fileBuffer)
@@ -106,6 +112,8 @@ export class AssetsService {
       .withMetadata({ orientation: undefined }) // Strip EXIF
       .toBuffer();
 
+    console.log('We are in line 111');
+
     // 8. Upload processed image to final path
     const finalFile = bucket.file(finalPath);
     await finalFile.save(processedBuffer, {
@@ -117,9 +125,13 @@ export class AssetsService {
       },
     });
 
+    console.log('We are in line 124');
+
     // 9. Get download token from uploaded file
     const [finalMetadata] = await finalFile.getMetadata();
     const downloadToken = finalMetadata.metadata?.firebaseStorageDownloadTokens;
+
+    console.log('We are in line 129');
 
     // 10. Create Asset record
     const asset = await this.prisma.asset.create({
@@ -137,6 +149,8 @@ export class AssetsService {
             : undefined,
       },
     });
+
+    console.log('We are in line 149');
 
     // 11. Link asset to entity
     switch (dto.context.type) {
@@ -173,6 +187,8 @@ export class AssetsService {
         });
         break;
     }
+
+    console.log('We are in line 187');
 
     // 12. Delete staging file
     try {

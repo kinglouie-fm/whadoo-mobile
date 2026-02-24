@@ -49,4 +49,5 @@ GoogleService-Info.plist
 ios/Pods/
 ios/Podfile.lock
 
+.pnpm-store/
 docs/
