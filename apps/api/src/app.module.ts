@@ -1,8 +1,11 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { APP_GUARD } from "@nestjs/core";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { ActivitiesModule } from "./activities/activities.module";
 import { ActivityTypeDefinitionsModule } from "./activity-type-definitions/activity-type-definitions.module";
 import { AssetsModule } from "./assets/assets.module";
+import { UserThrottlerGuard } from "./assets/user-throttler.guard";
 import { AuthModule } from "./auth/auth.module";
 import { AvailabilityTemplatesModule } from "./availability-templates/availability-templates.module";
 import { BusinessesModule } from "./businesses/businesses.module";
@@ -18,6 +21,12 @@ import { BookingsModule } from "./bookings/bookings.module";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ".env" }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 3600000,
+        limit: 50,
+      },
+    ]),
     PrismaModule,
     FirebaseModule,
     AuthModule,
@@ -32,6 +41,12 @@ import { BookingsModule } from "./bookings/bookings.module";
     AvailabilityResolutionModule,
     BookingsModule,
     AssetsModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: UserThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

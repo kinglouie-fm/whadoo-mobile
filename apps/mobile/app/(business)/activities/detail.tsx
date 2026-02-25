@@ -8,6 +8,7 @@ import { useBusiness } from "@/src/providers/business-context";
 import { useAuth } from "@/src/providers/auth-context";
 import { uploadToStaging } from "@/src/lib/firebase-storage";
 import { apiPost } from "@/src/lib/api";
+import * as ImagePicker from "expo-image-picker";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
   clearCurrentActivity,
@@ -69,12 +70,16 @@ export default function ActivityDetailScreen() {
   const [config, setConfig] = useState<Record<string, any>>({});
   const [pricing, setPricing] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [pendingImages, setPendingImages] = useState<Array<{
-    id: string;
-    uri: string;
-    width: number;
-    height: number;
-  }>>([]);
+  const [pendingImages, setPendingImages] = useState<
+    Array<{
+      id: string;
+      uri: string;
+      width: number;
+      height: number;
+      mimeType?: string;
+      fileName?: string | null;
+    }>
+  >([]);
   const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
@@ -263,14 +268,18 @@ export default function ActivityDetailScreen() {
         setUploadingImages(true);
         
         for (const image of pendingImages) {
-          const uploadResult = await uploadToStaging(
-            image.uri,
-            appUser.firebaseUid,
-          );
+          const uploadResult = await uploadToStaging({
+            uri: image.uri,
+            width: image.width,
+            height: image.height,
+            mimeType: image.mimeType,
+            fileName: image.fileName,
+          } as ImagePicker.ImagePickerAsset);
 
           await apiPost("/assets/finalize", {
             storageKey: uploadResult.storageKey,
-            contentType: "image/jpeg",
+            contentType: uploadResult.contentType,
+            sizeBytes: uploadResult.sizeBytes,
             width: image.width,
             height: image.height,
             context: {

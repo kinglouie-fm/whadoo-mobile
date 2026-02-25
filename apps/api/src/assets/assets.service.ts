@@ -4,10 +4,19 @@ import {
   Injectable,
 } from '@nestjs/common';
 import * as sharp from 'sharp';
+import { v4 as uuidv4 } from 'uuid';
 import { admin } from '../auth/firebase-admin';
 import { PrismaService } from '../prisma/prisma.service';
 
-import { v4 as uuidv4 } from 'uuid';
+const ALLOWED_MIME_TYPES = {
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
+} as const;
 
 interface FinalizeUploadDto {
   storageKey: string;
@@ -25,6 +34,51 @@ interface FinalizeUploadDto {
 @Injectable()
 export class AssetsService {
   constructor(private prisma: PrismaService) {}
+
+  async uploadToStaging(
+    user: { id: string; firebaseUid: string },
+    file: {
+      buffer: Buffer;
+      mimetype: string;
+      size: number;
+      originalname: string;
+    },
+  ) {
+    if (!ALLOWED_MIME_TYPES[file.mimetype]) {
+      throw new BadRequestException({
+        statusCode: 400,
+        error: 'INVALID_FILE_TYPE',
+        message: `Invalid file type "${file.mimetype}". Allowed: JPEG, PNG, GIF, WebP`,
+      });
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      throw new BadRequestException({
+        statusCode: 400,
+        error: 'FILE_TOO_LARGE',
+        message: 'File size exceeds 10MB limit',
+      });
+    }
+
+    const ext = ALLOWED_MIME_TYPES[file.mimetype];
+    const filename = `${uuidv4()}.${ext}`;
+    const storageKey = `staging/${user.firebaseUid}/${filename}`;
+
+    const bucket = admin.storage().bucket();
+    const storageFile = bucket.file(storageKey);
+
+    await storageFile.save(file.buffer, {
+      metadata: {
+        contentType: file.mimetype,
+      },
+    });
+
+    return {
+      storageKey,
+      contentType: file.mimetype,
+      sizeBytes: file.size,
+    };
+  }
 
   async finalizeUpload(userId: string, dto: FinalizeUploadDto) {
     // 1. Extract firebaseUid from userId
@@ -82,6 +136,19 @@ export class AssetsService {
         break;
       case 'activity_image':
         await this.verifyActivityOwnership(userId, dto.context.entityId!);
+
+        // Check if activity already has 5 images (will re-check in transaction)
+        const imageCount = await this.prisma.activityImage.count({
+          where: { activityId: dto.context.entityId! },
+        });
+        if (imageCount >= 5) {
+          throw new BadRequestException({
+            statusCode: 400,
+            error: 'MAX_IMAGES_REACHED',
+            message: 'Activity already has 5 images (maximum allowed)',
+          });
+        }
+
         targetSize = 900;
         finalPath = `activities/${dto.context.entityId}/medium/img_${uuid}_900x900.jpg`;
         break;
@@ -167,23 +234,39 @@ export class AssetsService {
         });
         break;
       case 'activity_image':
-        // Find max sort order for this activity
-        const maxSort = await this.prisma.activityImage.findFirst({
-          where: { activityId: dto.context.entityId! },
-          orderBy: { sortOrder: 'desc' },
-          select: { sortOrder: true },
-        });
-        const nextSortOrder = (maxSort?.sortOrder ?? -1) + 1;
-
         const downloadTokenStr = downloadToken ? String(downloadToken) : null;
-        await this.prisma.activityImage.create({
-          data: {
-            activityId: dto.context.entityId!,
-            assetId: asset.id,
-            isThumbnail: dto.context.isThumbnail || false,
-            imageUrl: this.buildPublicURL(finalPath, downloadTokenStr),
-            sortOrder: nextSortOrder,
-          },
+
+        // Use transaction to prevent race condition on max 5 images
+        await this.prisma.$transaction(async (tx) => {
+          // Re-check image count inside transaction
+          const imageCount = await tx.activityImage.count({
+            where: { activityId: dto.context.entityId! },
+          });
+          if (imageCount >= 5) {
+            throw new BadRequestException({
+              statusCode: 400,
+              error: 'MAX_IMAGES_REACHED',
+              message: 'Activity already has 5 images (maximum allowed)',
+            });
+          }
+
+          // Find max sort order for this activity
+          const maxSort = await tx.activityImage.findFirst({
+            where: { activityId: dto.context.entityId! },
+            orderBy: { sortOrder: 'desc' },
+            select: { sortOrder: true },
+          });
+          const nextSortOrder = (maxSort?.sortOrder ?? -1) + 1;
+
+          await tx.activityImage.create({
+            data: {
+              activityId: dto.context.entityId!,
+              assetId: asset.id,
+              isThumbnail: dto.context.isThumbnail || false,
+              imageUrl: this.buildPublicURL(finalPath, downloadTokenStr),
+              sortOrder: nextSortOrder,
+            },
+          });
         });
         break;
     }

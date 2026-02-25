@@ -1,18 +1,10 @@
-import { getApp } from "@react-native-firebase/app";
-import {
-  getDownloadURL,
-  getStorage,
-  putFile,
-  ref,
-} from "@react-native-firebase/storage";
 import * as ImagePicker from "expo-image-picker";
-import { Platform } from "react-native";
-import "react-native-get-random-values";
-import { v4 as uuidv4 } from "uuid";
+import { getAuth } from "@react-native-firebase/auth";
 
 export interface UploadResult {
   storageKey: string;
-  downloadURL: string;
+  contentType: string;
+  sizeBytes: number;
 }
 
 export async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> {
@@ -51,30 +43,61 @@ export async function pickMultipleImages(): Promise<
   return result.assets;
 }
 
-import * as FileSystemLegacy from "expo-file-system/legacy";
-import { cacheDirectory } from "expo-file-system/legacy";
+export async function uploadToStaging(
+  asset: ImagePicker.ImagePickerAsset,
+): Promise<UploadResult> {
+  const API_URL = process.env.EXPO_PUBLIC_API_URL!;
 
-export async function uploadToStaging(imageUri: string, firebaseUid: string) {
-  const filename = `${uuidv4()}.png`;
-  const storageKey = `staging/${firebaseUid}/${filename}`;
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
 
-  const app = getApp();
-  const storage = getStorage(app, `gs://${app.options.storageBucket}`);
-  const storageRef = ref(storage, storageKey);
+  const token = await user.getIdToken();
 
-  // Copy into app-owned cache to normalize the path/handle
-  const dest = `${cacheDirectory ?? ""}${filename}`;
-  await FileSystemLegacy.copyAsync({ from: imageUri, to: dest });
+  const formData = new FormData();
 
-  const uriForPutFile =
-    Platform.OS === "ios" ? dest.replace("file://", "") : dest;
+  const mimeType = asset.mimeType || "image/jpeg";
+  const ext = mimeType.split("/")[1]?.split("+")[0] || "jpg";
 
-  console.log("[uploadToStaging] original", imageUri);
-  console.log("[uploadToStaging] copiedTo", dest);
-  console.log("[uploadToStaging] uriForPutFile", uriForPutFile);
+  formData.append("image", {
+    uri: asset.uri,
+    name: asset.fileName || `upload.${ext}`,
+    type: mimeType,
+  } as any);
 
-  await putFile(storageRef, uriForPutFile, { contentType: "image/png" });
-  const downloadURL = await getDownloadURL(storageRef);
+  const response = await fetch(`${API_URL}/assets/upload`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
 
-  return { storageKey, downloadURL };
+  if (!response.ok) {
+    let errorMessage = `Upload failed (${response.status})`;
+    
+    try {
+      const errorData = await response.json();
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (errorData.error) {
+        const errorMap: Record<string, string> = {
+          INVALID_FILE_TYPE: "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.",
+          FILE_TOO_LARGE: "File is too large. Maximum size is 10MB.",
+          MAX_IMAGES_REACHED: "Activity already has the maximum of 5 images.",
+          RATE_LIMIT_EXCEEDED: "Too many uploads. Please wait before trying again.",
+        };
+        errorMessage = errorMap[errorData.error] || errorData.error;
+      }
+    } catch {
+      const text = await response.text();
+      if (text) errorMessage = text;
+    }
+    
+    throw new Error(errorMessage);
+  }
+
+  return await response.json();
 }

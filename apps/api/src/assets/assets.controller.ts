@@ -1,4 +1,16 @@
-import { Controller, Post, Body, UseGuards, Param, Req } from "@nestjs/common";
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Param,
+  Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { Throttle } from "@nestjs/throttler";
 import { AppUserGuard } from "../auth/app-user.guard";
 import { AuthService } from "../auth/auth.service";
 import { AuthedRequest, FirebaseAuthGuard } from "../auth/firebase-auth.guard";
@@ -15,7 +27,55 @@ export class AssetsController {
 
   private async currentDbUser(req: AuthedRequest) {
     const fb = req.firebase!;
-    return this.authService.getOrCreateUser(fb.uid, fb.email ?? undefined, fb.picture ?? undefined);
+    return this.authService.getOrCreateUser(
+      fb.uid,
+      fb.email ?? undefined,
+      fb.picture ?? undefined,
+    );
+  }
+
+  @Post("upload")
+  @Throttle({ default: { limit: 50, ttl: 3600000 } })
+  @UseInterceptors(
+    FileInterceptor("image", {
+      limits: {
+        fileSize: 10 * 1024 * 1024,
+      },
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith("image/")) {
+          return cb(
+            new BadRequestException({
+              statusCode: 400,
+              error: "INVALID_FILE_TYPE",
+              message:
+                "Only image files are allowed (JPEG, PNG, GIF, WebP)",
+            }),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async upload(
+    @Req() req: AuthedRequest,
+    @UploadedFile() file: {
+      buffer: Buffer;
+      mimetype: string;
+      size: number;
+      originalname: string;
+    },
+  ) {
+    if (!file) {
+      throw new BadRequestException({
+        statusCode: 400,
+        error: "NO_FILE",
+        message: "No file uploaded",
+      });
+    }
+
+    const user = await this.currentDbUser(req);
+    return this.assetsService.uploadToStaging(user, file);
   }
 
   @Post("finalize")
