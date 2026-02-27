@@ -1,0 +1,24 @@
+appId: com.whadoo.mobile
+---
+# Consumer Journey: Save and unsave activities
+- launchApp
+- assertVisible: "Discover"
+
+# Step 1: Swipe down to save activity
+- swipe:
+    direction: DOWN
+- assertVisible: "Saved"
+
+# Step 2: Navigate to saved activities
+- tapOn: "Saved" # Tab bar
+- assertVisible: "Saved Activities"
+- assertVisible:
+    text: ".*" # At least one saved activity
+
+# Step 3: Remove saved activity
+- tapOn:
+    id: "delete-button"
+    index: 0
+- assertNotVisible:
+    text: "Saved Activities"
+    timeout: 2000

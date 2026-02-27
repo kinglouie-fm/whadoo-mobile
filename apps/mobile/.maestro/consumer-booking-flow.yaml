@@ -1,0 +1,36 @@
+appId: com.whadoo.mobile
+---
+# Consumer Journey: Complete booking flow
+- launchApp
+- assertVisible: "Welcome" # Assuming onboarding/login screen
+
+# Step 1: Login/Register
+- tapOn: "Continue with Email"
+- inputText: "test-consumer@example.com"
+- tapOn: "Continue"
+- assertVisible: "Discover"
+
+# Step 2: View activity feed
+- assertVisible: "Swipe to discover"
+- swipe:
+    direction: LEFT # Swipe to next activity
+
+# Step 3: Open activity details
+- swipe:
+    direction: UP # Swipe up to view details
+- assertVisible: "Book Now"
+
+# Step 4: Select slot
+- tapOn: "Book Now"
+- assertVisible: "Select a time"
+- tapOn:
+    text: ".*AM|PM.*" # Tap any available slot
+    
+# Step 5: Confirm booking (profile must have phone number)
+- tapOn: "Confirm Booking"
+- assertVisible: "Booking Confirmed"
+
+# Step 6: Verify booking appears in "My Bookings"
+- tapOn: "Bookings" # Navigate to bookings tab
+- assertVisible: "My Bookings"
+- assertVisible: "Active"

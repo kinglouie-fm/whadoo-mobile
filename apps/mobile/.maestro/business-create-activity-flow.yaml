@@ -1,0 +1,38 @@
+appId: com.whadoo.mobile
+---
+# Business Journey: Create and publish activity
+- launchApp
+- assertVisible: "Business Dashboard"
+
+# Step 1: Create availability template
+- tapOn: "Templates"
+- tapOn: "Create Template"
+- inputText: "Weekday Schedule"
+- tapOn:
+    text: "Monday"
+- tapOn:
+    text: "Tuesday"
+- tapOn:
+    text: "Wednesday"
+- inputText: "09:00" # Start time
+- inputText: "17:00" # End time
+- inputText: "60" # Slot duration
+- inputText: "5" # Capacity
+- tapOn: "Save Template"
+- assertVisible: "Template created"
+
+# Step 2: Create activity
+- tapOn: "Activities"
+- tapOn: "Create Activity"
+- inputText: "Test Karting Experience"
+- tapOn: "Karting" # Select type
+- inputText: "Description of karting activity"
+- tapOn: "Link Template"
+- tapOn: "Weekday Schedule"
+- tapOn: "Save Draft"
+- assertVisible: "Draft"
+
+# Step 3: Publish activity
+- tapOn: "Publish"
+- assertVisible: "Published"
+- assertVisible: "Activity is now discoverable"
