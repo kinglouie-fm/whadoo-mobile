@@ -10,6 +10,7 @@ export async function createTestAvailabilityTemplate(
     endTime: string;
     slotDurationMinutes: number;
     capacity: number;
+    status: 'active' | 'inactive';
   }> = {},
 ) {
   return prisma.availabilityTemplate.create({
@@ -21,6 +22,7 @@ export async function createTestAvailabilityTemplate(
       endTime: new Date(`1970-01-01T${overrides.endTime || '17:00'}:00Z`),
       slotDurationMinutes: overrides.slotDurationMinutes || 60,
       capacity: overrides.capacity || 5,
+      status: overrides.status || 'active',
     },
   });
 }
@@ -36,6 +38,8 @@ export async function createTestActivity(
     availabilityTemplateId: string;
     config: any;
     pricing: any;
+    priceFrom: number;
+    city: string;
   }> = {},
 ) {
   return prisma.activity.create({
@@ -48,6 +52,8 @@ export async function createTestActivity(
       availabilityTemplateId: overrides.availabilityTemplateId || null,
       config: overrides.config || {},
       pricing: overrides.pricing || { basePrice: 50 },
+      priceFrom: overrides.priceFrom || 50,
+      city: overrides.city || 'Luxembourg',
     },
   });
 }

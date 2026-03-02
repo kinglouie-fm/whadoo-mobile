@@ -1,22 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { FirebaseAuthGuard } from '../../src/auth/firebase-auth.guard';
+import {
+  createTestActivity,
+  createTestAvailabilityTemplate,
+} from '../fixtures/activities';
+import { createTestBusiness, createTestUser } from '../fixtures/users';
+import { MockFirebaseAuthGuard } from '../mocks/mock-firebase-auth.guard';
 import {
   cleanupTestDatabase,
-  setupTestDatabase,
   disconnectTestDatabase,
+  setupTestDatabase,
   testPrisma,
 } from '../test-setup';
-import {
-  createTestUser,
-  createTestBusiness,
-} from '../fixtures/users';
-import {
-  createTestAvailabilityTemplate,
-  createTestActivity,
-} from '../fixtures/activities';
-import { admin } from '../../src/auth/firebase-admin';
 
 describe('Bookings API (E2E)', () => {
   let app: INestApplication;
@@ -28,10 +26,14 @@ describe('Bookings API (E2E)', () => {
 
   beforeAll(async () => {
     await setupTestDatabase();
+    await cleanupTestDatabase();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideGuard(FirebaseAuthGuard)
+      .useClass(MockFirebaseAuthGuard)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -55,9 +57,13 @@ describe('Bookings API (E2E)', () => {
     const business = await createTestBusiness(testPrisma, businessOwner.id);
     businessId = business.id;
 
-    const template = await createTestAvailabilityTemplate(testPrisma, business.id, {
-      capacity: 5,
-    });
+    const template = await createTestAvailabilityTemplate(
+      testPrisma,
+      business.id,
+      {
+        capacity: 5,
+      },
+    );
 
     const activity = await createTestActivity(testPrisma, business.id, {
       status: 'published',
@@ -65,9 +71,9 @@ describe('Bookings API (E2E)', () => {
     });
     activityId = activity.id;
 
-    // Mock Firebase tokens
-    consumerToken = await admin.auth().createCustomToken('test-consumer-uid');
-    businessToken = await admin.auth().createCustomToken('test-business-uid');
+    // Use Firebase UIDs directly as tokens (MockFirebaseAuthGuard extracts UID)
+    consumerToken = 'test-consumer-uid';
+    businessToken = 'test-business-uid';
   });
 
   afterAll(async () => {
@@ -83,7 +89,9 @@ describe('Bookings API (E2E)', () => {
 
   describe('POST /bookings', () => {
     it('should create booking with valid data', () => {
-      const slotStart = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const slotStart = new Date(
+        Date.now() + 24 * 60 * 60 * 1000,
+      ).toISOString();
 
       return request(app.getHttpServer())
         .post('/bookings')
@@ -104,7 +112,9 @@ describe('Bookings API (E2E)', () => {
     });
 
     it('should reject booking without authentication', () => {
-      const slotStart = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const slotStart = new Date(
+        Date.now() + 24 * 60 * 60 * 1000,
+      ).toISOString();
 
       return request(app.getHttpServer())
         .post('/bookings')
@@ -129,7 +139,9 @@ describe('Bookings API (E2E)', () => {
     });
 
     it('should reject booking when capacity exceeded', async () => {
-      const slotStart = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const slotStart = new Date(
+        Date.now() + 24 * 60 * 60 * 1000,
+      ).toISOString();
 
       // First booking takes 4 spots
       await request(app.getHttpServer())
@@ -162,7 +174,9 @@ describe('Bookings API (E2E)', () => {
 
   describe('GET /bookings', () => {
     it('should list user bookings', async () => {
-      const slotStart = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const slotStart = new Date(
+        Date.now() + 24 * 60 * 60 * 1000,
+      ).toISOString();
 
       // Create a booking first
       await request(app.getHttpServer())
@@ -186,7 +200,9 @@ describe('Bookings API (E2E)', () => {
     });
 
     it('should filter upcoming bookings', async () => {
-      const futureSlot = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const futureSlot = new Date(
+        Date.now() + 24 * 60 * 60 * 1000,
+      ).toISOString();
       const pastSlot = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
       // Create future booking
@@ -212,7 +228,9 @@ describe('Bookings API (E2E)', () => {
 
   describe('POST /bookings/:id/cancel', () => {
     it('should cancel own booking', async () => {
-      const slotStart = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const slotStart = new Date(
+        Date.now() + 24 * 60 * 60 * 1000,
+      ).toISOString();
 
       // Create booking
       const createRes = await request(app.getHttpServer())

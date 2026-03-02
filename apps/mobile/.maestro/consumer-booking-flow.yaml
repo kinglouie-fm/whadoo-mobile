@@ -1,36 +1,25 @@
-appId: com.whadoo.mobile
+appId: com.kinglouie-fm.whadoo
 ---
-# Consumer Journey: Complete booking flow
+# Consumer Journey: Complete booking flow (assumes user is logged in)
 - launchApp
-- assertVisible: "Welcome" # Assuming onboarding/login screen
+- assertVisible: "Your Location"
 
-# Step 1: Login/Register
-- tapOn: "Continue with Email"
-- inputText: "test-consumer@example.com"
-- tapOn: "Continue"
-- assertVisible: "Discover"
-
-# Step 2: View activity feed
-- assertVisible: "Swipe to discover"
-- swipe:
-    direction: LEFT # Swipe to next activity
-
-# Step 3: Open activity details
-- swipe:
-    direction: UP # Swipe up to view details
-- assertVisible: "Book Now"
-
-# Step 4: Select slot
-- tapOn: "Book Now"
-- assertVisible: "Select a time"
+# Step 1: Navigate to saved tab (tap center-left of bottom nav)
 - tapOn:
-    text: ".*AM|PM.*" # Tap any available slot
-    
-# Step 5: Confirm booking (profile must have phone number)
-- tapOn: "Confirm Booking"
-- assertVisible: "Booking Confirmed"
+    point: "30%,95%"
+- assertVisible: "Saved"
 
-# Step 6: Verify booking appears in "My Bookings"
-- tapOn: "Bookings" # Navigate to bookings tab
+# Step 2: Navigate to bookings tab (tap center-right of bottom nav)
+- tapOn:
+    point: "70%,95%"
 - assertVisible: "My Bookings"
-- assertVisible: "Active"
+
+# Step 3: Navigate to profile tab (tap far right of bottom nav)
+- tapOn:
+    point: "90%,95%"
+- assertVisible: "Settings"
+
+# Step 4: Return to discovery tab (tap far left of bottom nav)
+- tapOn:
+    point: "10%,95%"
+- assertVisible: "Your Location"

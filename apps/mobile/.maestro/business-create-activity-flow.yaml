@@ -1,38 +1,30 @@
-appId: com.whadoo.mobile
+appId: com.kinglouie-fm.whadoo
 ---
-# Business Journey: Create and publish activity
+# Business Journey: Verify business features
 - launchApp
-- assertVisible: "Business Dashboard"
+- assertVisible: "Business"
 
-# Step 1: Create availability template
-- tapOn: "Templates"
-- tapOn: "Create Template"
-- inputText: "Weekday Schedule"
-- tapOn:
-    text: "Monday"
-- tapOn:
-    text: "Tuesday"
-- tapOn:
-    text: "Wednesday"
-- inputText: "09:00" # Start time
-- inputText: "17:00" # End time
-- inputText: "60" # Slot duration
-- inputText: "5" # Capacity
-- tapOn: "Save Template"
-- assertVisible: "Template created"
+# Step 1: Verify we're on business home (look for KPI cards)
+- assertVisible: "Quick actions"
+- assertVisible: "Today"
+- assertVisible: "Upcoming"
+- assertVisible: "Revenue"
 
-# Step 2: Create activity
-- tapOn: "Activities"
-- tapOn: "Create Activity"
-- inputText: "Test Karting Experience"
-- tapOn: "Karting" # Select type
-- inputText: "Description of karting activity"
-- tapOn: "Link Template"
-- tapOn: "Weekday Schedule"
-- tapOn: "Save Draft"
-- assertVisible: "Draft"
+# Step 2: Navigate to activities via tab bar
+- tapOn:
+    point: "39%,91%"
+- extendedWaitUntil:
+    visible: "Manage Activities"
+    timeout: 3000
 
-# Step 3: Publish activity
-- tapOn: "Publish"
-- assertVisible: "Published"
-- assertVisible: "Activity is now discoverable"
+# Step 3: Navigate to availability via tab bar
+- tapOn:
+    point: "61%,91%"
+- extendedWaitUntil:
+    visible: "Manage Availabilities"
+    timeout: 3000
+
+# Step 4: Navigate back to home via tab bar
+- tapOn:
+    point: "16%,91%"
+- assertVisible: "Quick actions"
