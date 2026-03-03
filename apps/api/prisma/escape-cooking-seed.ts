@@ -89,7 +89,7 @@ const escapeRoomActivity: SeedActivity = {
   packages: [
     {
       code: '2-players',
-      title: '2 Players',
+      title: 'Escape from Alcatraz',
       description: 'Perfect for couples or close friends',
       base_price: 50,
       currency: 'EUR',
@@ -100,7 +100,7 @@ const escapeRoomActivity: SeedActivity = {
     },
     {
       code: '3-4-players',
-      title: '3-4 Players',
+      title: 'Prison Break',
       description: 'Most popular option for small groups',
       base_price: 22,
       currency: 'EUR',
@@ -114,7 +114,7 @@ const escapeRoomActivity: SeedActivity = {
     },
     {
       code: '5-6-players',
-      title: '5-6 Players',
+      title: 'Pirates of the Caribbean',
       description: 'Great for larger groups and teams',
       base_price: 20,
       currency: 'EUR',
@@ -223,7 +223,7 @@ async function seedActivity(params: {
 
   // Add availability to each package
   const packagesWithAvailability = activity.packages.map((pkg) =>
-    addAvailability(pkg, activity.durationMin)
+    addAvailability(pkg, activity.durationMin),
   );
 
   await prisma.$transaction(async (tx) => {
