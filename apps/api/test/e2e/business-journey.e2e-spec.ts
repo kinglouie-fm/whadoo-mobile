@@ -3,10 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { FirebaseAuthGuard } from '../../src/auth/firebase-auth.guard';
-import {
-  createTestAvailabilityTemplate,
-  createTestActivity,
-} from '../fixtures/activities';
+import { createTestActivity } from '../fixtures/activities';
 import { createTestBusiness, createTestUser } from '../fixtures/users';
 import { MockFirebaseAuthGuard } from '../mocks/mock-firebase-auth.guard';
 import {
@@ -219,11 +216,6 @@ describe('Business Journey (E2E)', () => {
   });
 
   it('should allow business to unpublish activity', async () => {
-    const template = await createTestAvailabilityTemplate(
-      testPrisma,
-      businessId,
-    );
-
     const activityResponse = await request(app.getHttpServer())
       .post('/activities')
       .set('Authorization', `Bearer ${businessToken}`)
@@ -233,13 +225,21 @@ describe('Business Journey (E2E)', () => {
         typeId: 'karting',
         city: 'Luxembourg',
         priceFrom: 50,
-        availabilityTemplateId: template.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },
@@ -265,14 +265,8 @@ describe('Business Journey (E2E)', () => {
   });
 
   it('should show business bookings with filters', async () => {
-    const template = await createTestAvailabilityTemplate(
-      testPrisma,
-      businessId,
-    );
-
     const activity = await createTestActivity(testPrisma, businessId, {
       status: 'published',
-      availabilityTemplateId: template.id,
     });
 
     // Create multiple bookings

@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../src/prisma/prisma.service';
 import { BookingsService } from '../../src/bookings/bookings.service';
 import { ActivitiesService } from '../../src/activities/activities.service';
-import { AvailabilityTemplatesService } from '../../src/availability-templates/availability-templates.service';
 import { ActivityTypeDefinitionsService } from '../../src/activity-type-definitions/activity-type-definitions.service';
 import {
   setupTestDatabase,
@@ -11,16 +10,12 @@ import {
   testPrisma,
 } from '../test-setup';
 import { createTestUser, createTestBusiness } from '../fixtures/users';
-import {
-  createTestAvailabilityTemplate,
-  createTestActivity,
-} from '../fixtures/activities';
+import { createTestActivity } from '../fixtures/activities';
 
 describe('Snapshots & Edge Cases (Integration)', () => {
   let module: TestingModule;
   let bookingsService: BookingsService;
   let activitiesService: ActivitiesService;
-  let templatesService: AvailabilityTemplatesService;
   let businessOwnerId: string;
   let businessId: string;
   let consumerId: string;
@@ -32,7 +27,6 @@ describe('Snapshots & Edge Cases (Integration)', () => {
       providers: [
         BookingsService,
         ActivitiesService,
-        AvailabilityTemplatesService,
         ActivityTypeDefinitionsService,
         {
           provide: PrismaService,
@@ -43,9 +37,6 @@ describe('Snapshots & Edge Cases (Integration)', () => {
 
     bookingsService = module.get<BookingsService>(BookingsService);
     activitiesService = module.get<ActivitiesService>(ActivitiesService);
-    templatesService = module.get<AvailabilityTemplatesService>(
-      AvailabilityTemplatesService,
-    );
   });
 
   afterAll(async () => {
@@ -68,39 +59,61 @@ describe('Snapshots & Edge Cases (Integration)', () => {
     consumerId = consumer.id;
   });
 
-  describe('Availability Template Changes', () => {
-    it('should preserve existing bookings when template is edited', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-        {
-          capacity: 10,
-          slotDurationMinutes: 60,
-        },
-      );
-
+  describe('Package Config Changes', () => {
+    it('should preserve existing bookings when package config is updated', async () => {
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
+        config: {
+          packages: [
+            {
+              code: 'standard',
+              title: 'Standard Package',
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 10,
+                status: 'active',
+              },
+            },
+          ],
+        },
       });
 
       const slotStart = new Date('2026-03-16T08:00:00.000Z');
 
-      // Create booking with current template
+      // Create booking with current config
       const booking = await bookingsService.createBooking(consumerId, {
         activityId: activity.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 2,
-        selectionData: {},
+        selectionData: { packageCode: 'standard' },
       });
 
-      // Update template (change duration and capacity)
-      await templatesService.updateTemplate(
-        template.id,
+      // Update activity config (change duration and capacity)
+      await activitiesService.updateActivity(
+        activity.id,
         businessOwnerId,
         {
-          slotDurationMinutes: 30,
-          capacity: 5,
+          config: {
+            packages: [
+              {
+                code: 'standard',
+                title: 'Standard Package - Updated',
+                min_participants: 2,
+                availability: {
+                  daysOfWeek: [1, 2, 3, 4, 5],
+                  startTime: '09:00:00',
+                  endTime: '17:00:00',
+                  slotDurationMinutes: 30,
+                  capacity: 5,
+                  status: 'active',
+                },
+              },
+            ],
+          },
         },
       );
 
@@ -110,23 +123,18 @@ describe('Snapshots & Edge Cases (Integration)', () => {
         booking.id,
       );
 
-      // Booking snapshot should preserve original template state
+      // Booking snapshot should preserve original config state
       expect(retrievedBooking.activitySnapshot).toBeDefined();
       expect(retrievedBooking.status).toBe('active');
       expect(retrievedBooking.participantsCount).toBe(2);
+      expect(retrievedBooking.selectionSnapshot.durationMinutes).toBe(60);
     });
   });
 
   describe('Activity Status Changes', () => {
     it('should preserve booking when activity becomes inactive', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
       });
 
       const slotStart = new Date('2026-03-16T08:00:00.000Z');
@@ -136,7 +144,7 @@ describe('Snapshots & Edge Cases (Integration)', () => {
         activityId: activity.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 2,
-        selectionData: {},
+        selectionData: { packageCode: 'standard' },
       });
 
       // Deactivate activity
@@ -154,14 +162,8 @@ describe('Snapshots & Edge Cases (Integration)', () => {
     });
 
     it('should not show inactive activity in discovery', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
       });
 
       await activitiesService.deactivateActivity(activity.id, businessOwnerId);
@@ -174,14 +176,8 @@ describe('Snapshots & Edge Cases (Integration)', () => {
 
   describe('Price Changes', () => {
     it('should not affect existing bookings when price changes', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
         priceFrom: 50,
         pricing: {
           basePrice: 50,
@@ -192,6 +188,15 @@ describe('Snapshots & Edge Cases (Integration)', () => {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },
@@ -204,7 +209,7 @@ describe('Snapshots & Edge Cases (Integration)', () => {
         activityId: activity.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 2,
-        selectionData: {},
+        selectionData: { packageCode: 'basic' },
       });
 
       // Unpublish, update price, republish
@@ -244,14 +249,8 @@ describe('Snapshots & Edge Cases (Integration)', () => {
 
   describe('Business Details Changes', () => {
     it('should preserve business details in booking snapshots', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
       });
 
       const slotStart = new Date('2026-03-16T08:00:00.000Z');
@@ -267,7 +266,7 @@ describe('Snapshots & Edge Cases (Integration)', () => {
         activityId: activity.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 2,
-        selectionData: {},
+        selectionData: { packageCode: 'standard' },
       });
 
       // Update business name
@@ -291,20 +290,23 @@ describe('Snapshots & Edge Cases (Integration)', () => {
 
   describe('Activity Config Changes', () => {
     it('should preserve activity config in selection snapshot', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },

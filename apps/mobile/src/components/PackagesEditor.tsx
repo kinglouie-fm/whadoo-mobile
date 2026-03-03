@@ -16,6 +16,15 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryButton, SecondaryButton } from "./Button";
 
+interface Availability {
+  daysOfWeek: number[];
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes: number;
+  capacity: number;
+  status: "active" | "inactive";
+}
+
 interface Package {
   code: string;
   title: string;
@@ -37,6 +46,7 @@ interface Package {
   includes_wine?: boolean;
   includes_extras?: boolean;
   difficulty_level?: string;
+  availability?: Availability;
 }
 
 interface PackagesEditorProps {
@@ -60,6 +70,15 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
       title: "",
       is_default: packages.length === 0,
       sort_order: packages.length,
+      min_participants: 1,
+      availability: {
+        daysOfWeek: [1, 2, 3, 4, 5, 6, 7],
+        startTime: "10:00:00",
+        endTime: "22:00:00",
+        slotDurationMinutes: 30,
+        capacity: 12,
+        status: "active",
+      },
     };
     setEditingPackage(newPackage);
     setEditingIndex(null);
@@ -92,6 +111,16 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
     );
     if (isDuplicate) {
       Alert.alert("Validation Error", "Package code must be unique");
+      return;
+    }
+
+    if (!editingPackage.availability) {
+      Alert.alert("Validation Error", "Availability configuration is required");
+      return;
+    }
+
+    if (editingPackage.availability.daysOfWeek.length === 0) {
+      Alert.alert("Validation Error", "Select at least one day of the week");
       return;
     }
 
@@ -484,15 +513,28 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
             </View>
 
             <FormInput
-              label="Minimum Participants"
-              value={editingPackage?.min_participants?.toString() || ""}
+              label="Minimum Participants *"
+              value={editingPackage?.min_participants?.toString() || "1"}
               onChangeText={(text) =>
                 setEditingPackage((prev) => ({
                   ...prev!,
-                  min_participants: text ? parseInt(text) : undefined,
+                  min_participants: text ? parseInt(text) : 1,
                 }))
               }
-              placeholder="e.g., 5"
+              placeholder="1"
+              keyboardType="number-pad"
+            />
+
+            <FormInput
+              label="Maximum Participants"
+              value={editingPackage?.max_participants?.toString() || ""}
+              onChangeText={(text) =>
+                setEditingPackage((prev) => ({
+                  ...prev!,
+                  max_participants: text ? parseInt(text) : undefined,
+                }))
+              }
+              placeholder="No limit"
               keyboardType="number-pad"
             />
 
@@ -539,6 +581,177 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               }
               placeholder="e.g., First Wednesday of month at 17:15"
             />
+
+            <View style={styles.sectionDivider}>
+              <Text style={[typography.h5, styles.sectionTitle]}>
+                Availability Configuration
+              </Text>
+              <Text style={styles.sectionHint}>
+                Configure when this package can be booked
+              </Text>
+            </View>
+
+            <View>
+              <Text
+                style={[typography.label, { marginBottom: theme.spacing.sm }]}
+              >
+                Days of Week <Text style={{ color: theme.colors.danger }}>*</Text>
+              </Text>
+              <View style={styles.daysGrid}>
+                {[
+                  { value: 1, label: "Mon" },
+                  { value: 2, label: "Tue" },
+                  { value: 3, label: "Wed" },
+                  { value: 4, label: "Thu" },
+                  { value: 5, label: "Fri" },
+                  { value: 6, label: "Sat" },
+                  { value: 7, label: "Sun" },
+                ].map((day) => {
+                  const isSelected = editingPackage?.availability?.daysOfWeek.includes(
+                    day.value,
+                  );
+                  return (
+                    <TouchableOpacity
+                      key={day.value}
+                      style={[
+                        styles.dayButton,
+                        isSelected && styles.dayButtonSelected,
+                      ]}
+                      onPress={() => {
+                        setEditingPackage((prev) => {
+                          if (!prev) return prev;
+                          const currentDays = prev.availability?.daysOfWeek || [];
+                          const newDays = isSelected
+                            ? currentDays.filter((d) => d !== day.value)
+                            : [...currentDays, day.value].sort();
+                          return {
+                            ...prev,
+                            availability: {
+                              ...prev.availability!,
+                              daysOfWeek: newDays,
+                            },
+                          };
+                        });
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.dayButtonText,
+                          isSelected && styles.dayButtonTextSelected,
+                        ]}
+                      >
+                        {day.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Start Time *"
+                  value={editingPackage?.availability?.startTime || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      availability: {
+                        ...prev!.availability!,
+                        startTime: text,
+                      },
+                    }))
+                  }
+                  placeholder="10:00:00"
+                />
+              </View>
+
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="End Time *"
+                  value={editingPackage?.availability?.endTime || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      availability: {
+                        ...prev!.availability!,
+                        endTime: text,
+                      },
+                    }))
+                  }
+                  placeholder="22:00:00"
+                />
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Slot Duration (min) *"
+                  value={
+                    editingPackage?.availability?.slotDurationMinutes?.toString() ||
+                    ""
+                  }
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      availability: {
+                        ...prev!.availability!,
+                        slotDurationMinutes: text ? parseInt(text) : 30,
+                      },
+                    }))
+                  }
+                  placeholder="30"
+                  keyboardType="number-pad"
+                />
+              </View>
+
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Capacity *"
+                  value={editingPackage?.availability?.capacity?.toString() || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      availability: {
+                        ...prev!.availability!,
+                        capacity: text ? parseInt(text) : 1,
+                      },
+                    }))
+                  }
+                  placeholder="12"
+                  keyboardType="number-pad"
+                />
+              </View>
+            </View>
+
+            <View>
+              <View style={styles.switchRow}>
+                <Text style={typography.label}>Availability Active</Text>
+                <Switch
+                  value={
+                    editingPackage?.availability?.status === "active" || false
+                  }
+                  onValueChange={(value) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      availability: {
+                        ...prev!.availability!,
+                        status: value ? "active" : "inactive",
+                      },
+                    }))
+                  }
+                  trackColor={{
+                    false: "rgba(255,255,255,0.18)",
+                    true: theme.colors.accent,
+                  }}
+                  thumbColor={"#fff"}
+                />
+              </View>
+              <Text style={styles.fieldHint}>
+                When active, customers can book this package during configured times
+              </Text>
+            </View>
 
             <View>
               <View style={styles.switchRow}>
@@ -733,5 +946,46 @@ const styles = StyleSheet.create({
     ...typography.captionSmall,
     marginTop: theme.spacing.sm,
     marginBottom: theme.spacing.lg,
+  },
+  sectionDivider: {
+    marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.divider,
+    paddingTop: theme.spacing.lg,
+  },
+  sectionTitle: {
+    marginBottom: theme.spacing.xs,
+  },
+  sectionHint: {
+    ...typography.captionSmall,
+    color: theme.colors.textMuted,
+  },
+  daysGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+  },
+  dayButton: {
+    width: 45,
+    height: 40,
+    borderWidth: 1,
+    borderColor: theme.colors.divider,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface,
+  },
+  dayButtonSelected: {
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accent,
+  },
+  dayButtonText: {
+    ...typography.caption,
+    fontWeight: "900",
+  },
+  dayButtonTextSelected: {
+    color: "#0B0B0B",
   },
 });

@@ -11,8 +11,6 @@ function iconFor(routeName: string): keyof typeof MaterialIcons.glyphMap {
       return "home";
     case "activities":
       return "grid-view";
-    case "availability":
-      return "timeline";
     case "profile":
       return "person";
     default:

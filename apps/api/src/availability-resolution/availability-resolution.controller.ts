@@ -11,17 +11,20 @@ export class AvailabilityResolutionController {
   @Get()
   async getAvailability(
     @Query('activityId') activityId: string,
+    @Query('packageCode') packageCode: string,
     @Query('date') date: string,
     @Query('partySize') partySize?: string
   ) {
     const slots = await this.service.getAvailability(
       activityId,
+      packageCode,
       date,
       partySize ? parseInt(partySize, 10) : undefined
     );
 
     return {
       activityId,
+      packageCode,
       date,
       slots,
     };

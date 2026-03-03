@@ -22,7 +22,6 @@ export default function BusinessTabsLayout() {
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="activities" />
-      <Tabs.Screen name="availability" />
       <Tabs.Screen name="profile" />
     </Tabs>
   );

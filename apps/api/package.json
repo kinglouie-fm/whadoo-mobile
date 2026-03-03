@@ -18,7 +18,8 @@
     "test:cov": "NODE_ENV=test jest --coverage --runInBand",
     "test:debug": "NODE_ENV=test node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json --runInBand",
-    "test:integration": "NODE_ENV=test jest --testPathPattern=integration --runInBand"
+    "test:integration": "NODE_ENV=test jest --testPathPattern=integration --runInBand",
+    "db:clean": "ts-node scripts/clean-db-preserve-accounts.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

@@ -3,7 +3,6 @@ import { PrismaService } from '../../src/prisma/prisma.service';
 import { AvailabilityResolutionService } from '../../src/availability-resolution/availability-resolution.service';
 import { BookingsService } from '../../src/bookings/bookings.service';
 import { ActivitiesService } from '../../src/activities/activities.service';
-import { AvailabilityTemplatesService } from '../../src/availability-templates/availability-templates.service';
 import { ActivityTypeDefinitionsService } from '../../src/activity-type-definitions/activity-type-definitions.service';
 import {
   setupTestDatabase,
@@ -12,10 +11,7 @@ import {
   testPrisma,
 } from '../test-setup';
 import { createTestUser, createTestBusiness } from '../fixtures/users';
-import {
-  createTestAvailabilityTemplate,
-  createTestActivity,
-} from '../fixtures/activities';
+import { createTestActivity } from '../fixtures/activities';
 
 describe('Availability Resolution (Integration)', () => {
   let module: TestingModule;
@@ -71,27 +67,32 @@ describe('Availability Resolution (Integration)', () => {
   });
 
   describe('Resolution Returns Slots', () => {
-    it('should return slots based on template fields', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-        {
-          daysOfWeek: [1, 3, 5], // Mon, Wed, Fri
-          startTime: '10:00',
-          endTime: '14:00',
-          slotDurationMinutes: 60,
-          capacity: 8,
-        },
-      );
-
+    it('should return slots based on package availability fields', async () => {
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
+        config: {
+          packages: [
+            {
+              code: 'standard',
+              title: 'Standard Package',
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 3, 5], // Mon, Wed, Fri
+                startTime: '10:00:00',
+                endTime: '14:00:00',
+                slotDurationMinutes: 60,
+                capacity: 8,
+                status: 'active',
+              },
+            },
+          ],
+        },
       });
 
       // Test Monday (2026-03-16)
       const slots = await availabilityService.getAvailability(
         activity.id,
+        'standard',
         '2026-03-16',
       );
 
@@ -103,22 +104,31 @@ describe('Availability Resolution (Integration)', () => {
     });
 
     it('should return empty array for non-matching days', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-        {
-          daysOfWeek: [1, 3, 5], // Mon, Wed, Fri only
-        },
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
+        config: {
+          packages: [
+            {
+              code: 'standard',
+              title: 'Standard Package',
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 3, 5], // Mon, Wed, Fri only
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
+            },
+          ],
+        },
       });
 
       // Test Tuesday (2026-03-17)
       const slots = await availabilityService.getAvailability(
         activity.id,
+        'standard',
         '2026-03-17',
       );
 
@@ -128,21 +138,30 @@ describe('Availability Resolution (Integration)', () => {
 
   describe('Capacity Reflected from slot_capacity', () => {
     it('should show default capacity when no bookings exist', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-        {
-          capacity: 15,
-        },
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
+        config: {
+          packages: [
+            {
+              code: 'standard',
+              title: 'Standard Package',
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 15,
+                status: 'active',
+              },
+            },
+          ],
+        },
       });
 
       const slots = await availabilityService.getAvailability(
         activity.id,
+        'standard',
         '2026-03-02', // Monday
       );
 
@@ -154,17 +173,25 @@ describe('Availability Resolution (Integration)', () => {
     });
 
     it('should update remaining capacity after booking', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-        {
-          capacity: 10,
-        },
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
+        config: {
+          packages: [
+            {
+              code: 'standard',
+              title: 'Standard Package',
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 10,
+                status: 'active',
+              },
+            },
+          ],
+        },
       });
 
       const slotStart = new Date('2026-03-16T08:00:00.000Z'); // Monday 09:00 Luxembourg (UTC+1)
@@ -174,12 +201,13 @@ describe('Availability Resolution (Integration)', () => {
         activityId: activity.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 3,
-        selectionData: {},
+        selectionData: { packageCode: 'standard' },
       });
 
       // Check availability
       const slots = await availabilityService.getAvailability(
         activity.id,
+        'standard',
         '2026-03-16',
       );
 
@@ -194,17 +222,25 @@ describe('Availability Resolution (Integration)', () => {
     });
 
     it('should update capacity after cancellation', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-        {
-          capacity: 10,
-        },
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
+        config: {
+          packages: [
+            {
+              code: 'standard',
+              title: 'Standard Package',
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 10,
+                status: 'active',
+              },
+            },
+          ],
+        },
       });
 
       const slotStart = new Date('2026-03-16T08:00:00.000Z');
@@ -214,7 +250,7 @@ describe('Availability Resolution (Integration)', () => {
         activityId: activity.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 4,
-        selectionData: {},
+        selectionData: { packageCode: 'standard' },
       });
 
       await bookingsService.cancelBooking(consumerId, booking.id);
@@ -222,6 +258,7 @@ describe('Availability Resolution (Integration)', () => {
       // Check availability
       const slots = await availabilityService.getAvailability(
         activity.id,
+        'standard',
         '2026-03-16',
       );
 
@@ -235,27 +272,50 @@ describe('Availability Resolution (Integration)', () => {
   });
 
   describe('Multiple Activities', () => {
-    it('should handle multiple activities with same time slots', async () => {
-      // Create shared template
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-        {
-          capacity: 5,
-        },
-      );
-
-      // Create two activities using the same template
+    it('should handle activities with independent capacity', async () => {
+      // Create two activities with their own availability
       const activity1 = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
         title: 'Activity 1',
+        config: {
+          packages: [
+            {
+              code: 'standard',
+              title: 'Standard Package',
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
+            },
+          ],
+        },
       });
 
       const activity2 = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
         title: 'Activity 2',
+        config: {
+          packages: [
+            {
+              code: 'standard',
+              title: 'Standard Package',
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
+            },
+          ],
+        },
       });
 
       const slotStart = new Date('2026-03-16T08:00:00.000Z');
@@ -265,16 +325,18 @@ describe('Availability Resolution (Integration)', () => {
         activityId: activity1.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 2,
-        selectionData: {},
+        selectionData: { packageCode: 'standard' },
       });
 
       // Check availability for both activities
       const slots1 = await availabilityService.getAvailability(
         activity1.id,
+        'standard',
         '2026-03-16',
       );
       const slots2 = await availabilityService.getAvailability(
         activity2.id,
+        'standard',
         '2026-03-16',
       );
 
@@ -295,21 +357,30 @@ describe('Availability Resolution (Integration)', () => {
 
   describe('Slot Capacity Initialization', () => {
     it('should use default capacity when slot_capacity record missing', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-        {
-          capacity: 12,
-        },
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
+        config: {
+          packages: [
+            {
+              code: 'standard',
+              title: 'Standard Package',
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 12,
+                status: 'active',
+              },
+            },
+          ],
+        },
       });
 
       const slots = await availabilityService.getAvailability(
         activity.id,
+        'standard',
         '2026-03-16', // Monday
       );
 
@@ -321,17 +392,25 @@ describe('Availability Resolution (Integration)', () => {
     });
 
     it('should create slot_capacity record on first booking', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-        {
-          capacity: 10,
-        },
-      );
-
       const activity = await createTestActivity(testPrisma, businessId, {
         status: 'published',
-        availabilityTemplateId: template.id,
+        config: {
+          packages: [
+            {
+              code: 'standard',
+              title: 'Standard Package',
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 10,
+                status: 'active',
+              },
+            },
+          ],
+        },
       });
 
       const slotStart = new Date('2026-03-16T08:00:00.000Z');
@@ -348,7 +427,7 @@ describe('Availability Resolution (Integration)', () => {
         activityId: activity.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 2,
-        selectionData: {},
+        selectionData: { packageCode: 'standard' },
       });
 
       // After booking, slot_capacity should exist

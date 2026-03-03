@@ -13,7 +13,7 @@ export interface SlotAvailability {
 export class AvailabilityResolutionService {
   constructor(private prisma: PrismaService) {}
 
-  private generateSlotId(activityId: string, slotStart: Date): string {
+  private generateSlotId(activityId: string, packageCode: string, slotStart: Date): string {
     // Generate slot ID using Luxembourg local time
     // slotStart is UTC but represents a Luxembourg local time
     const luxStr = slotStart.toLocaleString('en-US', {
@@ -31,11 +31,12 @@ export class AvailabilityResolutionService {
     const [month, day, year] = datePart.split('/');
     const [hours, minutes] = timePart.split(':');
     
-    return `${activityId}_${year}-${month}-${day}_${hours}${minutes}`;
+    return `${activityId}_${packageCode}_${year}-${month}-${day}_${hours}${minutes}`;
   }
 
   async getAvailability(
     activityId: string,
+    packageCode: string,
     date: string,
     partySize?: number
   ): Promise<SlotAvailability[]> {
@@ -43,11 +44,6 @@ export class AvailabilityResolutionService {
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
       include: {
-        availabilityTemplate: {
-          include: {
-            exceptions: true,
-          },
-        },
         business: {
           select: {
             status: true,
@@ -68,17 +64,26 @@ export class AvailabilityResolutionService {
       throw new BadRequestException('Business is not active');
     }
 
-    if (!activity.availabilityTemplateId || !activity.availabilityTemplate) {
-      throw new BadRequestException('No availability configured for this activity');
+    // 2. Find package in config
+    const config = activity.config as any;
+    const packages = config?.packages || [];
+    const pkg = packages.find((p: any) => p.code === packageCode);
+
+    if (!pkg) {
+      throw new BadRequestException(`Package "${packageCode}" not found for this activity`);
     }
 
-    const template = activity.availabilityTemplate;
-
-    if (template.status !== 'active') {
-      throw new BadRequestException('Availability template is inactive');
+    if (!pkg.availability) {
+      throw new BadRequestException('No availability configured for this package');
     }
 
-    // 2. Parse date in UTC (date string is in YYYY-MM-DD format representing a calendar day)
+    const availability = pkg.availability;
+
+    if (availability.status !== 'active') {
+      throw new BadRequestException('Package availability is inactive');
+    }
+
+    // 3. Parse date in UTC (date string is in YYYY-MM-DD format representing a calendar day)
     // Date comes as YYYY-MM-DD string from query param
     const [year, month, day] = date.split('-').map(Number);
     const requestedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
@@ -91,33 +96,28 @@ export class AvailabilityResolutionService {
       return []; // No slots for past dates
     }
 
-    // 3. Check if date is in template's daysOfWeek (1=Mon, 7=Sun)
+    // 4. Check if date is in package's daysOfWeek (1=Mon, 7=Sun)
     const dayOfWeek = requestedDate.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
     const isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek; // Convert to ISO 8601 (1=Mon, 7=Sun)
 
-    if (!template.daysOfWeek.includes(isoDayOfWeek)) {
-      return []; // Date not in template's days
+    if (!availability.daysOfWeek.includes(isoDayOfWeek)) {
+      return []; // Date not in package's available days
     }
 
-    // 4. Check for exceptions
-    const exceptions = template.exceptions || [];
-    const isExcepted = exceptions.some((exception) => {
-      const exceptionStart = new Date(exception.startDate);
-      const exceptionEnd = new Date(exception.endDate);
-      return requestedDate >= exceptionStart && requestedDate <= exceptionEnd;
-    });
-
-    if (isExcepted) {
-      return []; // Date is blocked by exception
-    }
-
-    // 5. Generate candidate slots
+    // 5. Generate candidate slots (no exceptions for now)
+    // Convert time strings to Date objects for compatibility with generateSlots
+    const [startHours, startMinutes] = availability.startTime.split(':').map(Number);
+    const [endHours, endMinutes] = availability.endTime.split(':').map(Number);
+    
+    const startTime = new Date(Date.UTC(1970, 0, 1, startHours, startMinutes, 0));
+    const endTime = new Date(Date.UTC(1970, 0, 1, endHours, endMinutes, 0));
+    
     const slots = this.generateSlots(
       requestedDate,
-      template.startTime,
-      template.endTime,
-      template.slotDurationMinutes,
-      template.capacity
+      startTime,
+      endTime,
+      availability.slotDurationMinutes,
+      availability.capacity
     );
 
     // 6. Filter out past slots if today (in Luxembourg timezone)
@@ -140,6 +140,7 @@ export class AvailabilityResolutionService {
     // 7. Lookup capacity for each slot
     const slotsWithCapacity = await this.applyCapacity(
       activityId,
+      packageCode,
       validSlots,
       partySize
     );
@@ -274,6 +275,7 @@ export class AvailabilityResolutionService {
 
   private async applyCapacity(
     activityId: string,
+    packageCode: string,
     slots: Array<{ slotStart: Date; capacity: number }>,
     partySize?: number
   ): Promise<SlotAvailability[]> {
@@ -281,10 +283,10 @@ export class AvailabilityResolutionService {
       return [];
     }
 
-    // Generate slot IDs for lookup
-    const slotIds = slots.map((s) => this.generateSlotId(activityId, s.slotStart));
+    // Generate slot IDs for this specific package
+    const slotIds = slots.map((s) => this.generateSlotId(activityId, packageCode, s.slotStart));
     
-    // Fetch existing capacity records for these slots
+    // Fetch existing capacity records for this package's slots
     const capacityRecords = await this.prisma.slotCapacity.findMany({
       where: {
         id: {
@@ -293,40 +295,74 @@ export class AvailabilityResolutionService {
       },
     });
 
-    // Create a map for fast lookup
+    // Also fetch ALL capacity records for these time slots to check if claimed by other packages
+    const allCapacityRecords = await this.prisma.slotCapacity.findMany({
+      where: {
+        activityId,
+        slotStart: {
+          in: slots.map(s => s.slotStart),
+        },
+      },
+    });
+
+    // Create a map for fast lookup (this package's capacity)
     const capacityMap = new Map<string, typeof capacityRecords[0]>();
     capacityRecords.forEach((record) => {
       capacityMap.set(record.id, record);
     });
 
-    // Apply capacity to each slot
-    return slots.map((slot) => {
-      const slotId = this.generateSlotId(activityId, slot.slotStart);
-      const capacityRecord = capacityMap.get(slotId);
-
-      let capacity = slot.capacity;
-      let bookedSeats = 0;
-      let status = 'active';
-
-      if (capacityRecord) {
-        capacity = capacityRecord.capacity;
-        bookedSeats = capacityRecord.bookedSeats;
-        status = capacityRecord.status;
+    // Create a set of time slots claimed by other packages
+    const claimedByOtherPackage = new Set<string>();
+    allCapacityRecords.forEach((record) => {
+      if (record.packageCode !== packageCode && record.bookedSeats > 0) {
+        claimedByOtherPackage.add(record.slotStart.toISOString());
       }
-
-      const remainingCapacity = capacity - bookedSeats;
-      const available =
-        status === 'active' &&
-        remainingCapacity > 0 &&
-        (!partySize || remainingCapacity >= partySize);
-
-      return {
-        slotId,
-        slotStart: slot.slotStart,
-        available,
-        remainingCapacity,
-        capacity,
-      };
     });
+
+    // Apply capacity to each slot and filter out those claimed by other packages
+    return slots
+      .map((slot) => {
+        const slotId = this.generateSlotId(activityId, packageCode, slot.slotStart);
+        const capacityRecord = capacityMap.get(slotId);
+        const timeKey = slot.slotStart.toISOString();
+
+        // If this time slot is claimed by another package, mark as unavailable
+        if (claimedByOtherPackage.has(timeKey)) {
+          return {
+            slotId,
+            slotStart: slot.slotStart,
+            available: false,
+            remainingCapacity: 0,
+            capacity: 0,
+            bookedSeats: 0,
+          };
+        }
+
+        let capacity = slot.capacity;
+        let bookedSeats = 0;
+        let status = 'active';
+
+        if (capacityRecord) {
+          capacity = capacityRecord.capacity;
+          bookedSeats = capacityRecord.bookedSeats;
+          status = capacityRecord.status;
+        }
+
+        const remainingCapacity = capacity - bookedSeats;
+        const available =
+          status === 'active' &&
+          remainingCapacity > 0 &&
+          (!partySize || remainingCapacity >= partySize);
+
+        return {
+          slotId,
+          slotStart: slot.slotStart,
+          available,
+          remainingCapacity,
+          capacity,
+          bookedSeats,
+        };
+      })
+      .filter((slot) => slot.available);
   }
 }

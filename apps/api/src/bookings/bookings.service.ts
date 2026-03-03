@@ -13,7 +13,11 @@ export class BookingsService {
 
   constructor(private prisma: PrismaService) {}
 
-  private generateSlotId(activityId: string, slotStart: Date): string {
+  private generateSlotId(
+    activityId: string,
+    packageCode: string,
+    slotStart: Date,
+  ): string {
     // Keep this commented out code!!!
     // Use UTC for slot ID format to match availability resolution
     // Slots are stored/generated in UTC, display is converted to local
@@ -22,7 +26,7 @@ export class BookingsService {
     // const day = String(slotStart.getUTCDate()).padStart(2, '0');
     // const hours = String(slotStart.getUTCHours ()).padStart(2, '0');
     // const minutes = String(slotStart.getUTCMinutes()).padStart(2, '0');
-    
+
     // Generate slot ID using Luxembourg local time to match availability resolution
     const luxStr = slotStart.toLocaleString('en-US', {
       timeZone: this.LUXEMBOURG_TZ,
@@ -33,36 +37,40 @@ export class BookingsService {
       minute: '2-digit',
       hour12: false,
     });
-    
+
     // Parse the formatted string (format: "MM/DD/YYYY, HH:mm")
     const [datePart, timePart] = luxStr.split(', ');
     const [month, day, year] = datePart.split('/');
     const [hours, minutes] = timePart.split(':');
-    
-    return `${activityId}_${year}-${month}-${day}_${hours}${minutes}`;
+
+    return `${activityId}_${packageCode}_${year}-${month}-${day}_${hours}${minutes}`;
   }
 
-  private calculatePrice(activity: any, participantsCount: number, selectionData: any): any {
+  private calculatePrice(
+    activity: any,
+    participantsCount: number,
+    selectionData: any,
+  ): any {
     // Extract pricing from activity config/pricing
     const { config, pricing } = activity;
-    
+
     // For activities with packages (karting, cooking_class, escape_room)
     if (config.packages && Array.isArray(config.packages)) {
       // Find the selected package
       const packageId = selectionData.packageId || selectionData.packageCode;
-      const selectedPackage = config.packages.find((pkg: any) => 
-        pkg.code === packageId || pkg.title === selectionData.packageName
+      const selectedPackage = config.packages.find(
+        (pkg: any) =>
+          pkg.code === packageId || pkg.title === selectionData.packageName,
       );
-      
+
       if (selectedPackage && selectedPackage.base_price) {
         const basePrice = Number(selectedPackage.base_price);
         const pricingType = selectedPackage.pricing_type || 'per_person';
-        
+
         // Calculate total based on pricing model
-        const total = pricingType === 'fixed' 
-          ? basePrice 
-          : basePrice * participantsCount;
-        
+        const total =
+          pricingType === 'fixed' ? basePrice : basePrice * participantsCount;
+
         return {
           total: total.toFixed(2),
           currency: selectedPackage.currency || 'EUR',
@@ -78,12 +86,12 @@ export class BookingsService {
         };
       }
     }
-    
+
     // Fallback to priceFrom if available
     if (activity.priceFrom) {
       const basePrice = Number(activity.priceFrom);
       const total = basePrice * participantsCount;
-      
+
       return {
         total: total.toFixed(2),
         currency: 'EUR',
@@ -93,7 +101,7 @@ export class BookingsService {
         },
       };
     }
-    
+
     // Default
     return {
       total: '0.00',
@@ -104,28 +112,29 @@ export class BookingsService {
 
   async createBooking(userId: string, dto: CreateBookingDto) {
     const { activityId, slotStart, participantsCount, selectionData } = dto;
-    
+
     // Check user profile completeness
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { phoneNumber: true, firstName: true, lastName: true },
     });
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    
+
     if (!user.phoneNumber) {
       throw new BadRequestException({
         code: 'PROFILE_INCOMPLETE',
-        message: 'Please complete your profile by adding a phone number before booking',
+        message:
+          'Please complete your profile by adding a phone number before booking',
         missingFields: ['phoneNumber'],
       });
     }
-    
+
     const slotStartDate = new Date(slotStart);
     const now = new Date();
-    
+
     if (slotStartDate <= now) {
       throw new BadRequestException('Cannot book a slot in the past');
     }
@@ -136,7 +145,6 @@ export class BookingsService {
       const activity = await tx.activity.findUnique({
         where: { id: activityId },
         include: {
-          availabilityTemplate: true,
           business: {
             select: {
               id: true,
@@ -163,68 +171,90 @@ export class BookingsService {
         throw new BadRequestException('Activity is not available for booking');
       }
 
-      if (!activity.availabilityTemplateId || !activity.availabilityTemplate) {
-        throw new BadRequestException('Activity has no availability configured');
-      }
-
-      if (activity.availabilityTemplate.status !== 'active') {
-        throw new BadRequestException('Activity availability is inactive');
-      }
-
-      // 2. Validate participant count against package constraints
+      // 2. Find selected package and validate
       const config = activity.config as any;
-      if (config?.packages && Array.isArray(config.packages)) {
-        const packageId = selectionData?.packageCode || selectionData?.packageId;
-        const selectedPackage = config.packages.find((pkg: any) => 
-          pkg.code === packageId || pkg.title === selectionData?.packageName
-        );
+      const packages = config?.packages || [];
+      const packageId = selectionData?.packageCode || selectionData?.packageId;
+      const selectedPackage = packages.find(
+        (pkg: any) =>
+          pkg.code === packageId || pkg.title === selectionData?.packageName,
+      );
 
-        if (selectedPackage) {
-          if (selectedPackage.min_participants && participantsCount < selectedPackage.min_participants) {
-            throw new BadRequestException({
-              code: 'MIN_PARTICIPANTS_NOT_MET',
-              message: `This package requires at least ${selectedPackage.min_participants} participants. You selected ${participantsCount}.`,
-              minParticipants: selectedPackage.min_participants,
-              selectedParticipants: participantsCount,
-            });
-          }
-
-          if (selectedPackage.max_participants && participantsCount > selectedPackage.max_participants) {
-            throw new BadRequestException({
-              code: 'MAX_PARTICIPANTS_EXCEEDED',
-              message: `This package allows maximum ${selectedPackage.max_participants} participants. You selected ${participantsCount}.`,
-              maxParticipants: selectedPackage.max_participants,
-              selectedParticipants: participantsCount,
-            });
-          }
-        }
+      if (!selectedPackage) {
+        throw new BadRequestException('Selected package not found');
       }
 
-      // 3. Generate slot ID
-      const slotId = this.generateSlotId(activityId, slotStartDate);
+      if (!selectedPackage.availability) {
+        throw new BadRequestException('Package has no availability configured');
+      }
 
-      // 3. Lock / initialize slot capacity row
+      if (selectedPackage.availability.status !== 'active') {
+        throw new BadRequestException('Package availability is inactive');
+      }
+
+      // 3. Validate participant count against package constraints
+      if (
+        selectedPackage.min_participants &&
+        participantsCount < selectedPackage.min_participants
+      ) {
+        throw new BadRequestException({
+          code: 'MIN_PARTICIPANTS_NOT_MET',
+          message: `This package requires at least ${selectedPackage.min_participants} participants. You selected ${participantsCount}.`,
+          minParticipants: selectedPackage.min_participants,
+          selectedParticipants: participantsCount,
+        });
+      }
+
+      if (
+        selectedPackage.max_participants &&
+        participantsCount > selectedPackage.max_participants
+      ) {
+        throw new BadRequestException({
+          code: 'MAX_PARTICIPANTS_EXCEEDED',
+          message: `This package allows maximum ${selectedPackage.max_participants} participants. You selected ${participantsCount}.`,
+          maxParticipants: selectedPackage.max_participants,
+          selectedParticipants: participantsCount,
+        });
+      }
+
+      // 4. Generate slot ID
+      const slotId = this.generateSlotId(
+        activityId,
+        selectedPackage.code,
+        slotStartDate,
+      );
+
+      // 5. Lock / initialize slot capacity row
       let slotCapacity = await tx.slotCapacity.findUnique({
         where: { id: slotId },
       });
 
       if (!slotCapacity) {
-        // Lazy init - create slot capacity record
+        // Lazy init - create slot capacity record using package availability capacity
         slotCapacity = await tx.slotCapacity.create({
           data: {
             id: slotId,
             activityId,
+            packageCode: selectedPackage.code,
             slotStart: slotStartDate,
-            capacity: activity.availabilityTemplate.capacity,
+            capacity: selectedPackage.availability.capacity,
             bookedSeats: 0,
             status: 'active',
           },
         });
+      } else {
+        // If slot exists but is claimed by a different package, reject booking
+        if (slotCapacity.packageCode !== selectedPackage.code) {
+          throw new ConflictException({
+            code: 'SLOT_CLAIMED_BY_OTHER_PACKAGE',
+            message: 'This time slot is already reserved for another package.',
+          });
+        }
       }
 
-      // 5. Capacity check
+      // 6. Capacity check
       const availableSeats = slotCapacity.capacity - slotCapacity.bookedSeats;
-      
+
       if (availableSeats < participantsCount) {
         throw new ConflictException({
           code: 'SLOT_FULL',
@@ -233,7 +263,7 @@ export class BookingsService {
         });
       }
 
-      // 6. Update booked seats
+      // 7. Update booked seats
       await tx.slotCapacity.update({
         where: { id: slotId },
         data: {
@@ -243,9 +273,13 @@ export class BookingsService {
         },
       });
 
-      // 7. Compute price & snapshots
-      const priceSnapshot = this.calculatePrice(activity, participantsCount, selectionData);
-      
+      // 8. Compute price & snapshots
+      const priceSnapshot = this.calculatePrice(
+        activity,
+        participantsCount,
+        selectionData,
+      );
+
       const activitySnapshot = {
         title: activity.title,
         description: activity.description,
@@ -255,7 +289,7 @@ export class BookingsService {
         typeId: activity.typeId,
         catalogGroupKind: activity.catalogGroupKind,
       };
-      
+
       const businessSnapshot = {
         name: activity.business.name,
         contactPhone: activity.business.contactPhone,
@@ -263,12 +297,12 @@ export class BookingsService {
         city: activity.business.city,
         address: activity.business.address,
       };
-      
+
       const selectionSnapshot = {
         typeId: activity.typeId,
         activityId: activity.id,
         packageName: selectionData.packageName || null,
-        durationMinutes: activity.availabilityTemplate.slotDurationMinutes,
+        durationMinutes: selectedPackage.availability.slotDurationMinutes,
         participantsCount,
         data: selectionData,
       };
@@ -286,7 +320,9 @@ export class BookingsService {
           businessSnapshot,
           selectionSnapshot,
           priceSnapshot,
-          paymentAmount: priceSnapshot.total ? Number(priceSnapshot.total) : null,
+          paymentAmount: priceSnapshot.total
+            ? Number(priceSnapshot.total)
+            : null,
           paymentCurrency: priceSnapshot.currency || null,
         },
       });
@@ -323,8 +359,14 @@ export class BookingsService {
       });
 
       // 3. Refund capacity
-      const slotId = this.generateSlotId(booking.activityId, booking.slotStart);
-      
+      const selectionSnapshot = booking.selectionSnapshot as any;
+      const packageCode = selectionSnapshot.packageCode;
+      const slotId = this.generateSlotId(
+        booking.activityId,
+        packageCode,
+        booking.slotStart,
+      );
+
       const slotCapacity = await tx.slotCapacity.findUnique({
         where: { id: slotId },
       });
@@ -363,7 +405,7 @@ export class BookingsService {
   async listBookings(
     userId: string,
     kind?: 'upcoming' | 'past',
-    options?: { limit?: number; cursor?: string }
+    options?: { limit?: number; cursor?: string },
   ) {
     const limit = options?.limit || 50;
     const now = new Date();
@@ -384,7 +426,8 @@ export class BookingsService {
 
     const bookings = await this.prisma.booking.findMany({
       where,
-      orderBy: kind === 'upcoming' ? { slotStart: 'asc' } : { slotStart: 'desc' },
+      orderBy:
+        kind === 'upcoming' ? { slotStart: 'asc' } : { slotStart: 'desc' },
       take: limit + 1,
     });
 
@@ -401,7 +444,11 @@ export class BookingsService {
     userId: string,
     businessId: string,
     kind?: 'upcoming' | 'past' | 'today',
-    options?: { status?: 'active' | 'cancelled' | 'completed'; limit?: number; cursor?: string }
+    options?: {
+      status?: 'active' | 'cancelled' | 'completed';
+      limit?: number;
+      cursor?: string;
+    },
   ) {
     // Verify user owns this business
     const business = await this.prisma.business.findUnique({
@@ -414,7 +461,9 @@ export class BookingsService {
     }
 
     if (business.ownerUserId !== userId) {
-      throw new BadRequestException('You can only view bookings for your own business');
+      throw new BadRequestException(
+        'You can only view bookings for your own business',
+      );
     }
 
     const limit = options?.limit || 50;
@@ -437,9 +486,20 @@ export class BookingsService {
         day: '2-digit',
       });
       const [month, day, year] = luxNow.split(', ')[0].split('/');
-      const todayStart = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0));
-      const todayEnd = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59));
-      
+      const todayStart = new Date(
+        Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0),
+      );
+      const todayEnd = new Date(
+        Date.UTC(
+          parseInt(year),
+          parseInt(month) - 1,
+          parseInt(day),
+          23,
+          59,
+          59,
+        ),
+      );
+
       where.slotStart = {
         gte: todayStart,
         lte: todayEnd,
@@ -484,7 +544,9 @@ export class BookingsService {
     }
 
     if (business.ownerUserId !== userId) {
-      throw new BadRequestException('You can only view stats for your own business');
+      throw new BadRequestException(
+        'You can only view stats for your own business',
+      );
     }
 
     const now = new Date();
@@ -497,8 +559,12 @@ export class BookingsService {
       day: '2-digit',
     });
     const [month, day, year] = luxNow.split(', ')[0].split('/');
-    const todayStart = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0));
-    const todayEnd = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59));
+    const todayStart = new Date(
+      Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0),
+    );
+    const todayEnd = new Date(
+      Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59),
+    );
 
     // Count bookings happening today
     const todayCount = await this.prisma.booking.count({

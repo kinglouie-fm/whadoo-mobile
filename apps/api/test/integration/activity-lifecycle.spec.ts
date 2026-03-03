@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma/prisma.service';
 import { ActivitiesService } from '../../src/activities/activities.service';
-import { AvailabilityTemplatesService } from '../../src/availability-templates/availability-templates.service';
 import { ActivityTypeDefinitionsService } from '../../src/activity-type-definitions/activity-type-definitions.service';
 import {
   setupTestDatabase,
@@ -11,13 +10,11 @@ import {
   testPrisma,
 } from '../test-setup';
 import { createTestUser, createTestBusiness } from '../fixtures/users';
-import { createTestAvailabilityTemplate } from '../fixtures/activities';
 import { PublishValidationError } from '../../src/common/error-responses';
 
 describe('Activity Lifecycle (Integration)', () => {
   let module: TestingModule;
   let activitiesService: ActivitiesService;
-  let availabilityTemplatesService: AvailabilityTemplatesService;
   let typeDefinitionsService: ActivityTypeDefinitionsService;
   let businessOwnerId: string;
   let businessId: string;
@@ -28,7 +25,6 @@ describe('Activity Lifecycle (Integration)', () => {
     module = await Test.createTestingModule({
       providers: [
         ActivitiesService,
-        AvailabilityTemplatesService,
         ActivityTypeDefinitionsService,
         {
           provide: PrismaService,
@@ -125,25 +121,28 @@ describe('Activity Lifecycle (Integration)', () => {
       ).rejects.toThrow(PublishValidationError);
     });
 
-    it('should successfully publish activity with valid template', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
+    it('should successfully publish activity with valid package availability', async () => {
       const activity = await activitiesService.createActivity(businessOwnerId, {
         businessId,
         title: 'Test Karting',
         typeId: 'karting',
         city: 'Luxembourg',
         priceFrom: 50,
-        availabilityTemplateId: template.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },
@@ -158,26 +157,28 @@ describe('Activity Lifecycle (Integration)', () => {
       expect(published.status).toBe('published');
     });
 
-    it('should require active template for publishing', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-        { status: 'inactive' },
-      );
-
+    it('should require active availability for publishing', async () => {
       const activity = await activitiesService.createActivity(businessOwnerId, {
         businessId,
         title: 'Test Karting',
         typeId: 'karting',
         city: 'Luxembourg',
         priceFrom: 50,
-        availabilityTemplateId: template.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'inactive',
+              },
             },
           ],
         },
@@ -192,24 +193,27 @@ describe('Activity Lifecycle (Integration)', () => {
 
   describe('Discovery Visibility', () => {
     it('should show published activities in discovery', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
       const activity = await activitiesService.createActivity(businessOwnerId, {
         businessId,
         title: 'Published Activity',
         typeId: 'karting',
         city: 'Luxembourg',
         priceFrom: 50,
-        availabilityTemplateId: template.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },
@@ -238,24 +242,27 @@ describe('Activity Lifecycle (Integration)', () => {
     });
 
     it('should not show inactive activities in discovery', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
       const activity = await activitiesService.createActivity(businessOwnerId, {
         businessId,
         title: 'Activity to Deactivate',
         typeId: 'karting',
         city: 'Luxembourg',
         priceFrom: 50,
-        availabilityTemplateId: template.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },
@@ -294,29 +301,28 @@ describe('Activity Lifecycle (Integration)', () => {
       expect(updated.status).toBe('draft');
     });
 
-    it('should prevent changing template for published activity', async () => {
-      const template1 = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-      const template2 = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
+    it('should allow updating config for published activity', async () => {
       const activity = await activitiesService.createActivity(businessOwnerId, {
         businessId,
         title: 'Test Activity',
         typeId: 'karting',
         city: 'Luxembourg',
         priceFrom: 50,
-        availabilityTemplateId: template1.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },
@@ -325,20 +331,50 @@ describe('Activity Lifecycle (Integration)', () => {
 
       await activitiesService.publishActivity(activity.id, businessOwnerId);
 
-      await expect(
-        activitiesService.updateActivity(activity.id, businessOwnerId, {
-          availabilityTemplateId: template2.id,
-        }),
-      ).rejects.toThrow();
+      const updated = await activitiesService.updateActivity(activity.id, businessOwnerId, {
+        config: {
+          packages: [
+            {
+              code: 'basic',
+              title: 'Updated Package',
+              is_default: true,
+              min_participants: 2,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '10:00:00',
+                endTime: '18:00:00',
+                slotDurationMinutes: 90,
+                capacity: 8,
+                status: 'active',
+              },
+            },
+          ],
+        },
+      });
+
+      expect(updated.config).toEqual({
+        packages: [
+          {
+            code: 'basic',
+            title: 'Updated Package',
+            is_default: true,
+            min_participants: 2,
+            availability: {
+              daysOfWeek: [1, 2, 3, 4, 5],
+              startTime: '10:00:00',
+              endTime: '18:00:00',
+              slotDurationMinutes: 90,
+              capacity: 8,
+              status: 'active',
+            },
+          },
+        ],
+      });
     });
   });
 
   describe('Unpublish and Deactivate', () => {
     it('should unpublish activity back to draft', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
 
       const activity = await activitiesService.createActivity(businessOwnerId, {
         businessId,
@@ -346,13 +382,21 @@ describe('Activity Lifecycle (Integration)', () => {
         typeId: 'karting',
         city: 'Luxembourg',
         priceFrom: 50,
-        availabilityTemplateId: template.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },
@@ -369,24 +413,27 @@ describe('Activity Lifecycle (Integration)', () => {
     });
 
     it('should deactivate activity', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
       const activity = await activitiesService.createActivity(businessOwnerId, {
         businessId,
         title: 'Test Activity',
         typeId: 'karting',
         city: 'Luxembourg',
         priceFrom: 50,
-        availabilityTemplateId: template.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },
@@ -405,24 +452,27 @@ describe('Activity Lifecycle (Integration)', () => {
 
   describe('Consumer View Access', () => {
     it('should allow consumers to view published activities', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
       const activity = await activitiesService.createActivity(businessOwnerId, {
         businessId,
         title: 'Public Activity',
         typeId: 'karting',
         city: 'Luxembourg',
         priceFrom: 50,
-        availabilityTemplateId: template.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },
@@ -455,24 +505,27 @@ describe('Activity Lifecycle (Integration)', () => {
     });
 
     it('should hide inactive activities from consumer view', async () => {
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        businessId,
-      );
-
       const activity = await activitiesService.createActivity(businessOwnerId, {
         businessId,
         title: 'Activity to Deactivate',
         typeId: 'karting',
         city: 'Luxembourg',
         priceFrom: 50,
-        availabilityTemplateId: template.id,
         config: {
           packages: [
             {
               code: 'basic',
               title: 'Basic Package',
               is_default: true,
+              min_participants: 1,
+              availability: {
+                daysOfWeek: [1, 2, 3, 4, 5],
+                startTime: '09:00:00',
+                endTime: '17:00:00',
+                slotDurationMinutes: 60,
+                capacity: 5,
+                status: 'active',
+              },
             },
           ],
         },

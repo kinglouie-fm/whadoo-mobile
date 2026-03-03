@@ -3,10 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { FirebaseAuthGuard } from '../../src/auth/firebase-auth.guard';
-import {
-  createTestActivity,
-  createTestAvailabilityTemplate,
-} from '../fixtures/activities';
+import { createTestActivity } from '../fixtures/activities';
 import { createTestBusiness, createTestUser } from '../fixtures/users';
 import { MockFirebaseAuthGuard } from '../mocks/mock-firebase-auth.guard';
 import {
@@ -46,28 +43,21 @@ describe('Saved Activities (E2E)', () => {
       role: 'business',
     });
     const business = await createTestBusiness(testPrisma, businessOwner.id);
-    const template = await createTestAvailabilityTemplate(
-      testPrisma,
-      business.id,
-    );
 
     const activity1 = await createTestActivity(testPrisma, business.id, {
       status: 'published',
-      availabilityTemplateId: template.id,
       title: 'Activity 1',
     });
     activity1Id = activity1.id;
 
     const activity2 = await createTestActivity(testPrisma, business.id, {
       status: 'published',
-      availabilityTemplateId: template.id,
       title: 'Activity 2',
     });
     activity2Id = activity2.id;
 
     const activity3 = await createTestActivity(testPrisma, business.id, {
       status: 'published',
-      availabilityTemplateId: template.id,
       title: 'Activity 3',
     });
     activity3Id = activity3.id;

@@ -6,10 +6,7 @@ import { AvailabilityTemplatesService } from '../../src/availability-templates/a
 import { BookingsService } from '../../src/bookings/bookings.service';
 import { BusinessesService } from '../../src/businesses/businesses.service';
 import { PrismaService } from '../../src/prisma/prisma.service';
-import {
-  createTestActivity,
-  createTestAvailabilityTemplate,
-} from '../fixtures/activities';
+import { createTestActivity } from '../fixtures/activities';
 import { createTestBusiness, createTestUser } from '../fixtures/users';
 import {
   cleanupTestDatabase,
@@ -203,13 +200,8 @@ describe('RBAC - Role-Based Access Control Tests', () => {
         role: 'business',
       });
       const business = await createTestBusiness(testPrisma, businessOwner.id);
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        business.id,
-      );
       const activity = await createTestActivity(testPrisma, business.id, {
         status: 'published',
-        availabilityTemplateId: template.id,
       });
 
       const slotStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -219,7 +211,7 @@ describe('RBAC - Role-Based Access Control Tests', () => {
         activityId: activity.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 1,
-        selectionData: {},
+        selectionData: { packageCode: 'standard' },
       });
 
       // Act & Assert - Consumer2 tries to view consumer1's booking
@@ -238,13 +230,8 @@ describe('RBAC - Role-Based Access Control Tests', () => {
         role: 'business',
       });
       const business = await createTestBusiness(testPrisma, businessOwner.id);
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        business.id,
-      );
       const activity = await createTestActivity(testPrisma, business.id, {
         status: 'published',
-        availabilityTemplateId: template.id,
       });
 
       const slotStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -254,7 +241,7 @@ describe('RBAC - Role-Based Access Control Tests', () => {
         activityId: activity.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 1,
-        selectionData: {},
+        selectionData: { packageCode: 'standard' },
       });
 
       // Act - Business owner lists bookings for their business
@@ -283,13 +270,8 @@ describe('RBAC - Role-Based Access Control Tests', () => {
       });
       const business1 = await createTestBusiness(testPrisma, businessOwner1.id);
       const business2 = await createTestBusiness(testPrisma, businessOwner2.id);
-      const template = await createTestAvailabilityTemplate(
-        testPrisma,
-        business1.id,
-      );
       const activity = await createTestActivity(testPrisma, business1.id, {
         status: 'published',
-        availabilityTemplateId: template.id,
       });
 
       const slotStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -299,7 +281,7 @@ describe('RBAC - Role-Based Access Control Tests', () => {
         activityId: activity.id,
         slotStart: slotStart.toISOString(),
         participantsCount: 1,
-        selectionData: {},
+        selectionData: { packageCode: 'standard' },
       });
 
       // Act & Assert - Business owner 2 tries to view business1's bookings

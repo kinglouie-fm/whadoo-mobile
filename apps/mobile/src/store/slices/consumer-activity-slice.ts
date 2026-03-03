@@ -20,9 +20,6 @@ export interface ActivityGroup {
     config: any;
     pricing: any;
     images: any[];
-    duration: number | null;
-    capacity: number | null;
-    availabilityTemplate: any;
   }>;
 }
 

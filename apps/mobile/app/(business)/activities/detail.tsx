@@ -4,11 +4,10 @@ import { FormInput, TextArea } from "@/src/components/Input";
 import { MultiImageUpload } from "@/src/components/MultiImageUpload";
 import { PackagesEditor } from "@/src/components/PackagesEditor";
 // import { PricingSchemaRenderer } from "@/src/components/PricingSchemaRenderer";
-import { useBusiness } from "@/src/providers/business-context";
-import { useAuth } from "@/src/providers/auth-context";
-import { uploadToStaging } from "@/src/lib/firebase-storage";
 import { apiPost } from "@/src/lib/api";
-import * as ImagePicker from "expo-image-picker";
+import { uploadToStaging } from "@/src/lib/firebase-storage";
+import { useAuth } from "@/src/providers/auth-context";
+import { useBusiness } from "@/src/providers/business-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
   clearCurrentActivity,
@@ -22,10 +21,10 @@ import {
   fetchTypeDefinition,
   fetchTypeDefinitions,
 } from "@/src/store/slices/activity-type-slice";
-import { fetchTemplates } from "@/src/store/slices/availability-template-slice";
 import { theme } from "@/src/theme/theme";
 import { typography } from "@/src/theme/typography";
 import { ui } from "@/src/theme/ui";
+import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -48,7 +47,6 @@ export default function ActivityDetailScreen() {
   const { currentActivity, loading } = useAppSelector(
     (state) => state.activities,
   );
-  const { templates } = useAppSelector((state) => state.availabilityTemplates);
   const { typeDefinitions, currentTypeDefinition } = useAppSelector(
     (state) => state.activityTypes,
   );
@@ -62,7 +60,6 @@ export default function ActivityDetailScreen() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [priceFrom, setPriceFrom] = useState("");
-  const [availabilityTemplateId, setAvailabilityTemplateId] = useState("");
   const [catalogGroupId, setCatalogGroupId] = useState("");
   const [catalogGroupTitle, setCatalogGroupTitle] = useState("");
   const [catalogGroupKind, setCatalogGroupKind] = useState("");
@@ -94,10 +91,6 @@ export default function ActivityDetailScreen() {
   }, [dispatch, id, isEditMode]);
 
   useEffect(() => {
-    if (business?.id) dispatch(fetchTemplates(business.id));
-  }, [dispatch, business?.id]);
-
-  useEffect(() => {
     if (currentActivity && isEditMode) {
       setTitle(currentActivity.title);
       setTypeId(currentActivity.typeId);
@@ -106,7 +99,6 @@ export default function ActivityDetailScreen() {
       setCity(currentActivity.city || "");
       setAddress(currentActivity.address || "");
       setPriceFrom(currentActivity.priceFrom?.toString() || "");
-      setAvailabilityTemplateId(currentActivity.availabilityTemplateId || "");
       setCatalogGroupId(currentActivity.catalogGroupId || "");
       setCatalogGroupTitle(currentActivity.catalogGroupTitle || "");
       setCatalogGroupKind(currentActivity.catalogGroupKind || "");
@@ -200,11 +192,6 @@ export default function ActivityDetailScreen() {
       newErrors.catalogGroupTitle = "Catalog Group Title is required";
     }
 
-    // Availability template is required
-    if (!availabilityTemplateId) {
-      newErrors.availabilityTemplateId = "Availability template is required";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -234,7 +221,6 @@ export default function ActivityDetailScreen() {
           priceFrom: priceFrom ? parseFloat(priceFrom) : undefined,
           config,
           pricing,
-          availabilityTemplateId: availabilityTemplateId || undefined,
           catalogGroupId: catalogGroupId || undefined,
           catalogGroupTitle: catalogGroupTitle || undefined,
           catalogGroupKind: catalogGroupKind || undefined,
@@ -254,7 +240,6 @@ export default function ActivityDetailScreen() {
           priceFrom: priceFrom ? parseFloat(priceFrom) : undefined,
           config,
           pricing,
-          availabilityTemplateId: availabilityTemplateId || undefined,
           catalogGroupId: catalogGroupId || undefined,
           catalogGroupTitle: catalogGroupTitle || undefined,
           catalogGroupKind: catalogGroupKind || undefined,
@@ -266,7 +251,7 @@ export default function ActivityDetailScreen() {
       // Step 2: Upload pending images if any
       if (pendingImages.length > 0 && activityId && appUser) {
         setUploadingImages(true);
-        
+
         for (const image of pendingImages) {
           const uploadResult = await uploadToStaging({
             uri: image.uri,
@@ -293,7 +278,12 @@ export default function ActivityDetailScreen() {
         setPendingImages([]);
       }
 
-      Alert.alert("Success", isEditMode ? "Activity updated successfully" : "Activity created successfully");
+      Alert.alert(
+        "Success",
+        isEditMode
+          ? "Activity updated successfully"
+          : "Activity created successfully",
+      );
       router.back();
     } catch (error: any) {
       console.error("Failed to save activity:", error);
@@ -529,81 +519,6 @@ export default function ActivityDetailScreen() {
             /> */}
           </>
         )}
-
-        {/* Availability Template Picker */}
-        <View style={ui.section}>
-          <View style={[ui.rowBetween, styles.labelRow]}>
-            <Text style={[typography.label, styles.labelSpacing]}>
-              Availability Template *
-            </Text>
-            {!availabilityTemplateId && (
-              <View style={styles.requiredIndicator}>
-                <Text style={[typography.captionSmall, styles.requiredText]}>
-                  ⚠️ Required
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {errors.availabilityTemplateId && (
-            <Text style={[typography.captionSmall, styles.errorText]}>
-              {errors.availabilityTemplateId}
-            </Text>
-          )}
-
-          {templates.length > 0 ? (
-            <View style={styles.templatePicker}>
-              {templates
-                .filter((t) => t.status === "active")
-                .map((template) => (
-                  <TouchableOpacity
-                    key={template.id}
-                    style={[
-                      styles.templateOption,
-                      availabilityTemplateId === template.id &&
-                        styles.templateOptionSelected,
-                    ]}
-                    onPress={() => setAvailabilityTemplateId(template.id)}
-                    disabled={
-                      isEditMode && currentActivity?.status === "published"
-                    }
-                  >
-                    <Text style={typography.caption}>{template.name}</Text>
-                    <Text
-                      style={[typography.captionSmall, styles.templateDetails]}
-                    >
-                      {template.daysOfWeek?.length || 0} days •{" "}
-                      {template.capacity} capacity
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-
-              {availabilityTemplateId &&
-                currentActivity?.status !== "published" && (
-                  <SecondaryButton
-                    title="Clear Selection"
-                    onPress={() => setAvailabilityTemplateId("")}
-                    style={styles.templateClearButton}
-                  />
-                )}
-            </View>
-          ) : (
-            <View style={styles.warningBox}>
-              <Text style={[typography.caption, styles.warningText]}>
-                ⚠️ No active templates found. Create one in the Availability tab
-                first.
-              </Text>
-            </View>
-          )}
-
-          {isEditMode && currentActivity?.status === "published" && (
-            <View style={styles.infoBox}>
-              <Text style={[typography.caption, styles.infoText]}>
-                ✓ Template is linked and cannot be changed while published
-              </Text>
-            </View>
-          )}
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

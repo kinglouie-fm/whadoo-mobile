@@ -37,6 +37,25 @@ function computePriceFrom(packages: any[]): number | undefined {
   return prices.length ? Math.min(...prices) : undefined;
 }
 
+/**
+ * Helper: add default availability to a package
+ */
+function addAvailability(pkg: any, slotDurationMinutes: number) {
+  return {
+    ...pkg,
+    min_participants: pkg.min_participants || 1,
+    max_participants: pkg.max_participants || undefined,
+    availability: {
+      daysOfWeek: [1, 2, 3, 4, 5, 6, 7], // Mon-Sun
+      startTime: '10:00:00',
+      endTime: '22:00:00',
+      slotDurationMinutes,
+      capacity: 12,
+      status: 'active',
+    },
+  };
+}
+
 type ActivitySeed = {
   durationMin: number; // MUST match availabilityTemplate.slotDurationMinutes
   title: string;
@@ -293,36 +312,6 @@ async function main() {
 
   console.log('Starting karting seed (ActionFunCenter)...');
 
-  // Load active templates for this business
-  const templates = await prisma.availabilityTemplate.findMany({
-    where: { businessId: BUSINESS_ID, status: 'active' },
-    select: { id: true, slotDurationMinutes: true, name: true },
-  });
-
-  const templateByDuration = new Map<number, string>();
-  for (const t of templates)
-    templateByDuration.set(t.slotDurationMinutes, t.id);
-
-  // Validate durations exist
-  const missingDurations = seeds
-    .map((s) => s.durationMin)
-    .filter((d) => !templateByDuration.has(d));
-
-  if (missingDurations.length > 0) {
-    console.log('Available templates:');
-    templates
-      .sort((a, b) => a.slotDurationMinutes - b.slotDurationMinutes)
-      .forEach((t) =>
-        console.log(`- ${t.slotDurationMinutes} min: ${t.name} (${t.id})`),
-      );
-
-    throw new Error(
-      `Missing active availability templates for durations: ${missingDurations.join(
-        ', ',
-      )}. Create templates with those slotDurationMinutes first.`,
-    );
-  }
-
   await prisma.$transaction(async (tx) => {
     // idempotent: remove previous runs for this group
     await tx.activity.deleteMany({
@@ -335,6 +324,11 @@ async function main() {
 
     // insert all
     for (const s of seeds) {
+      // Add availability to each package based on activity duration
+      const packagesWithAvailability = s.packages.map((pkg) =>
+        addAvailability(pkg, s.durationMin)
+      );
+
       await tx.activity.create({
         data: {
           businessId: BUSINESS_ID,
@@ -344,12 +338,11 @@ async function main() {
           category: CATEGORY,
           city: CITY || undefined,
           address: ADDRESS || undefined,
-          priceFrom: computePriceFrom(s.packages),
+          priceFrom: computePriceFrom(packagesWithAvailability),
           catalogGroupId: GROUP.catalogGroupId,
           catalogGroupTitle: GROUP.catalogGroupTitle,
           catalogGroupKind: GROUP.catalogGroupKind,
-          availabilityTemplateId: templateByDuration.get(s.durationMin)!,
-          config: { packages: s.packages },
+          config: { packages: packagesWithAvailability },
           pricing: {},
         },
       });

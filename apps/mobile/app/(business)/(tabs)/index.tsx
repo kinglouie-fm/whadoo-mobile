@@ -154,13 +154,6 @@ export default function BusinessHomeScreen() {
           />
 
           <ActionTile
-            title="Manage availability"
-            subtitle="Opening hours, slot duration, templates"
-            icon="timeline"
-            onPress={() => router.push("/(business)/(tabs)/availability")}
-          />
-
-          <ActionTile
             title="Analytics"
             subtitle="Views, swipes, conversion"
             icon="pie-chart-outline"

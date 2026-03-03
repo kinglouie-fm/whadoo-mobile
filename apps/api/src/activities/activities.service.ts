@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ActivityTypeDefinitionsService } from '../activity-type-definitions/activity-type-definitions.service';
-import { AvailabilityTemplatesService } from '../availability-templates/availability-templates.service';
 import {
   ConflictErrorResponse,
   ErrorCodes,
@@ -25,7 +24,6 @@ import { UpdateActivityDto } from './dto/update-activity.dto';
 export class ActivitiesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly templatesService: AvailabilityTemplatesService,
     private readonly typeDefinitionsService: ActivityTypeDefinitionsService,
   ) {}
 
@@ -98,7 +96,6 @@ export class ActivitiesService {
         catalogGroupId: dto.catalogGroupId ?? null,
         catalogGroupTitle: dto.catalogGroupTitle ?? null,
         catalogGroupKind: dto.catalogGroupKind ?? null,
-        availabilityTemplateId: dto.availabilityTemplateId ?? null,
         status: 'draft',
         images: dto.images
           ? {
@@ -129,13 +126,6 @@ export class ActivitiesService {
         images: true,
         business: {
           select: { ownerUserId: true, name: true },
-        },
-        availabilityTemplate: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-          },
         },
       },
     });
@@ -248,11 +238,6 @@ export class ActivitiesService {
             id: true,
             name: true,
             status: true,
-          },
-        },
-        availabilityTemplate: {
-          select: {
-            slotDurationMinutes: true,
           },
         },
       },
@@ -450,23 +435,6 @@ export class ActivitiesService {
       throw new ForbiddenException('You do not own this activity');
     }
 
-    // Prevent changing/unlinking template from published activity
-    if (
-      existing.status === 'published' &&
-      dto.availabilityTemplateId !== undefined
-    ) {
-      if (
-        dto.availabilityTemplateId === null ||
-        dto.availabilityTemplateId !== existing.availabilityTemplateId
-      ) {
-        throw new ConflictErrorResponse(
-          ErrorCodes.CANNOT_UNLINK_PUBLISHED,
-          'Cannot unlink or change availability template for a published activity. Unpublish the activity first.',
-          { field: 'availabilityTemplateId' },
-        );
-      }
-    }
-
     // Prevent changing type from published activity
     if (
       existing.status === 'published' &&
@@ -498,7 +466,6 @@ export class ActivitiesService {
         catalogGroupKind: dto.catalogGroupKind,
         config: dto.config,
         pricing: dto.pricing,
-        availabilityTemplateId: dto.availabilityTemplateId,
         images: dto.images
           ? {
               deleteMany: {},
@@ -552,33 +519,37 @@ export class ActivitiesService {
       );
     }
 
-    // Check: availability template is linked
-    if (!activity.availabilityTemplateId) {
+    // Check: at least one package has availability configured and active
+    const config = activity.config as any;
+    const packages = config?.packages || [];
+    
+    if (packages.length === 0) {
       throw new PublishValidationError(
-        ErrorCodes.TEMPLATE_REQUIRED,
-        'Availability template must be linked before publishing.',
-        'availabilityTemplateId',
+        ErrorCodes.PACKAGES_REQUIRED,
+        'At least one package must be defined before publishing.',
+        'config.packages',
       );
     }
 
-    // Verify template exists and is active
-    const template = await this.templatesService.getTemplateById(
-      activity.availabilityTemplateId,
+    const packagesWithAvailability = packages.filter((pkg: any) => pkg.availability);
+    
+    if (packagesWithAvailability.length === 0) {
+      throw new PublishValidationError(
+        ErrorCodes.AVAILABILITY_REQUIRED,
+        'At least one package must have availability configured.',
+        'config.packages',
+      );
+    }
+
+    const activePackages = packagesWithAvailability.filter(
+      (pkg: any) => pkg.availability.status === 'active'
     );
 
-    if (!template) {
+    if (activePackages.length === 0) {
       throw new PublishValidationError(
-        ErrorCodes.TEMPLATE_NOT_FOUND,
-        'Linked availability template does not exist.',
-        'availabilityTemplateId',
-      );
-    }
-
-    if (template.status !== 'active') {
-      throw new PublishValidationError(
-        ErrorCodes.TEMPLATE_INACTIVE,
-        'Linked availability template is inactive. Activate or link a different template.',
-        'availabilityTemplateId',
+        ErrorCodes.NO_ACTIVE_AVAILABILITY,
+        'At least one package must have active availability.',
+        'config.packages',
       );
     }
 
@@ -694,19 +665,6 @@ export class ActivitiesService {
     return updated;
   }
 
-  // Internal helper - no RBAC
-  async getActivityWithTemplate(activityId: string) {
-    return this.prisma.activity.findUnique({
-      where: { id: activityId },
-      include: {
-        availabilityTemplate: {
-          include: {
-            exceptions: true,
-          },
-        },
-      },
-    });
-  }
 
   private buildAssetUrl(asset?: { storageKey?: string; downloadToken?: string } | null): string[] {
     if (!asset?.storageKey || !asset?.downloadToken) return [];
@@ -903,18 +861,13 @@ export class ActivitiesService {
         status: true,
         catalogGroupId: true,
         catalogGroupTitle: true,
-        availabilityTemplateId: true,
         priceFrom: true,
+        config: true,
         business: {
           select: {
             id: true,
             name: true,
             status: true,
-          },
-        },
-        availabilityTemplate: {
-          select: {
-            slotDurationMinutes: true,
           },
         },
       },
@@ -925,16 +878,20 @@ export class ActivitiesService {
       total: activities.length,
       published: activities.filter((a) => a.status === 'published').length,
       withGroupId: activities.filter((a) => a.catalogGroupId).length,
-      activities: activities.map((a) => ({
-        id: a.id,
-        title: a.title,
-        status: a.status,
-        catalogGroupId: a.catalogGroupId,
-        catalogGroupTitle: a.catalogGroupTitle,
-        duration: a.availabilityTemplate?.slotDurationMinutes,
-        priceFrom: a.priceFrom,
-        businessStatus: a.business?.status,
-      })),
+      activities: activities.map((a) => {
+        const config = a.config as any;
+        const firstPackage = config?.packages?.[0];
+        return {
+          id: a.id,
+          title: a.title,
+          status: a.status,
+          catalogGroupId: a.catalogGroupId,
+          catalogGroupTitle: a.catalogGroupTitle,
+          duration: firstPackage?.availability?.slotDurationMinutes,
+          priceFrom: a.priceFrom,
+          businessStatus: a.business?.status,
+        };
+      }),
     };
   }
 
@@ -966,17 +923,6 @@ export class ActivitiesService {
             },
           },
         },
-        availabilityTemplate: {
-          select: {
-            id: true,
-            name: true,
-            slotDurationMinutes: true,
-            capacity: true,
-            daysOfWeek: true,
-            startTime: true,
-            endTime: true,
-          },
-        },
       },
       orderBy: [{ priceFrom: 'asc' }, { updatedAt: 'desc' }],
     });
@@ -997,9 +943,6 @@ export class ActivitiesService {
         config: activity.config,
         pricing: activity.pricing,
         images: activity.images,
-        duration: activity.availabilityTemplate?.slotDurationMinutes,
-        capacity: activity.availabilityTemplate?.capacity,
-        availabilityTemplate: activity.availabilityTemplate,
       })),
     };
   }

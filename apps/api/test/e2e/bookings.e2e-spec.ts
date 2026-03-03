@@ -3,10 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { FirebaseAuthGuard } from '../../src/auth/firebase-auth.guard';
-import {
-  createTestActivity,
-  createTestAvailabilityTemplate,
-} from '../fixtures/activities';
+import { createTestActivity } from '../fixtures/activities';
 import { createTestBusiness, createTestUser } from '../fixtures/users';
 import { MockFirebaseAuthGuard } from '../mocks/mock-firebase-auth.guard';
 import {
@@ -57,17 +54,8 @@ describe('Bookings API (E2E)', () => {
     const business = await createTestBusiness(testPrisma, businessOwner.id);
     businessId = business.id;
 
-    const template = await createTestAvailabilityTemplate(
-      testPrisma,
-      business.id,
-      {
-        capacity: 5,
-      },
-    );
-
     const activity = await createTestActivity(testPrisma, business.id, {
       status: 'published',
-      availabilityTemplateId: template.id,
     });
     activityId = activity.id;
 

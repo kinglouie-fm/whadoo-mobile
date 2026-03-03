@@ -3,10 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { FirebaseAuthGuard } from '../../src/auth/firebase-auth.guard';
-import {
-  createTestActivity,
-  createTestAvailabilityTemplate,
-} from '../fixtures/activities';
+import { createTestActivity } from '../fixtures/activities';
 import { createTestBusiness, createTestUser } from '../fixtures/users';
 import { MockFirebaseAuthGuard } from '../mocks/mock-firebase-auth.guard';
 import {
@@ -44,14 +41,25 @@ describe('Consumer Journey (E2E)', () => {
       role: 'business',
     });
     const business = await createTestBusiness(testPrisma, businessOwner.id);
-    const template = await createTestAvailabilityTemplate(
-      testPrisma,
-      business.id,
-      { capacity: 10 },
-    );
     const activity = await createTestActivity(testPrisma, business.id, {
       status: 'published',
-      availabilityTemplateId: template.id,
+      config: {
+        packages: [
+          {
+            code: 'standard',
+            title: 'Standard Package',
+            min_participants: 1,
+            availability: {
+              daysOfWeek: [1, 2, 3, 4, 5],
+              startTime: '09:00:00',
+              endTime: '17:00:00',
+              slotDurationMinutes: 60,
+              capacity: 10,
+              status: 'active',
+            },
+          },
+        ],
+      },
     });
     activityId = activity.id;
 

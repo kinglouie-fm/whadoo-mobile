@@ -7,7 +7,6 @@ import { ActivityTypeDefinitionsModule } from "./activity-type-definitions/activ
 import { AssetsModule } from "./assets/assets.module";
 import { UserThrottlerGuard } from "./assets/user-throttler.guard";
 import { AuthModule } from "./auth/auth.module";
-import { AvailabilityTemplatesModule } from "./availability-templates/availability-templates.module";
 import { BusinessesModule } from "./businesses/businesses.module";
 import { DevModule } from "./dev/dev.module";
 import { FirebaseModule } from "./firebase/firebase.module";
@@ -34,7 +33,6 @@ import { BookingsModule } from "./bookings/bookings.module";
     DevModule,
     MeModule,
     BusinessesModule,
-    AvailabilityTemplatesModule,
     ActivitiesModule,
     ActivityTypeDefinitionsModule,
     SavedActivitiesModule,
