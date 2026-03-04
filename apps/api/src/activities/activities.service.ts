@@ -934,16 +934,21 @@ export class ActivitiesService {
       businessCity: activities[0].business?.city,
       businessAddress: activities[0].business?.address,
       businessImages: this.buildAssetUrl(activities[0].business?.logoAsset),
-      activities: activities.map((activity) => ({
-        id: activity.id,
-        title: activity.title,
-        description: activity.description,
-        typeId: activity.typeId,
-        priceFrom: activity.priceFrom,
-        config: activity.config,
-        pricing: activity.pricing,
-        images: activity.images,
-      })),
+      activities: activities.map((activity) => {
+        const config = activity.config as any;
+        const firstPackage = config?.packages?.[0];
+        return {
+          id: activity.id,
+          title: activity.title,
+          description: activity.description,
+          typeId: activity.typeId,
+          priceFrom: activity.priceFrom,
+          duration: firstPackage?.availability?.slotDurationMinutes,
+          config: activity.config,
+          pricing: activity.pricing,
+          images: activity.images,
+        };
+      }),
     };
   }
 }

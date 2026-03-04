@@ -51,3 +51,5 @@ ios/Podfile.lock
 
 .pnpm-store/
 docs/
+
+Setup.md

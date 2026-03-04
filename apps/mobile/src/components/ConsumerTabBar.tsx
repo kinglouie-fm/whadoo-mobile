@@ -9,6 +9,8 @@ function iconFor(routeName: string): keyof typeof MaterialIcons.glyphMap {
     switch (routeName) {
         case "index":
             return "home";
+        case "discover":
+            return "explore";
         case "saved":
             return "bookmark";
         case "bookings":

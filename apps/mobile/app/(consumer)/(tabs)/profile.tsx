@@ -1,9 +1,9 @@
-import { useAuth } from "@/src/providers/auth-context";
 import { Avatar } from "@/src/components/Avatar";
 import { Card } from "@/src/components/Card";
+import { useAuth } from "@/src/providers/auth-context";
 import { theme } from "@/src/theme/theme";
-import { ui } from "@/src/theme/ui";
 import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -35,10 +35,7 @@ function Row({
 
       <View style={{ flex: 1 }}>
         <Text
-          style={[
-            typography.body,
-            danger && { color: theme.colors.danger },
-          ]}
+          style={[typography.body, danger && { color: theme.colors.danger }]}
         >
           {title}
         </Text>
@@ -145,12 +142,28 @@ export default function ConsumerProfileHome() {
           title="Log Out"
           subtitle="Log out the account"
           danger
-          onPress={async () => {
-            try {
-              await signOut();
-            } catch (e: any) {
-              Alert.alert("Logout failed", e?.message ?? String(e));
-            }
+          onPress={() => {
+            Alert.alert(
+              "Log Out",
+              "Are you sure you want to log out?",
+              [
+                {
+                  text: "Cancel",
+                  style: "cancel",
+                },
+                {
+                  text: "Log Out",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      await signOut();
+                    } catch (e: any) {
+                      Alert.alert("Logout failed", e?.message ?? String(e));
+                    }
+                  },
+                },
+              ],
+            );
           }}
         />
       </View>

@@ -18,6 +18,7 @@ export default function ConsumerTabsLayout() {
       }}
     >
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="discover" />
       <Tabs.Screen name="saved" />
       <Tabs.Screen name="bookings" />
       <Tabs.Screen name="profile" />

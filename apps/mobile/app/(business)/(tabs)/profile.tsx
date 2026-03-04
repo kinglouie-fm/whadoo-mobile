@@ -99,12 +99,6 @@ export default function BusinessProfileHome() {
             onPress={() => router.push("/(business)/(tabs)/activities")}
           />
           <Row
-            icon="timeline"
-            title="Manage availabilities"
-            subtitle="Availability templates"
-            onPress={() => router.push("/(business)/(tabs)/availability")}
-          />
-          <Row
             icon="settings"
             title="Settings"
             subtitle="Account, profile, privacy"
@@ -117,12 +111,24 @@ export default function BusinessProfileHome() {
           title="Log out"
           subtitle="Log out the account"
           danger
-          onPress={async () => {
-            try {
-              await signOut();
-            } catch (e: any) {
-              Alert.alert("Logout failed", e?.message ?? String(e));
-            }
+          onPress={() => {
+            Alert.alert("Log Out", "Are you sure you want to log out?", [
+              {
+                text: "Cancel",
+                style: "cancel",
+              },
+              {
+                text: "Log Out",
+                style: "destructive",
+                onPress: async () => {
+                  try {
+                    await signOut();
+                  } catch (e: any) {
+                    Alert.alert("Logout failed", e?.message ?? String(e));
+                  }
+                },
+              },
+            ]);
           }}
         />
       </View>
