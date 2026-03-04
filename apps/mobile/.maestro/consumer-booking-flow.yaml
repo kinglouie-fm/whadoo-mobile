@@ -4,22 +4,70 @@ appId: com.kinglouie-fm.whadoo
 - launchApp
 - assertVisible: "Your Location"
 
-# Step 1: Navigate to saved tab (tap center-left of bottom nav)
-- tapOn:
-    point: "30%,95%"
-- assertVisible: "Saved"
+# Swipe to view activity details
+- swipe:
+    start: 50%,56%
+    end: 48%,12%
+    duration: 1267
 
-# Step 2: Navigate to bookings tab (tap center-right of bottom nav)
+# Timeout
+- assertVisible: "Information"
+
+# Start booking process
 - tapOn:
-    point: "70%,95%"
+    point: 48%,94%
+
+- assertVisible: "Booking Options"
+
+# Select Package
+- swipe:
+    start: 55%,47%
+    end: 55%,11%
+    duration: 966
+
+# Select participants
+- tapOn:
+    point: 70%,69%
+
+# Swipe to click on date and time button
+- swipe:
+    start: 50%,77%
+    end: 50%,47%
+    duration: 600
+- tapOn:
+    point: 51%,92%
+
+- assertVisible: "Select Date & Time"
+
+# Go to next month
+- tapOn:
+    point: 87%,30%
+
+# Select first day of the month
+- tapOn:
+    point: 51%,38%
+
+# Select first time slot
+- tapOn:
+    point: 20%,72%
+
+# Swipe to click on continue to overview button
+- swipe:
+    start: 46%,67%
+    end: 47%,21%
+    duration: 933
+
+- assertVisible: "Continue to Overview"
+
+# Click on continue to overview button
+- tapOn:
+    point: 49%,93%
+
+- assertVisible: "Booking Details"
+
+# Click on confirm booking button
+- tapOn:
+    point: 52%,94%
+
+# Verify booking confirmation message
 - assertVisible: "My Bookings"
-
-# Step 3: Navigate to profile tab (tap far right of bottom nav)
-- tapOn:
-    point: "90%,95%"
-- assertVisible: "Settings"
-
-# Step 4: Return to discovery tab (tap far left of bottom nav)
-- tapOn:
-    point: "10%,95%"
-- assertVisible: "Your Location"

@@ -10,10 +10,10 @@ curl -Ls "https://get.maestro.mobile.dev" | bash
 
 ## Running Tests
 
-### Run all tests
+Run maestro studio for setup and debug
 
 ```bash
-maestro test .maestro/
+maestro studio
 ```
 
 ### Run specific test
@@ -44,5 +44,3 @@ xcrun simctl listapps E1725E80-D193-45A5-A9D4-E2B44AB97513 | grep -i whadoo
 - Log in with correct account:
   - Consumer Account for **consumer-booking-flow.yaml**
   - Business Account for **business-create-activity-flow.yaml**
-
-- Important: Do not forget to use maestro studio for debugging.

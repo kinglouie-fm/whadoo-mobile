@@ -81,7 +81,7 @@ type SeedActivity = {
  * - ONE activity per group with multiple package options
  */
 const escapeRoomActivity: SeedActivity = {
-  durationMin: 60, // Default/most common duration
+  durationMin: 60,
   title: 'Escape Room',
   description:
     'Immersive puzzle experiences with various themes and difficulty levels. Choose your perfect challenge!',
