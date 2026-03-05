@@ -7,26 +7,23 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 
+/**
+ * Booking lifecycle operations, including slot capacity accounting and business views.
+ */
 @Injectable()
 export class BookingsService {
   private readonly LUXEMBOURG_TZ = 'Europe/Luxembourg';
 
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Builds a deterministic slot id from activity/package and Luxembourg-local slot time.
+   */
   private generateSlotId(
     activityId: string,
     packageCode: string,
     slotStart: Date,
   ): string {
-    // Keep this commented out code!!!
-    // Use UTC for slot ID format to match availability resolution
-    // Slots are stored/generated in UTC, display is converted to local
-    // const year = slotStart.getUTCFullYear();
-    // const month = String(slotStart.getUTCMonth() + 1).padStart(2, '0');
-    // const day = String(slotStart.getUTCDate()).padStart(2, '0');
-    // const hours = String(slotStart.getUTCHours ()).padStart(2, '0');
-    // const minutes = String(slotStart.getUTCMinutes()).padStart(2, '0');
-
     // Generate slot ID using Luxembourg local time to match availability resolution
     const luxStr = slotStart.toLocaleString('en-US', {
       timeZone: this.LUXEMBOURG_TZ,
@@ -46,6 +43,9 @@ export class BookingsService {
     return `${activityId}_${packageCode}_${year}-${month}-${day}_${hours}${minutes}`;
   }
 
+  /**
+   * Computes booking price snapshot from package pricing, with fallback to `priceFrom`.
+   */
   private calculatePrice(
     activity: any,
     participantsCount: number,
@@ -110,6 +110,9 @@ export class BookingsService {
     };
   }
 
+  /**
+   * Creates a booking atomically with slot-capacity checks and snapshot persistence.
+   */
   async createBooking(userId: string, dto: CreateBookingDto) {
     const { activityId, slotStart, participantsCount, selectionData } = dto;
 
@@ -139,7 +142,7 @@ export class BookingsService {
       throw new BadRequestException('Cannot book a slot in the past');
     }
 
-    // Transaction for atomic booking
+    // Transaction prevents race conditions between capacity check and seat reservation.
     return await this.prisma.$transaction(async (tx) => {
       // 1. Fetch activity with full details
       const activity = await tx.activity.findUnique({
@@ -224,7 +227,7 @@ export class BookingsService {
         slotStartDate,
       );
 
-      // 5. Lock / initialize slot capacity row
+      // Create capacity row lazily so first booking materializes the slot state.
       let slotCapacity = await tx.slotCapacity.findUnique({
         where: { id: slotId },
       });
@@ -273,7 +276,7 @@ export class BookingsService {
         },
       });
 
-      // 8. Compute price & snapshots
+      // Snapshots preserve booking details even if source entities change later.
       const priceSnapshot = this.calculatePrice(
         activity,
         participantsCount,
@@ -307,7 +310,7 @@ export class BookingsService {
         data: selectionData,
       };
 
-      // 8. Insert booking record
+      // Persist booking after capacity reservation succeeds.
       const booking = await tx.booking.create({
         data: {
           userId,
@@ -331,6 +334,9 @@ export class BookingsService {
     });
   }
 
+  /**
+   * Cancels a booking and releases previously reserved slot capacity.
+   */
   async cancelBooking(userId: string, bookingId: string, reason?: string) {
     return await this.prisma.$transaction(async (tx) => {
       // 1. Fetch booking
@@ -386,6 +392,9 @@ export class BookingsService {
     });
   }
 
+  /**
+   * Returns one booking if it belongs to the authenticated user.
+   */
   async getBooking(userId: string, bookingId: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
@@ -402,6 +411,9 @@ export class BookingsService {
     return booking;
   }
 
+  /**
+   * Lists user bookings with kind filter and cursor pagination.
+   */
   async listBookings(
     userId: string,
     kind?: 'upcoming' | 'past',
@@ -419,6 +431,7 @@ export class BookingsService {
     }
 
     if (options?.cursor) {
+      // Cursor is booking id; fetch older ids for stable pagination.
       where.id = {
         lt: options.cursor,
       };
@@ -440,6 +453,9 @@ export class BookingsService {
     };
   }
 
+  /**
+   * Lists bookings for a business owner with status/kind filters.
+   */
   async listBusinessBookings(
     userId: string,
     businessId: string,
@@ -510,7 +526,7 @@ export class BookingsService {
       where.slotStart = { lt: now };
     }
 
-    // Cursor-based pagination
+    // Cursor is booking id; fetch older ids for stable pagination.
     if (options?.cursor) {
       where.id = {
         lt: options.cursor,
@@ -532,6 +548,9 @@ export class BookingsService {
     };
   }
 
+  /**
+   * Returns today/upcoming counts and total active-booking revenue for a business.
+   */
   async getBusinessStats(userId: string, businessId: string) {
     // Verify user owns this business
     const business = await this.prisma.business.findUnique({

@@ -9,10 +9,16 @@ export interface SlotAvailability {
   capacity: number;
 }
 
+/**
+ * Resolves date-based package availability into concrete, capacity-aware booking slots.
+ */
 @Injectable()
 export class AvailabilityResolutionService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Builds a deterministic slot id from activity, package, and Luxembourg-local slot time.
+   */
   private generateSlotId(activityId: string, packageCode: string, slotStart: Date): string {
     // Generate slot ID using Luxembourg local time
     // slotStart is UTC but represents a Luxembourg local time
@@ -34,6 +40,9 @@ export class AvailabilityResolutionService {
     return `${activityId}_${packageCode}_${year}-${month}-${day}_${hours}${minutes}`;
   }
 
+  /**
+   * Returns bookable slots for a package/date after status, day-of-week, and capacity checks.
+   */
   async getAvailability(
     activityId: string,
     packageCode: string,
@@ -148,6 +157,9 @@ export class AvailabilityResolutionService {
     return slotsWithCapacity;
   }
 
+  /**
+   * Extracts hour/minute from PostgreSQL TIME values represented as Date instances.
+   */
   private extractTimeComponents(timeDate: Date): { hours: number; minutes: number } {
     // PostgreSQL TIME type is returned as a Date object with arbitrary date (1970-01-01)
     // TIME is stored without timezone, representing Luxembourg local time
@@ -156,6 +168,9 @@ export class AvailabilityResolutionService {
     return { hours, minutes };
   }
 
+  /**
+   * Returns the current wall-clock time interpreted in the Luxembourg timezone.
+   */
   private getCurrentLuxembourgTime(): Date {
     // Get current time in Luxembourg timezone
     const now = new Date();
@@ -172,6 +187,9 @@ export class AvailabilityResolutionService {
     return new Date(luxString);
   }
 
+  /**
+   * Returns Luxembourg UTC offset hours for a date (CET/CEST approximation).
+   */
   private getLuxembourgOffsetHours(date: Date): number {
     // Determine if DST is active for Luxembourg on this date
     // Luxembourg uses CET (UTC+1) in winter and CEST (UTC+2) in summer
@@ -198,6 +216,9 @@ export class AvailabilityResolutionService {
     return 1; // UTC+1 (CET)
   }
 
+  /**
+   * Converts a Luxembourg-local calendar date/time into a UTC Date object.
+   */
   private createLuxembourgDate(dateStr: string, hours: number, minutes: number): Date {
     // Create a Date representing a specific time in Luxembourg timezone
     // Input: dateStr (YYYY-MM-DD), hours and minutes (Luxembourg local time)
@@ -224,6 +245,9 @@ export class AvailabilityResolutionService {
     return result;
   }
 
+  /**
+   * Generates candidate slot start times for one date window.
+   */
   private generateSlots(
     date: Date,
     startTime: Date,
@@ -273,6 +297,9 @@ export class AvailabilityResolutionService {
     return slots;
   }
 
+  /**
+   * Merges generated slots with stored capacity and package-claim constraints.
+   */
   private async applyCapacity(
     activityId: string,
     packageCode: string,
@@ -295,7 +322,7 @@ export class AvailabilityResolutionService {
       },
     });
 
-    // Also fetch ALL capacity records for these time slots to check if claimed by other packages
+    // Cross-package claims make a time unavailable for this package once seats are booked.
     const allCapacityRecords = await this.prisma.slotCapacity.findMany({
       where: {
         activityId,

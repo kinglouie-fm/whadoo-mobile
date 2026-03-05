@@ -26,6 +26,9 @@ import {
   View,
 } from "react-native";
 
+/**
+ * Route screen for (business)/(tabs)/index.
+ */
 export default function BusinessHomeScreen() {
   const router = useRouter();
   const navigation = useNavigation();

@@ -9,6 +9,9 @@ import React, { useEffect, useState } from "react";
 import { Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+/**
+ * Route screen for (business)/settings/profile/category.
+ */
 export default function BusinessCategoryScreen() {
     const { business, refetch } = useBusiness();
     const [value, setValue] = useState("");

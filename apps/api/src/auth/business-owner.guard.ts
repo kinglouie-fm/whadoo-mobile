@@ -9,17 +9,23 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { AuthedRequest } from "./firebase-auth.guard";
 
+/**
+ * Authorizes requests to business routes scoped by `:id` ownership.
+ */
 @Injectable()
 export class BusinessOwnerGuard implements CanActivate {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Ensures the authenticated app user owns the targeted business id.
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<AuthedRequest>();
     const appUser = req.appUser;
 
     if (!appUser) throw new ForbiddenException("Missing app user");
 
-    // assumes route like PATCH /businesses/:id
+    // Guard is designed for routes that expose business id as `:id`.
     const businessId = req.params?.id;
     if (!businessId) throw new BadRequestException("Missing business id");
 

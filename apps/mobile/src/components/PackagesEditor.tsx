@@ -583,7 +583,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
             />
 
             <View style={styles.sectionDivider}>
-              <Text style={[typography.h5, styles.sectionTitle]}>
+              <Text style={[typography.h4, styles.sectionTitle]}>
                 Availability Configuration
               </Text>
               <Text style={styles.sectionHint}>
@@ -595,7 +595,8 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               <Text
                 style={[typography.label, { marginBottom: theme.spacing.sm }]}
               >
-                Days of Week <Text style={{ color: theme.colors.danger }}>*</Text>
+                Days of Week{" "}
+                <Text style={{ color: theme.colors.danger }}>*</Text>
               </Text>
               <View style={styles.daysGrid}>
                 {[
@@ -607,9 +608,10 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                   { value: 6, label: "Sat" },
                   { value: 7, label: "Sun" },
                 ].map((day) => {
-                  const isSelected = editingPackage?.availability?.daysOfWeek.includes(
-                    day.value,
-                  );
+                  const isSelected =
+                    editingPackage?.availability?.daysOfWeek.includes(
+                      day.value,
+                    );
                   return (
                     <TouchableOpacity
                       key={day.value}
@@ -620,7 +622,8 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                       onPress={() => {
                         setEditingPackage((prev) => {
                           if (!prev) return prev;
-                          const currentDays = prev.availability?.daysOfWeek || [];
+                          const currentDays =
+                            prev.availability?.daysOfWeek || [];
                           const newDays = isSelected
                             ? currentDays.filter((d) => d !== day.value)
                             : [...currentDays, day.value].sort();
@@ -709,7 +712,9 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
               <View style={styles.formGroupHalf}>
                 <FormInput
                   label="Capacity *"
-                  value={editingPackage?.availability?.capacity?.toString() || ""}
+                  value={
+                    editingPackage?.availability?.capacity?.toString() || ""
+                  }
                   onChangeText={(text) =>
                     setEditingPackage((prev) => ({
                       ...prev!,
@@ -749,7 +754,8 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                 />
               </View>
               <Text style={styles.fieldHint}>
-                When active, customers can book this package during configured times
+                When active, customers can book this package during configured
+                times
               </Text>
             </View>
 
@@ -959,7 +965,7 @@ const styles = StyleSheet.create({
   },
   sectionHint: {
     ...typography.captionSmall,
-    color: theme.colors.textMuted,
+    color: theme.colors.muted,
   },
   daysGrid: {
     flexDirection: "row",

@@ -57,6 +57,9 @@ function Row({
   );
 }
 
+/**
+ * Route screen for (consumer)/(tabs)/profile.
+ */
 export default function ConsumerProfileHome() {
   const { appUser, stats, signOut } = useAuth();
   const router = useRouter();

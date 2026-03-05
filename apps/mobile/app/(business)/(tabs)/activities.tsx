@@ -41,6 +41,9 @@ import Toast from "react-native-toast-message";
 type FilterStatus = "all" | "draft" | "published" | "inactive";
 const FILTERS: FilterStatus[] = ["all", "draft", "published", "inactive"];
 
+/**
+ * Route screen for (business)/(tabs)/activities.
+ */
 export default function ActivitiesScreen() {
   const router = useRouter();
   const navigation = useNavigation();

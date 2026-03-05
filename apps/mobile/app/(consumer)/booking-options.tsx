@@ -23,6 +23,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+/**
+ * Route screen for (consumer)/booking-options.
+ */
 export default function BookingOptionsScreen() {
   const router = useRouter();
   const { activityId, catalogGroupId } = useLocalSearchParams<{

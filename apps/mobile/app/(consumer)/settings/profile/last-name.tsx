@@ -8,6 +8,9 @@ import React, { useEffect, useState } from "react";
 import { Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+/**
+ * Route screen for (consumer)/settings/profile/last-name.
+ */
 export default function LastNameScreen() {
     const { appUser, refreshMe } = useAuth();
     const [value, setValue] = useState("");

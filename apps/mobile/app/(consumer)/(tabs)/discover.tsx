@@ -176,6 +176,9 @@ function ListItem({
   );
 }
 
+/**
+ * Route screen for (consumer)/(tabs)/discover.
+ */
 export default function DiscoveryListScreen() {
   const router = useRouter();
   const navigation = useNavigation();

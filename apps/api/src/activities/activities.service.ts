@@ -20,6 +20,9 @@ import {
 import { RecordSwipeDto } from './dto/record-swipe.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 
+/**
+ * Business and consumer activity operations, including publish and discovery flows.
+ */
 @Injectable()
 export class ActivitiesService {
   constructor(
@@ -27,6 +30,9 @@ export class ActivitiesService {
     private readonly typeDefinitionsService: ActivityTypeDefinitionsService,
   ) {}
 
+  /**
+   * Creates a draft activity for a business owner after schema validation.
+   */
   async createActivity(userId: string, dto: CreateActivityDto) {
     // Verify business ownership
     const business = await this.prisma.business.findUnique({
@@ -115,6 +121,9 @@ export class ActivitiesService {
     return activity;
   }
 
+  /**
+   * Returns a single activity in business or consumer visibility context.
+   */
   async getActivity(
     activityId: string,
     userId?: string,
@@ -150,6 +159,9 @@ export class ActivitiesService {
     return activity;
   }
 
+  /**
+   * Lists activities for a business after ownership verification.
+   */
   async listActivities(userId: string, businessId: string, status?: string) {
     // Verify business ownership
     const business = await this.prisma.business.findUnique({
@@ -185,6 +197,9 @@ export class ActivitiesService {
     return activities;
   }
 
+  /**
+   * Lists published activities with optional city/type filters.
+   */
   async listPublishedActivities(filters?: { city?: string; typeId?: string }) {
     const activities = await this.prisma.activity.findMany({
       where: {
@@ -211,6 +226,9 @@ export class ActivitiesService {
     return activities;
   }
 
+  /**
+   * Builds grouped discovery cards with cursor-style pagination.
+   */
   async getGroupedCards(filters?: {
     city?: string;
     typeId?: string;
@@ -336,7 +354,7 @@ export class ActivitiesService {
     // Sort groups by updatedAt descending
     groups.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
-    // Apply cursor-based pagination
+    // Cursor is group id; pagination starts strictly after that group.
     let paginatedGroups = groups;
     if (filters?.cursor) {
       const cursorIndex = groups.findIndex(
@@ -347,7 +365,7 @@ export class ActivitiesService {
       }
     }
 
-    // Take limit + 1 to determine if there's a next page
+    // Read one extra item to detect whether a next cursor should be emitted.
     const hasMore = paginatedGroups.length > limit;
     const resultGroups = paginatedGroups.slice(0, limit);
     const nextCursor = hasMore
@@ -360,6 +378,9 @@ export class ActivitiesService {
     };
   }
 
+  /**
+   * Updates an activity owned by the user, with type/config/pricing validation.
+   */
   async updateActivity(
     activityId: string,
     userId: string,
@@ -435,7 +456,7 @@ export class ActivitiesService {
       throw new ForbiddenException('You do not own this activity');
     }
 
-    // Prevent changing type from published activity
+    // Lock type once published to protect published schema compatibility.
     if (
       existing.status === 'published' &&
       dto.typeId &&
@@ -485,6 +506,9 @@ export class ActivitiesService {
     return updated;
   }
 
+  /**
+   * Publishes an activity once required fields and package constraints are valid.
+   */
   async publishActivity(activityId: string, userId: string) {
     // Fetch activity with business
     const activity = await this.prisma.activity.findUnique({
@@ -519,7 +543,7 @@ export class ActivitiesService {
       );
     }
 
-    // Check: at least one package has availability configured and active
+    // Publishing requires at least one package with active availability.
     const config = activity.config as any;
     const packages = config?.packages || [];
     
@@ -607,6 +631,9 @@ export class ActivitiesService {
     return updated;
   }
 
+  /**
+   * Reverts a published activity back to draft state.
+   */
   async unpublishActivity(activityId: string, userId: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
@@ -636,6 +663,9 @@ export class ActivitiesService {
     return updated;
   }
 
+  /**
+   * Marks an activity as inactive for business-controlled removal from availability.
+   */
   async deactivateActivity(activityId: string, userId: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
@@ -665,7 +695,9 @@ export class ActivitiesService {
     return updated;
   }
 
-
+  /**
+   * Converts stored asset metadata into a public Firebase Storage URL list.
+   */
   private buildAssetUrl(asset?: { storageKey?: string; downloadToken?: string } | null): string[] {
     if (!asset?.storageKey || !asset?.downloadToken) return [];
     const bucket = admin.storage().bucket();
@@ -673,6 +705,9 @@ export class ActivitiesService {
     return [url];
   }
 
+  /**
+   * Enforces karting package invariants required for publishing.
+   */
   private validateKartingPackages(config: any) {
     const packages = config?.packages;
 
@@ -741,7 +776,7 @@ export class ActivitiesService {
       );
     }
 
-    // If no default, auto-set first package as default (or require one - choosing auto-set)
+    // Backfill a default package to keep downstream selection deterministic.
     if (defaultCount === 0) {
       packages[0].is_default = true;
     }
@@ -767,6 +802,9 @@ export class ActivitiesService {
     }
   }
 
+  /**
+   * Records a swipe interaction used by recommendation/discovery features.
+   */
   async recordSwipe(userId: string, dto: RecordSwipeDto) {
     await this.prisma.userSwipe.create({
       data: {
@@ -782,6 +820,9 @@ export class ActivitiesService {
     return { success: true };
   }
 
+  /**
+   * Deletes an activity image and associated storage/asset records when present.
+   */
   async deleteActivityImage(
     userId: string,
     activityId: string,
@@ -819,7 +860,7 @@ export class ActivitiesService {
       throw new BadRequestException('Image does not belong to this activity');
     }
 
-    // 3. Delete the file from Firebase Storage if asset exists
+    // Storage deletion is best-effort; DB cleanup still proceeds on failure.
     if (activityImage.asset?.storageKey) {
       try {
         const bucket = admin.storage().bucket();
@@ -850,6 +891,9 @@ export class ActivitiesService {
     return { success: true, message: 'Image deleted successfully' };
   }
 
+  /**
+   * Debug helper returning karting activity publish/grouping diagnostics.
+   */
   async debugKartingActivities() {
     const activities = await this.prisma.activity.findMany({
       where: {
@@ -895,6 +939,9 @@ export class ActivitiesService {
     };
   }
 
+  /**
+   * Returns published activities belonging to a catalog group for consumer detail views.
+   */
   async getActivitiesByGroup(catalogGroupId: string) {
     // Try to find activities by catalogGroupId
     let activities = await this.prisma.activity.findMany({

@@ -25,6 +25,9 @@ function Row({ title, value, onPress }: { title: string; value?: string; onPress
     );
 }
 
+/**
+ * Route screen for (consumer)/settings/profile/index.
+ */
 export default function ProfileSettingsScreen() {
     const { appUser, refreshMe } = useAuth();
     const router = useRouter();

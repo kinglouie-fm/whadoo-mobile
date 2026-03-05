@@ -20,6 +20,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+/**
+ * Route screen for (consumer)/booking-detail.
+ */
 export default function BookingDetailScreen() {
     const router = useRouter();
     const dispatch = useAppDispatch();

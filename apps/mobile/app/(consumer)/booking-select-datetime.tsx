@@ -27,6 +27,9 @@ interface TimeSlot {
   remainingCapacity: number;
 }
 
+/**
+ * Route screen for (consumer)/booking-select-datetime.
+ */
 export default function BookingSelectDateTimeScreen() {
   const router = useRouter();
   const { activityId, participantsCount, packageName, packageCode } =

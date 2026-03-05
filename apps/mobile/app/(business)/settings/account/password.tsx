@@ -15,6 +15,9 @@ import React, { useMemo, useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+/**
+ * Route screen for (business)/settings/account/password.
+ */
 export default function PasswordScreen() {
     const auth = getAuth();
     const user = auth.currentUser;

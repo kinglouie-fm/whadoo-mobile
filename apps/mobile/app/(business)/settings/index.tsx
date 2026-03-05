@@ -46,6 +46,9 @@ function Row({
   );
 }
 
+/**
+ * Route screen for (business)/settings/index.
+ */
 export default function BusinessSettingsHome() {
   const router = useRouter();
 

@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { apiGet, apiPost } from "../../lib/api";
 
 export interface GroupedCard {
@@ -10,7 +10,7 @@ export interface GroupedCard {
   city: string;
   locationSummary: string;
   thumbnailUrl?: string;
-  images?: string[]; // All activity image URLs for story format
+  images?: string[];
   priceFrom: number;
   tags: string[];
   activityCount: number;
@@ -59,10 +59,12 @@ export const fetchGroupedCards = createAsyncThunk(
     if (filters?.typeId) params.append("typeId", filters.typeId);
     if (filters?.cursor) params.append("cursor", filters.cursor);
     const query = params.toString();
-    const url = query ? `/activities/grouped-cards?${query}` : "/activities/grouped-cards";
+    const url = query
+      ? `/activities/grouped-cards?${query}`
+      : "/activities/grouped-cards";
     const response = await apiGet<GroupedCardsResponse>(url);
     return response;
-  }
+  },
 );
 
 export const recordSwipe = createAsyncThunk(
@@ -70,7 +72,7 @@ export const recordSwipe = createAsyncThunk(
   async (data: RecordSwipeData) => {
     await apiPost("/activities/swipe", data);
     return data;
-  }
+  },
 );
 
 const groupedCardSlice = createSlice({

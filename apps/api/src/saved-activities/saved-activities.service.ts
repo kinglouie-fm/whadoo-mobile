@@ -1,10 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+/**
+ * Saved-activity persistence with idempotent save/unsave semantics.
+ */
 @Injectable()
 export class SavedActivitiesService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Saves an activity for a user and snapshots display fields for list performance.
+   */
   async saveActivity(userId: string, activityId: string) {
     // Validate activity exists and is published
     const activity = await this.prisma.activity.findUnique({
@@ -33,7 +39,7 @@ export class SavedActivitiesService {
       catalogGroupKind: activity.catalogGroupKind,
     };
 
-    // Upsert (idempotent save)
+    // Upsert keeps save operation idempotent across repeated taps.
     const saved = await this.prisma.savedActivity.upsert({
       where: {
         userId_activityId: {
@@ -62,6 +68,9 @@ export class SavedActivitiesService {
     };
   }
 
+  /**
+   * Removes a saved activity relation without failing if it is already absent.
+   */
   async unsaveActivity(userId: string, activityId: string) {
     // Idempotent delete - no error if not exists
     await this.prisma.savedActivity.deleteMany({
@@ -74,6 +83,9 @@ export class SavedActivitiesService {
     return { success: true };
   }
 
+  /**
+   * Lists a user's saved activities with timestamp-based cursor pagination.
+   */
   async listSavedActivities(
     userId: string,
     options?: { limit?: number; cursor?: string }
@@ -82,6 +94,7 @@ export class SavedActivitiesService {
 
     const where: any = { userId };
     if (options?.cursor) {
+      // Cursor is ISO timestamp from `savedAt`; fetch strictly older saves.
       where.savedAt = {
         lt: new Date(options.cursor),
       };
@@ -106,6 +119,9 @@ export class SavedActivitiesService {
     };
   }
 
+  /**
+   * Bulk-deletes saved activity relations for a user.
+   */
   async bulkDelete(userId: string, activityIds: string[]) {
     const result = await this.prisma.savedActivity.deleteMany({
       where: {
@@ -122,6 +138,9 @@ export class SavedActivitiesService {
     };
   }
 
+  /**
+   * Returns whether a user has saved a given activity.
+   */
   async isSaved(userId: string, activityId: string): Promise<boolean> {
     const saved = await this.prisma.savedActivity.findUnique({
       where: {

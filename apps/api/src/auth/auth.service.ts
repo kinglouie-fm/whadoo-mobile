@@ -1,10 +1,16 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 
+/**
+ * Authentication-facing user provisioning and lookup helpers.
+ */
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Returns the app user for a Firebase uid, creating one on first sign-in.
+   */
   async getOrCreateUser(firebaseUid: string, email?: string, photoUrl?: string) {
     const existing = await this.prisma.user.findUnique({
       where: { firebaseUid },
@@ -12,6 +18,7 @@ export class AuthService {
     });
 
     if (existing?.deletedAt) {
+      // Block automatic recreation of soft-deleted accounts.
       throw new ForbiddenException("Account was deleted.");
     }
 

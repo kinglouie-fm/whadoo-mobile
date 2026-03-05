@@ -33,6 +33,9 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: "completed", label: "Completed" },
 ];
 
+/**
+ * Route screen for (consumer)/(tabs)/bookings.
+ */
 export default function MyBookingsScreen() {
   const router = useRouter();
   const navigation = useNavigation();

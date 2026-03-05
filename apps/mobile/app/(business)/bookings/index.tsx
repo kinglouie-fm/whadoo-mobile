@@ -25,6 +25,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 type TabKind = "upcoming" | "past" | "all";
 
+/**
+ * Route screen for (business)/bookings/index.
+ */
 export default function BusinessBookingsScreen() {
   const { business } = useBusiness();
   const dispatch = useAppDispatch();

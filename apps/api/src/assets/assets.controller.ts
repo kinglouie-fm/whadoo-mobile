@@ -17,6 +17,9 @@ import { AuthedRequest, FirebaseAuthGuard } from "../auth/firebase-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { AssetsService } from "./assets.service";
 
+/**
+ * Endpoints for staged image upload and finalization.
+ */
 @Controller("assets")
 @UseGuards(FirebaseAuthGuard, AppUserGuard, RolesGuard)
 export class AssetsController {
@@ -25,6 +28,9 @@ export class AssetsController {
     private authService: AuthService,
   ) {}
 
+  /**
+   * Resolves or creates the backing app user for an authenticated Firebase identity.
+   */
   private async currentDbUser(req: AuthedRequest) {
     const fb = req.firebase!;
     return this.authService.getOrCreateUser(
@@ -34,6 +40,9 @@ export class AssetsController {
     );
   }
 
+  /**
+   * Uploads an image file into user-scoped staging storage.
+   */
   @Post("upload")
   @Throttle({ default: { limit: 50, ttl: 3600000 } })
   @UseInterceptors(
@@ -74,10 +83,14 @@ export class AssetsController {
       });
     }
 
+    // Persisting under staging requires an internal user id and firebase uid mapping.
     const user = await this.currentDbUser(req);
     return this.assetsService.uploadToStaging(user, file);
   }
 
+  /**
+   * Finalizes a staged upload and links the resulting asset to its target entity.
+   */
   @Post("finalize")
   async finalize(@Req() req: AuthedRequest, @Body() body: any) {
     const user = await this.currentDbUser(req);

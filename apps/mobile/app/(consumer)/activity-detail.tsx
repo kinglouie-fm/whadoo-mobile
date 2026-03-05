@@ -35,6 +35,9 @@ import { useStoriesProgress } from "../../hooks/useStoriesProgress";
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = 400;
 
+/**
+ * Route screen for (consumer)/activity-detail.
+ */
 export default function ActivityDetailScreen() {
   const router = useRouter();
   const { activityId, catalogGroupId } = useLocalSearchParams<{

@@ -58,6 +58,9 @@ function Row({
   );
 }
 
+/**
+ * Route screen for (business)/(tabs)/profile.
+ */
 export default function BusinessProfileHome() {
   const { signOut } = useAuth();
   const { business } = useBusiness();

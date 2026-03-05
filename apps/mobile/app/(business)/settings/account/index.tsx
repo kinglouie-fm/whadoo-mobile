@@ -27,6 +27,9 @@ function Row({ title, right, onPress }: { title: string; right?: string; onPress
     );
 }
 
+/**
+ * Route screen for (business)/settings/account/index.
+ */
 export default function BusinessAccountScreen() {
     const { appUser } = useAuth();
     const router = useRouter();

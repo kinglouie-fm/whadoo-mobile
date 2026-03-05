@@ -8,6 +8,9 @@ import { FormInput } from "@/src/components/Input";
 import React, { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 
+/**
+ * Route screen for (consumer)/complete-profile.
+ */
 export default function CompleteProfileScreen() {
     const { appUser, refreshMe } = useAuth();
 

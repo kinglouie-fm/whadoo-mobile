@@ -3,6 +3,9 @@ import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { theme } from "@/src/theme/theme";
 
+/**
+ * Route screen for (business)/create-activity/index.
+ */
 export default function CreateActivityScreen() {
   const router = useRouter();
 

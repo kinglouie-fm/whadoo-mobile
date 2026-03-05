@@ -26,12 +26,18 @@ export type AuthedRequest = Request & {
   appUser?: RequestAppUser;
 };
 
+/**
+ * Verifies Firebase bearer tokens and attaches decoded identity to the request.
+ */
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
   constructor(
     @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: typeof admin,
   ) {}
 
+  /**
+   * Rejects missing/invalid tokens and populates `req.firebase` on success.
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<AuthedRequest>();
     const header = req.headers.authorization;
@@ -54,6 +60,7 @@ export class FirebaseAuthGuard implements CanActivate {
 
       return true;
     } catch (e) {
+      // Avoid exposing verification details to clients.
       console.error('verifyIdToken failed:');
       throw new UnauthorizedException('Invalid Firebase token');
     }

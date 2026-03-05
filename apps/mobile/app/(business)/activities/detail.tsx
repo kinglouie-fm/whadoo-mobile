@@ -38,6 +38,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+/**
+ * Route screen for (business)/activities/detail.
+ */
 export default function ActivityDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -114,6 +117,9 @@ export default function ActivityDetailScreen() {
     if (typeId && !isEditMode) {
       dispatch(fetchTypeDefinition(typeId));
 
+      /**
+       * Set default packages for different activity types.
+       */
       const newConfig: Record<string, any> = {};
       if (typeId === "karting") {
         newConfig.packages = [

@@ -31,10 +31,16 @@ interface FinalizeUploadDto {
   };
 }
 
+/**
+ * Handles image staging, processing, and asset linking to application entities.
+ */
 @Injectable()
 export class AssetsService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Validates and stores a raw image in user-scoped staging storage.
+   */
   async uploadToStaging(
     user: { id: string; firebaseUid: string },
     file: {
@@ -80,8 +86,11 @@ export class AssetsService {
     };
   }
 
+  /**
+   * Moves a staged image to its final location, persists metadata, and links records.
+   */
   async finalizeUpload(userId: string, dto: FinalizeUploadDto) {
-    // 1. Extract firebaseUid from userId
+    // Resolve firebase uid to enforce user-scoped staging path ownership.
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { firebaseUid: true },
@@ -90,12 +99,12 @@ export class AssetsService {
       throw new BadRequestException('User not found');
     }
 
-    // 2. Verify staging path
+    // Prevent finalizing files outside the caller's staging prefix.
     if (!dto.storageKey.startsWith(`staging/${user.firebaseUid}/`)) {
       throw new ForbiddenException('Invalid storage path');
     }
 
-    // 3. Verify file exists and get metadata
+    // Read canonical metadata from storage before processing.
     const bucket = admin.storage().bucket();
     const stagingFile = bucket.file(dto.storageKey);
     const [exists] = await stagingFile.exists();
@@ -106,12 +115,12 @@ export class AssetsService {
     const [metadata] = await stagingFile.getMetadata();
     const contentType = metadata.contentType || dto.contentType;
 
-    // Validate it's an image
+    // Finalized assets are image-only.
     if (!contentType || !contentType.startsWith('image/')) {
       throw new BadRequestException('File must be an image');
     }
 
-    // Validate file size (10MB max)
+    // Enforce hard size limit even if client metadata is missing or incorrect.
     const sizeBytes = metadata.size
       ? parseInt(String(metadata.size))
       : dto.sizeBytes;
@@ -119,7 +128,7 @@ export class AssetsService {
       throw new BadRequestException('File size must be less than 10MB');
     }
 
-    // 4. Determine target size and final path
+    // Target path and resize strategy are context-specific.
     let targetSize: number;
     let finalPath: string;
     const uuid = uuidv4();
@@ -137,7 +146,7 @@ export class AssetsService {
       case 'activity_image':
         await this.verifyActivityOwnership(userId, dto.context.entityId!);
 
-        // Check if activity already has 5 images (will re-check in transaction)
+        // Fast-fail before processing; transaction re-check below handles races.
         const imageCount = await this.prisma.activityImage.count({
           where: { activityId: dto.context.entityId! },
         });
@@ -156,15 +165,14 @@ export class AssetsService {
         throw new BadRequestException('Invalid context type');
     }
 
-    // 5. Download staging file
+    // Download source bytes after ownership and context checks pass.
     const [fileBuffer] = await stagingFile.download();
 
-    // 6. Validate metadata
     const sizeInBytes = metadata.size
       ? parseInt(String(metadata.size))
       : dto.sizeBytes;
 
-    // 7. Process image: resize, crop, compress
+    // Normalize uploaded images to a square JPEG profile.
     const processedBuffer = await sharp(fileBuffer)
       .resize(targetSize, targetSize, {
         fit: 'cover', // center-crop to fill square
@@ -177,7 +185,7 @@ export class AssetsService {
       .withMetadata({ orientation: undefined }) // Strip EXIF
       .toBuffer();
 
-    // 8. Upload processed image to final path
+    // Persist processed output to the final storage location.
     const finalFile = bucket.file(finalPath);
     await finalFile.save(processedBuffer, {
       metadata: {
@@ -188,11 +196,11 @@ export class AssetsService {
       },
     });
 
-    // 9. Get download token from uploaded file
+    // Read generated download token for public URL construction.
     const [finalMetadata] = await finalFile.getMetadata();
     const downloadToken = finalMetadata.metadata?.firebaseStorageDownloadTokens;
 
-    // 10. Create Asset record
+    // Persist shared asset metadata independently from entity linkage.
     const asset = await this.prisma.asset.create({
       data: {
         storageKey: finalPath,
@@ -209,7 +217,7 @@ export class AssetsService {
       },
     });
 
-    // 11. Link asset to entity
+    // Link the created asset to the target entity.
     switch (dto.context.type) {
       case 'user_avatar':
         await this.prisma.user.update({
@@ -226,9 +234,9 @@ export class AssetsService {
       case 'activity_image':
         const downloadTokenStr = downloadToken ? String(downloadToken) : null;
 
-        // Use transaction to prevent race condition on max 5 images
+        // Transaction prevents concurrent uploads from exceeding image cap.
         await this.prisma.$transaction(async (tx) => {
-          // Re-check image count inside transaction
+          // Re-check inside transaction to close time-of-check/time-of-use gap.
           const imageCount = await tx.activityImage.count({
             where: { activityId: dto.context.entityId! },
           });
@@ -240,7 +248,7 @@ export class AssetsService {
             });
           }
 
-          // Find max sort order for this activity
+          // Append new image at the end of existing sort order.
           const maxSort = await tx.activityImage.findFirst({
             where: { activityId: dto.context.entityId! },
             orderBy: { sortOrder: 'desc' },
@@ -261,7 +269,7 @@ export class AssetsService {
         break;
     }
 
-    // 12. Delete staging file
+    // Best-effort cleanup; finalized asset remains valid if this fails.
     try {
       await stagingFile.delete();
     } catch (error) {
@@ -276,11 +284,17 @@ export class AssetsService {
     };
   }
 
+  /**
+   * Builds a Firebase Storage media URL for an asset object path and token.
+   */
   private buildPublicURL(storageKey: string, token: string | null): string {
     const bucket = admin.storage().bucket();
     return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storageKey)}?alt=media&token=${token || ''}`;
   }
 
+  /**
+   * Ensures the caller owns the business before asset linkage.
+   */
   private async verifyBusinessOwnership(userId: string, businessId: string) {
     const business = await this.prisma.business.findFirst({
       where: { id: businessId, ownerUserId: userId },
@@ -290,6 +304,9 @@ export class AssetsService {
     }
   }
 
+  /**
+   * Ensures the caller owns the activity before asset linkage.
+   */
   private async verifyActivityOwnership(userId: string, activityId: string) {
     const activity = await this.prisma.activity.findFirst({
       where: { id: activityId, business: { ownerUserId: userId } },

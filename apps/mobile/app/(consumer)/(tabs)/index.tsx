@@ -23,6 +23,9 @@ import Swiper from "react-native-deck-swiper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+/**
+ * Route screen for (consumer)/(tabs)/index.
+ */
 export default function DiscoverySwipeScreen() {
   const router = useRouter();
   const navigation = useNavigation();

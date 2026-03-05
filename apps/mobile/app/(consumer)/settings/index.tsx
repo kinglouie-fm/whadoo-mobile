@@ -47,6 +47,9 @@ function Row({
   );
 }
 
+/**
+ * Route screen for (consumer)/settings/index.
+ */
 export default function SettingsScreen() {
   const router = useRouter();
 

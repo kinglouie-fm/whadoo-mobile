@@ -56,6 +56,9 @@ type SavedItem = {
   };
 };
 
+/**
+ * Route screen for (consumer)/(tabs)/saved.
+ */
 export default function SavedActivitiesScreen() {
   const dispatch = useAppDispatch();
   const router = useRouter();

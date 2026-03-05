@@ -3,6 +3,9 @@ import { theme } from "@/src/theme/theme";
 import { Tabs } from "expo-router";
 import React from "react";
 
+/**
+ * Defines layout and navigation for (business)/(tabs)/_layout routes.
+ */
 export default function BusinessTabsLayout() {
   return (
     <Tabs

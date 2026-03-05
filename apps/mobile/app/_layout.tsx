@@ -69,6 +69,9 @@ function RouteGuard() {
   return null;
 }
 
+/**
+ * Defines layout and navigation for _layout routes.
+ */
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 

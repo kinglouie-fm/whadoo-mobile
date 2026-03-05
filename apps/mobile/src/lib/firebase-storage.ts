@@ -1,5 +1,5 @@
-import * as ImagePicker from "expo-image-picker";
 import { getAuth } from "@react-native-firebase/auth";
+import * as ImagePicker from "expo-image-picker";
 
 export interface UploadResult {
   storageKey: string;
@@ -7,6 +7,9 @@ export interface UploadResult {
   sizeBytes: number;
 }
 
+/**
+ * Pick an image from the media library.
+ */
 export async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") {
@@ -24,6 +27,9 @@ export async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> 
   return result.assets[0];
 }
 
+/**
+ * Pick multiple images from the media library.
+ */
 export async function pickMultipleImages(): Promise<
   ImagePicker.ImagePickerAsset[]
 > {
@@ -43,6 +49,9 @@ export async function pickMultipleImages(): Promise<
   return result.assets;
 }
 
+/**
+ * Upload an image to the staging area.
+ */
 export async function uploadToStaging(
   asset: ImagePicker.ImagePickerAsset,
 ): Promise<UploadResult> {
@@ -77,17 +86,19 @@ export async function uploadToStaging(
 
   if (!response.ok) {
     let errorMessage = `Upload failed (${response.status})`;
-    
+
     try {
       const errorData = await response.json();
       if (errorData.message) {
         errorMessage = errorData.message;
       } else if (errorData.error) {
         const errorMap: Record<string, string> = {
-          INVALID_FILE_TYPE: "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.",
+          INVALID_FILE_TYPE:
+            "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.",
           FILE_TOO_LARGE: "File is too large. Maximum size is 10MB.",
           MAX_IMAGES_REACHED: "Activity already has the maximum of 5 images.",
-          RATE_LIMIT_EXCEEDED: "Too many uploads. Please wait before trying again.",
+          RATE_LIMIT_EXCEEDED:
+            "Too many uploads. Please wait before trying again.",
         };
         errorMessage = errorMap[errorData.error] || errorData.error;
       }
@@ -95,7 +106,7 @@ export async function uploadToStaging(
       const text = await response.text();
       if (text) errorMessage = text;
     }
-    
+
     throw new Error(errorMessage);
   }
 

@@ -1,5 +1,8 @@
 import type { AppUser } from "@/src/providers/auth-context";
 
+/**
+ * Check if a consumer profile is complete.
+ */
 export function isConsumerProfileComplete(u: AppUser | null): boolean {
   if (!u) return false;
   const first = (u.firstName ?? "").trim();

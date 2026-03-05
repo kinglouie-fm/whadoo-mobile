@@ -130,12 +130,6 @@ GOOGLE_APPLICATION_CREDENTIALS="./.secrets/firebase-service-account.json"
 FIREBASE_SERVICE_ACCOUNT_PATH="./.secrets/firebase-service-account.json"
 ```
 
-Set Firebase credentials (required for API):
-
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS="/absolute/path/to/apps/api/prisma/firebase-service-account.json"
-```
-
 ### 5. Add the following .env to apps/mobile when using Google Sign-In and Firebase Storage (from GoogleService-Info.plist)
 
 ```bash
@@ -146,18 +140,18 @@ EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=<STORAGE_BUCKET>
 
 - Attention: You need a Blaze account for setting up Firebase Storage!
 
-### 5. Run Database Migrations
+### 6. Run Database Migrations
 
 ```bash
 cd apps/api
 pnpm prisma migrate dev
 ```
 
-### 6. Seed Database
+### 7. Seed Database
 
 See detailed seeding instructions in [`apps/api/prisma/README.md`](./apps/api/prisma/README.md)
 
-### 7. Build Mobile App (First Time Only)
+### 8. Build Mobile App (First Time Only)
 
 ```bash
 # iOS
@@ -177,9 +171,6 @@ pnpm db
 ### Start API Backend
 
 ```bash
-# Make sure GOOGLE_APPLICATION_CREDENTIALS is set
-export GOOGLE_APPLICATION_CREDENTIALS="/path/to/firebase-service-account.json"
-
 pnpm api
 ```
 
