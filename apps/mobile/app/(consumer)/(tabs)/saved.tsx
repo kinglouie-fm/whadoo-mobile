@@ -52,6 +52,7 @@ type SavedItem = {
     city?: string | null;
     address?: string | null;
     priceFrom?: any;
+    businessId?: string | null;
     catalogGroupId?: string | null;
   };
 };
@@ -128,16 +129,17 @@ export default function SavedActivitiesScreen() {
   const handleCardPress = (
     activityId: string,
     catalogGroupId: string | null | undefined,
+    businessId: string | null | undefined,
   ) => {
     if (multiSelectMode) {
       dispatch(toggleSelectActivity(activityId));
       return;
     }
 
-    if (catalogGroupId) {
+    if (catalogGroupId && businessId) {
       router.push({
         pathname: "/(consumer)/activity-detail",
-        params: { catalogGroupId },
+        params: { catalogGroupId, businessId },
       });
     } else {
       router.push({
@@ -256,7 +258,11 @@ export default function SavedActivitiesScreen() {
         <Pressable
           style={[styles.card, isSelected && styles.cardSelected]}
           onPress={() =>
-            handleCardPress(item.activityId, item.snapshot?.catalogGroupId)
+            handleCardPress(
+              item.activityId,
+              item.snapshot?.catalogGroupId,
+              item.snapshot?.businessId,
+            )
           }
           onLongPress={() => {
             if (!multiSelectMode) {

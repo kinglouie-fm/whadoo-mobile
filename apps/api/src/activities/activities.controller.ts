@@ -91,8 +91,11 @@ export class ActivitiesController {
    * Lists activities assigned to a specific catalog group.
    */
   @Get("group/:catalogGroupId")
-  async getActivitiesByGroup(@Param("catalogGroupId") catalogGroupId: string) {
-    return this.service.getActivitiesByGroup(catalogGroupId);
+  async getActivitiesByGroup(
+    @Param("catalogGroupId") catalogGroupId: string,
+    @Query("businessId") businessId?: string,
+  ) {
+    return this.service.getActivitiesByGroup(catalogGroupId, businessId);
   }
 
   /**

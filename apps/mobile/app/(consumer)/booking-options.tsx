@@ -28,9 +28,10 @@ import Toast from "react-native-toast-message";
  */
 export default function BookingOptionsScreen() {
   const router = useRouter();
-  const { activityId, catalogGroupId } = useLocalSearchParams<{
+  const { activityId, catalogGroupId, businessId } = useLocalSearchParams<{
     activityId?: string;
     catalogGroupId?: string;
+    businessId?: string;
   }>();
   const dispatch = useAppDispatch();
   const { currentActivity, currentGroup, loading } = useAppSelector(
@@ -43,11 +44,11 @@ export default function BookingOptionsScreen() {
 
   useEffect(() => {
     if (catalogGroupId) {
-      dispatch(fetchActivityGroup(catalogGroupId));
+      dispatch(fetchActivityGroup({ catalogGroupId, businessId }));
     } else if (activityId) {
       dispatch(fetchConsumerActivity(activityId));
     }
-  }, [activityId, catalogGroupId]);
+  }, [activityId, catalogGroupId, businessId]);
 
   const displayData =
     currentGroup ||

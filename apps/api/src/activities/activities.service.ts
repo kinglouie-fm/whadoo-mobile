@@ -5,13 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ActivityTypeDefinitionsService } from '../activity-type-definitions/activity-type-definitions.service';
+import { admin } from '../auth/firebase-admin';
 import {
   ConflictErrorResponse,
   ErrorCodes,
   PublishValidationError,
 } from '../common/error-responses';
 import { PrismaService } from '../prisma/prisma.service';
-import { admin } from '../auth/firebase-admin';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import {
   GroupedCardDto,
@@ -262,19 +262,22 @@ export class ActivitiesService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    // Group activities by catalogGroupId or by individual activity if no grouping
+    // Group activities by businessId + catalogGroupId to ensure activities from different businesses never merge
     const groupMap = new Map<string, any[]>();
 
     for (const activity of activities) {
-      const groupKey = activity.catalogGroupId || activity.id;
+      // Use businessId:catalogGroupId as key to prevent cross-business merging
+      const groupKey = activity.catalogGroupId
+        ? `${activity.businessId}:${activity.catalogGroupId}`
+        : activity.id;
       if (!groupMap.has(groupKey)) {
         groupMap.set(groupKey, []);
       }
       groupMap.get(groupKey)!.push(activity);
     }
 
-    // Build grouped cards
-    const groups: GroupedCardDto[] = [];
+    // Build grouped cards (with internal groupKey for pagination)
+    const groups: Array<GroupedCardDto & { _groupKey: string }> = [];
 
     for (const [groupKey, groupActivities] of groupMap.entries()) {
       // Sort by priceFrom (nulls last) and then by updatedAt
@@ -333,7 +336,8 @@ export class ActivitiesService {
         `${representativeActivity.typeId}, ${businessName}`;
 
       groups.push({
-        catalogGroupId: groupKey,
+        catalogGroupId:
+          representativeActivity.catalogGroupId || representativeActivity.id,
         businessId: representativeActivity.businessId,
         businessName,
         typeId: representativeActivity.typeId,
@@ -348,17 +352,18 @@ export class ActivitiesService {
         sampleDurations: uniqueDurations,
         updatedAt: maxUpdatedAt,
         representativeActivityId: representativeActivity.id,
+        _groupKey: groupKey, // Internal key for pagination
       });
     }
 
     // Sort groups by updatedAt descending
     groups.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
-    // Cursor is group id; pagination starts strictly after that group.
+    // Cursor uses internal _groupKey for unique identification across businesses
     let paginatedGroups = groups;
     if (filters?.cursor) {
       const cursorIndex = groups.findIndex(
-        (g) => g.catalogGroupId === filters.cursor,
+        (g) => (g as any)._groupKey === filters.cursor,
       );
       if (cursorIndex !== -1) {
         paginatedGroups = groups.slice(cursorIndex + 1);
@@ -369,11 +374,16 @@ export class ActivitiesService {
     const hasMore = paginatedGroups.length > limit;
     const resultGroups = paginatedGroups.slice(0, limit);
     const nextCursor = hasMore
-      ? resultGroups[resultGroups.length - 1].catalogGroupId
+      ? (resultGroups[resultGroups.length - 1] as any)._groupKey
       : null;
 
+    // Remove internal _groupKey before returning to client
+    const cleanedGroups = resultGroups.map(
+      ({ _groupKey, ...group }: any) => group,
+    );
+
     return {
-      groups: resultGroups,
+      groups: cleanedGroups,
       nextCursor,
     };
   }
@@ -546,7 +556,7 @@ export class ActivitiesService {
     // Publishing requires at least one package with active availability.
     const config = activity.config as any;
     const packages = config?.packages || [];
-    
+
     if (packages.length === 0) {
       throw new PublishValidationError(
         ErrorCodes.PACKAGES_REQUIRED,
@@ -555,8 +565,10 @@ export class ActivitiesService {
       );
     }
 
-    const packagesWithAvailability = packages.filter((pkg: any) => pkg.availability);
-    
+    const packagesWithAvailability = packages.filter(
+      (pkg: any) => pkg.availability,
+    );
+
     if (packagesWithAvailability.length === 0) {
       throw new PublishValidationError(
         ErrorCodes.AVAILABILITY_REQUIRED,
@@ -566,7 +578,7 @@ export class ActivitiesService {
     }
 
     const activePackages = packagesWithAvailability.filter(
-      (pkg: any) => pkg.availability.status === 'active'
+      (pkg: any) => pkg.availability.status === 'active',
     );
 
     if (activePackages.length === 0) {
@@ -698,7 +710,9 @@ export class ActivitiesService {
   /**
    * Converts stored asset metadata into a public Firebase Storage URL list.
    */
-  private buildAssetUrl(asset?: { storageKey?: string; downloadToken?: string } | null): string[] {
+  private buildAssetUrl(
+    asset?: { storageKey?: string; downloadToken?: string } | null,
+  ): string[] {
     if (!asset?.storageKey || !asset?.downloadToken) return [];
     const bucket = admin.storage().bucket();
     const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(asset.storageKey)}?alt=media&token=${asset.downloadToken}`;
@@ -942,11 +956,12 @@ export class ActivitiesService {
   /**
    * Returns published activities belonging to a catalog group for consumer detail views.
    */
-  async getActivitiesByGroup(catalogGroupId: string) {
-    // Try to find activities by catalogGroupId
+  async getActivitiesByGroup(catalogGroupId: string, businessId?: string) {
+    // Find activities by catalogGroupId (and optionally businessId to prevent cross-business results)
     let activities = await this.prisma.activity.findMany({
       where: {
         catalogGroupId,
+        ...(businessId ? { businessId } : {}),
         status: 'published',
         business: {
           status: 'active',

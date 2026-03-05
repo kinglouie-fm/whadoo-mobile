@@ -50,10 +50,16 @@ export const fetchConsumerActivity = createAsyncThunk(
 
 export const fetchActivityGroup = createAsyncThunk(
   "consumerActivity/fetchGroup",
-  async (catalogGroupId: string) => {
-    const group = await apiGet<ActivityGroup>(
-      `/activities/group/${catalogGroupId}`,
-    );
+  async (params: { catalogGroupId: string; businessId?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params.businessId) {
+      queryParams.append('businessId', params.businessId);
+    }
+    const query = queryParams.toString();
+    const url = query
+      ? `/activities/group/${params.catalogGroupId}?${query}`
+      : `/activities/group/${params.catalogGroupId}`;
+    const group = await apiGet<ActivityGroup>(url);
     return group;
   },
 );

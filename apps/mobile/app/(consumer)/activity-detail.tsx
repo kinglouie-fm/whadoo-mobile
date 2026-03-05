@@ -40,9 +40,10 @@ const IMAGE_HEIGHT = 400;
  */
 export default function ActivityDetailScreen() {
   const router = useRouter();
-  const { activityId, catalogGroupId } = useLocalSearchParams<{
+  const { activityId, catalogGroupId, businessId } = useLocalSearchParams<{
     activityId?: string;
     catalogGroupId?: string;
+    businessId?: string;
   }>();
   const dispatch = useAppDispatch();
   const { currentActivity, currentGroup, loading } = useAppSelector(
@@ -94,7 +95,7 @@ export default function ActivityDetailScreen() {
 
   useEffect(() => {
     if (catalogGroupId) {
-      dispatch(fetchActivityGroup(catalogGroupId));
+      dispatch(fetchActivityGroup({ catalogGroupId, businessId }));
     } else if (activityId) {
       dispatch(fetchConsumerActivity(activityId));
     }
@@ -102,7 +103,7 @@ export default function ActivityDetailScreen() {
       dispatch(clearCurrentActivity());
       dispatch(clearCurrentGroup());
     };
-  }, [activityId, catalogGroupId]);
+  }, [activityId, catalogGroupId, businessId]);
 
   useEffect(() => {
     if (representativeActivityId) {
@@ -282,10 +283,10 @@ export default function ActivityDetailScreen() {
         <PrimaryButton
           title="Book"
           onPress={() => {
-            if (catalogGroupId) {
+            if (catalogGroupId && businessId) {
               router.push({
                 pathname: "/(consumer)/booking-options",
-                params: { catalogGroupId },
+                params: { catalogGroupId, businessId },
               });
             } else if (representativeActivityId) {
               router.push({

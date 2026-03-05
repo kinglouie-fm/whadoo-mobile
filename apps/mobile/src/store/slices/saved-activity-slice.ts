@@ -6,6 +6,7 @@ export interface SavedActivitySnapshot {
   thumbnailUrl: string | null;
   city: string | null;
   priceFrom: string | null;
+  businessId: string | null;
   catalogGroupId: string | null;
   catalogGroupTitle: string | null;
   catalogGroupKind: string | null;
@@ -134,6 +135,7 @@ const savedActivitiesSlice = createSlice({
             thumbnailUrl: null,
             city: null,
             priceFrom: null,
+            businessId: null,
             catalogGroupId: null,
             catalogGroupTitle: null,
             catalogGroupKind: null,

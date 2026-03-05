@@ -298,7 +298,10 @@ export default function DiscoveryListScreen() {
   const handleCardPress = (card: GroupedCard) => {
     router.push({
       pathname: "/(consumer)/activity-detail",
-      params: { catalogGroupId: card.catalogGroupId },
+      params: { 
+        catalogGroupId: card.catalogGroupId,
+        businessId: card.businessId,
+      },
     });
   };
 
@@ -347,7 +350,7 @@ export default function DiscoveryListScreen() {
     <View style={ui.container}>
       <FlatList
         data={listData}
-        keyExtractor={(item) => item.catalogGroupId}
+        keyExtractor={(item) => `${item.businessId}:${item.catalogGroupId}`}
         renderItem={({ item }) => (
           <ListItem
             card={item}
@@ -368,7 +371,7 @@ export default function DiscoveryListScreen() {
               >
                 {horizontalData.map((card) => (
                   <HorizontalCard
-                    key={card.catalogGroupId}
+                    key={`${card.businessId}:${card.catalogGroupId}`}
                     card={card}
                     onPress={() => handleCardPress(card)}
                     onSavePress={() => handleSaveToggle(card)}

@@ -34,6 +34,7 @@ export class SavedActivitiesService {
       thumbnailUrl: activity.images[0]?.imageUrl || null,
       city: activity.city,
       priceFrom: activity.priceFrom,
+      businessId: activity.businessId,
       catalogGroupId: activity.catalogGroupId,
       catalogGroupTitle: activity.catalogGroupTitle,
       catalogGroupKind: activity.catalogGroupKind,
