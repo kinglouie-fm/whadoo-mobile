@@ -32,9 +32,4 @@ export class UpdateBusinessDto {
   @IsOptional()
   @IsString()
   city?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  images?: string[];
 }

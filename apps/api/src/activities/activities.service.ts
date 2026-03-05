@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ActivityTypeDefinitionsService } from '../activity-type-definitions/activity-type-definitions.service';
-import { AvailabilityTemplatesService } from '../availability-templates/availability-templates.service';
+import { admin } from '../auth/firebase-admin';
 import {
   ConflictErrorResponse,
   ErrorCodes,
@@ -20,14 +20,19 @@ import {
 import { RecordSwipeDto } from './dto/record-swipe.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 
+/**
+ * Business and consumer activity operations, including publish and discovery flows.
+ */
 @Injectable()
 export class ActivitiesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly templatesService: AvailabilityTemplatesService,
     private readonly typeDefinitionsService: ActivityTypeDefinitionsService,
   ) {}
 
+  /**
+   * Creates a draft activity for a business owner after schema validation.
+   */
   async createActivity(userId: string, dto: CreateActivityDto) {
     // Verify business ownership
     const business = await this.prisma.business.findUnique({
@@ -97,7 +102,6 @@ export class ActivitiesService {
         catalogGroupId: dto.catalogGroupId ?? null,
         catalogGroupTitle: dto.catalogGroupTitle ?? null,
         catalogGroupKind: dto.catalogGroupKind ?? null,
-        availabilityTemplateId: dto.availabilityTemplateId ?? null,
         status: 'draft',
         images: dto.images
           ? {
@@ -117,6 +121,9 @@ export class ActivitiesService {
     return activity;
   }
 
+  /**
+   * Returns a single activity in business or consumer visibility context.
+   */
   async getActivity(
     activityId: string,
     userId?: string,
@@ -128,13 +135,6 @@ export class ActivitiesService {
         images: true,
         business: {
           select: { ownerUserId: true, name: true },
-        },
-        availabilityTemplate: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-          },
         },
       },
     });
@@ -159,6 +159,9 @@ export class ActivitiesService {
     return activity;
   }
 
+  /**
+   * Lists activities for a business after ownership verification.
+   */
   async listActivities(userId: string, businessId: string, status?: string) {
     // Verify business ownership
     const business = await this.prisma.business.findUnique({
@@ -194,6 +197,9 @@ export class ActivitiesService {
     return activities;
   }
 
+  /**
+   * Lists published activities with optional city/type filters.
+   */
   async listPublishedActivities(filters?: { city?: string; typeId?: string }) {
     const activities = await this.prisma.activity.findMany({
       where: {
@@ -220,6 +226,9 @@ export class ActivitiesService {
     return activities;
   }
 
+  /**
+   * Builds grouped discovery cards with cursor-style pagination.
+   */
   async getGroupedCards(filters?: {
     city?: string;
     typeId?: string;
@@ -240,8 +249,6 @@ export class ActivitiesService {
       },
       include: {
         images: {
-          where: { isThumbnail: true },
-          take: 1,
           orderBy: { sortOrder: 'asc' },
         },
         business: {
@@ -251,28 +258,26 @@ export class ActivitiesService {
             status: true,
           },
         },
-        availabilityTemplate: {
-          select: {
-            slotDurationMinutes: true,
-          },
-        },
       },
       orderBy: { updatedAt: 'desc' },
     });
 
-    // Group activities by catalogGroupId or by individual activity if no grouping
+    // Group activities by businessId + catalogGroupId to ensure activities from different businesses never merge
     const groupMap = new Map<string, any[]>();
 
     for (const activity of activities) {
-      const groupKey = activity.catalogGroupId || activity.id;
+      // Use businessId:catalogGroupId as key to prevent cross-business merging
+      const groupKey = activity.catalogGroupId
+        ? `${activity.businessId}:${activity.catalogGroupId}`
+        : activity.id;
       if (!groupMap.has(groupKey)) {
         groupMap.set(groupKey, []);
       }
       groupMap.get(groupKey)!.push(activity);
     }
 
-    // Build grouped cards
-    const groups: GroupedCardDto[] = [];
+    // Build grouped cards (with internal groupKey for pagination)
+    const groups: Array<GroupedCardDto & { _groupKey: string }> = [];
 
     for (const [groupKey, groupActivities] of groupMap.entries()) {
       // Sort by priceFrom (nulls last) and then by updatedAt
@@ -312,8 +317,11 @@ export class ActivitiesService {
         .sort((a, b) => a - b)
         .slice(0, 3);
 
-      // Get thumbnail
+      // Get thumbnail and all images
       const thumbnailUrl = representativeActivity.images[0]?.imageUrl || null;
+      const imageUrls = representativeActivity.images
+        .map((img) => img.imageUrl)
+        .filter(Boolean);
 
       // Extract tags (for now, just use category if available)
       const tags: string[] = [];
@@ -328,7 +336,8 @@ export class ActivitiesService {
         `${representativeActivity.typeId}, ${businessName}`;
 
       groups.push({
-        catalogGroupId: groupKey,
+        catalogGroupId:
+          representativeActivity.catalogGroupId || representativeActivity.id,
         businessId: representativeActivity.businessId,
         businessName,
         typeId: representativeActivity.typeId,
@@ -336,42 +345,52 @@ export class ActivitiesService {
         city,
         locationSummary: `${city}${representativeActivity.address ? ', ' + representativeActivity.address : ''}`,
         thumbnailUrl: thumbnailUrl || undefined,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
         priceFrom,
         tags,
         activityCount: groupActivities.length,
         sampleDurations: uniqueDurations,
         updatedAt: maxUpdatedAt,
         representativeActivityId: representativeActivity.id,
+        _groupKey: groupKey, // Internal key for pagination
       });
     }
 
     // Sort groups by updatedAt descending
     groups.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
-    // Apply cursor-based pagination
+    // Cursor uses internal _groupKey for unique identification across businesses
     let paginatedGroups = groups;
     if (filters?.cursor) {
       const cursorIndex = groups.findIndex(
-        (g) => g.catalogGroupId === filters.cursor,
+        (g) => (g as any)._groupKey === filters.cursor,
       );
       if (cursorIndex !== -1) {
         paginatedGroups = groups.slice(cursorIndex + 1);
       }
     }
 
-    // Take limit + 1 to determine if there's a next page
+    // Read one extra item to detect whether a next cursor should be emitted.
     const hasMore = paginatedGroups.length > limit;
     const resultGroups = paginatedGroups.slice(0, limit);
     const nextCursor = hasMore
-      ? resultGroups[resultGroups.length - 1].catalogGroupId
+      ? (resultGroups[resultGroups.length - 1] as any)._groupKey
       : null;
 
+    // Remove internal _groupKey before returning to client
+    const cleanedGroups = resultGroups.map(
+      ({ _groupKey, ...group }: any) => group,
+    );
+
     return {
-      groups: resultGroups,
+      groups: cleanedGroups,
       nextCursor,
     };
   }
 
+  /**
+   * Updates an activity owned by the user, with type/config/pricing validation.
+   */
   async updateActivity(
     activityId: string,
     userId: string,
@@ -447,24 +466,7 @@ export class ActivitiesService {
       throw new ForbiddenException('You do not own this activity');
     }
 
-    // Prevent changing/unlinking template from published activity
-    if (
-      existing.status === 'published' &&
-      dto.availabilityTemplateId !== undefined
-    ) {
-      if (
-        dto.availabilityTemplateId === null ||
-        dto.availabilityTemplateId !== existing.availabilityTemplateId
-      ) {
-        throw new ConflictErrorResponse(
-          ErrorCodes.CANNOT_UNLINK_PUBLISHED,
-          'Cannot unlink or change availability template for a published activity. Unpublish the activity first.',
-          { field: 'availabilityTemplateId' },
-        );
-      }
-    }
-
-    // Prevent changing type from published activity
+    // Lock type once published to protect published schema compatibility.
     if (
       existing.status === 'published' &&
       dto.typeId &&
@@ -495,7 +497,6 @@ export class ActivitiesService {
         catalogGroupKind: dto.catalogGroupKind,
         config: dto.config,
         pricing: dto.pricing,
-        availabilityTemplateId: dto.availabilityTemplateId,
         images: dto.images
           ? {
               deleteMany: {},
@@ -515,6 +516,9 @@ export class ActivitiesService {
     return updated;
   }
 
+  /**
+   * Publishes an activity once required fields and package constraints are valid.
+   */
   async publishActivity(activityId: string, userId: string) {
     // Fetch activity with business
     const activity = await this.prisma.activity.findUnique({
@@ -549,33 +553,39 @@ export class ActivitiesService {
       );
     }
 
-    // Check: availability template is linked
-    if (!activity.availabilityTemplateId) {
+    // Publishing requires at least one package with active availability.
+    const config = activity.config as any;
+    const packages = config?.packages || [];
+
+    if (packages.length === 0) {
       throw new PublishValidationError(
-        ErrorCodes.TEMPLATE_REQUIRED,
-        'Availability template must be linked before publishing.',
-        'availabilityTemplateId',
+        ErrorCodes.PACKAGES_REQUIRED,
+        'At least one package must be defined before publishing.',
+        'config.packages',
       );
     }
 
-    // Verify template exists and is active
-    const template = await this.templatesService.getTemplateById(
-      activity.availabilityTemplateId,
+    const packagesWithAvailability = packages.filter(
+      (pkg: any) => pkg.availability,
     );
 
-    if (!template) {
+    if (packagesWithAvailability.length === 0) {
       throw new PublishValidationError(
-        ErrorCodes.TEMPLATE_NOT_FOUND,
-        'Linked availability template does not exist.',
-        'availabilityTemplateId',
+        ErrorCodes.AVAILABILITY_REQUIRED,
+        'At least one package must have availability configured.',
+        'config.packages',
       );
     }
 
-    if (template.status !== 'active') {
+    const activePackages = packagesWithAvailability.filter(
+      (pkg: any) => pkg.availability.status === 'active',
+    );
+
+    if (activePackages.length === 0) {
       throw new PublishValidationError(
-        ErrorCodes.TEMPLATE_INACTIVE,
-        'Linked availability template is inactive. Activate or link a different template.',
-        'availabilityTemplateId',
+        ErrorCodes.NO_ACTIVE_AVAILABILITY,
+        'At least one package must have active availability.',
+        'config.packages',
       );
     }
 
@@ -633,6 +643,9 @@ export class ActivitiesService {
     return updated;
   }
 
+  /**
+   * Reverts a published activity back to draft state.
+   */
   async unpublishActivity(activityId: string, userId: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
@@ -662,6 +675,9 @@ export class ActivitiesService {
     return updated;
   }
 
+  /**
+   * Marks an activity as inactive for business-controlled removal from availability.
+   */
   async deactivateActivity(activityId: string, userId: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
@@ -691,20 +707,21 @@ export class ActivitiesService {
     return updated;
   }
 
-  // Internal helper - no RBAC
-  async getActivityWithTemplate(activityId: string) {
-    return this.prisma.activity.findUnique({
-      where: { id: activityId },
-      include: {
-        availabilityTemplate: {
-          include: {
-            exceptions: true,
-          },
-        },
-      },
-    });
+  /**
+   * Converts stored asset metadata into a public Firebase Storage URL list.
+   */
+  private buildAssetUrl(
+    asset?: { storageKey?: string; downloadToken?: string } | null,
+  ): string[] {
+    if (!asset?.storageKey || !asset?.downloadToken) return [];
+    const bucket = admin.storage().bucket();
+    const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(asset.storageKey)}?alt=media&token=${asset.downloadToken}`;
+    return [url];
   }
 
+  /**
+   * Enforces karting package invariants required for publishing.
+   */
   private validateKartingPackages(config: any) {
     const packages = config?.packages;
 
@@ -773,7 +790,7 @@ export class ActivitiesService {
       );
     }
 
-    // If no default, auto-set first package as default (or require one - choosing auto-set)
+    // Backfill a default package to keep downstream selection deterministic.
     if (defaultCount === 0) {
       packages[0].is_default = true;
     }
@@ -799,6 +816,9 @@ export class ActivitiesService {
     }
   }
 
+  /**
+   * Records a swipe interaction used by recommendation/discovery features.
+   */
   async recordSwipe(userId: string, dto: RecordSwipeDto) {
     await this.prisma.userSwipe.create({
       data: {
@@ -814,6 +834,80 @@ export class ActivitiesService {
     return { success: true };
   }
 
+  /**
+   * Deletes an activity image and associated storage/asset records when present.
+   */
+  async deleteActivityImage(
+    userId: string,
+    activityId: string,
+    imageId: string,
+  ) {
+    // 1. Fetch the activity and verify ownership
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      include: {
+        business: {
+          select: { ownerUserId: true },
+        },
+      },
+    });
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    if (activity.business.ownerUserId !== userId) {
+      throw new ForbiddenException('You do not own this activity');
+    }
+
+    // 2. Fetch the ActivityImage with its Asset
+    const activityImage = await this.prisma.activityImage.findUnique({
+      where: { id: imageId },
+      include: { asset: true },
+    });
+
+    if (!activityImage) {
+      throw new NotFoundException('Image not found');
+    }
+
+    if (activityImage.activityId !== activityId) {
+      throw new BadRequestException('Image does not belong to this activity');
+    }
+
+    // Storage deletion is best-effort; DB cleanup still proceeds on failure.
+    if (activityImage.asset?.storageKey) {
+      try {
+        const bucket = admin.storage().bucket();
+        const file = bucket.file(activityImage.asset.storageKey);
+        await file.delete();
+      } catch (error) {
+        console.warn(
+          'Failed to delete file from storage:',
+          activityImage.asset.storageKey,
+          error,
+        );
+        // Continue with database deletion even if storage deletion fails
+      }
+    }
+
+    // 4. Delete the Asset record (this will cascade delete the ActivityImage via onDelete: Cascade)
+    if (activityImage.assetId) {
+      await this.prisma.asset.delete({
+        where: { id: activityImage.assetId },
+      });
+    } else {
+      // If no asset, delete ActivityImage directly
+      await this.prisma.activityImage.delete({
+        where: { id: imageId },
+      });
+    }
+
+    return { success: true, message: 'Image deleted successfully' };
+  }
+
+  /**
+   * Debug helper returning karting activity publish/grouping diagnostics.
+   */
   async debugKartingActivities() {
     const activities = await this.prisma.activity.findMany({
       where: {
@@ -825,18 +919,13 @@ export class ActivitiesService {
         status: true,
         catalogGroupId: true,
         catalogGroupTitle: true,
-        availabilityTemplateId: true,
         priceFrom: true,
+        config: true,
         business: {
           select: {
             id: true,
             name: true,
             status: true,
-          },
-        },
-        availabilityTemplate: {
-          select: {
-            slotDurationMinutes: true,
           },
         },
       },
@@ -847,24 +936,32 @@ export class ActivitiesService {
       total: activities.length,
       published: activities.filter((a) => a.status === 'published').length,
       withGroupId: activities.filter((a) => a.catalogGroupId).length,
-      activities: activities.map((a) => ({
-        id: a.id,
-        title: a.title,
-        status: a.status,
-        catalogGroupId: a.catalogGroupId,
-        catalogGroupTitle: a.catalogGroupTitle,
-        duration: a.availabilityTemplate?.slotDurationMinutes,
-        priceFrom: a.priceFrom,
-        businessStatus: a.business?.status,
-      })),
+      activities: activities.map((a) => {
+        const config = a.config as any;
+        const firstPackage = config?.packages?.[0];
+        return {
+          id: a.id,
+          title: a.title,
+          status: a.status,
+          catalogGroupId: a.catalogGroupId,
+          catalogGroupTitle: a.catalogGroupTitle,
+          duration: firstPackage?.availability?.slotDurationMinutes,
+          priceFrom: a.priceFrom,
+          businessStatus: a.business?.status,
+        };
+      }),
     };
   }
 
-  async getActivitiesByGroup(catalogGroupId: string) {
-    // Try to find activities by catalogGroupId
+  /**
+   * Returns published activities belonging to a catalog group for consumer detail views.
+   */
+  async getActivitiesByGroup(catalogGroupId: string, businessId?: string) {
+    // Find activities by catalogGroupId (and optionally businessId to prevent cross-business results)
     let activities = await this.prisma.activity.findMany({
       where: {
         catalogGroupId,
+        ...(businessId ? { businessId } : {}),
         status: 'published',
         business: {
           status: 'active',
@@ -880,18 +977,12 @@ export class ActivitiesService {
             name: true,
             city: true,
             address: true,
-            images: true,
-          },
-        },
-        availabilityTemplate: {
-          select: {
-            id: true,
-            name: true,
-            slotDurationMinutes: true,
-            capacity: true,
-            daysOfWeek: true,
-            startTime: true,
-            endTime: true,
+            logoAsset: {
+              select: {
+                storageKey: true,
+                downloadToken: true,
+              },
+            },
           },
         },
       },
@@ -904,20 +995,22 @@ export class ActivitiesService {
       businessName: activities[0].business?.name,
       businessCity: activities[0].business?.city,
       businessAddress: activities[0].business?.address,
-      businessImages: activities[0].business?.images || [],
-      activities: activities.map((activity) => ({
-        id: activity.id,
-        title: activity.title,
-        description: activity.description,
-        typeId: activity.typeId,
-        priceFrom: activity.priceFrom,
-        config: activity.config,
-        pricing: activity.pricing,
-        images: activity.images,
-        duration: activity.availabilityTemplate?.slotDurationMinutes,
-        capacity: activity.availabilityTemplate?.capacity,
-        availabilityTemplate: activity.availabilityTemplate,
-      })),
+      businessImages: this.buildAssetUrl(activities[0].business?.logoAsset),
+      activities: activities.map((activity) => {
+        const config = activity.config as any;
+        const firstPackage = config?.packages?.[0];
+        return {
+          id: activity.id,
+          title: activity.title,
+          description: activity.description,
+          typeId: activity.typeId,
+          priceFrom: activity.priceFrom,
+          duration: firstPackage?.availability?.slotDurationMinutes,
+          config: activity.config,
+          pricing: activity.pricing,
+          images: activity.images,
+        };
+      }),
     };
   }
 }

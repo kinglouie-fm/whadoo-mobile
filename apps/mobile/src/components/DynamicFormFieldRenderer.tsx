@@ -33,7 +33,7 @@ export function DynamicFormFieldRenderer({
 }: DynamicFormFieldRendererProps) {
   const inputProps = useMemo(
     () => ({
-      underlineColorAndroid: "transparent" as const, // ✅ kills blue underline on Android
+      underlineColorAndroid: "transparent" as const, //  kills blue underline on Android
       selectionColor: theme.colors.accent,
       cursorColor: theme.colors.accent,
       placeholderTextColor: stylesVars.label,
@@ -126,7 +126,9 @@ export function DynamicFormFieldRenderer({
       default:
         return (
           <Text style={styles.unsupported}>
-            Unsupported field type: {field.type}
+            {field.type === "array"
+              ? "Please choose an activity type from the list"
+              : `Unsupported field type: ${field.type}`}
           </Text>
         );
     }
@@ -249,7 +251,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
 
-  // ✅ readable on accent
+  //  readable on accent
   selectOptionTextSelected: {
     color: "#0B0B0B",
   },

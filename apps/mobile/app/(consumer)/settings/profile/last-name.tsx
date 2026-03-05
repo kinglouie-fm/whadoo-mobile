@@ -1,11 +1,16 @@
 import { TopBar } from "@/src/components/TopBar";
+import { PrimaryButton } from "@/src/components/Button";
+import { FormInput } from "@/src/components/Input";
 import { apiPatch } from "@/src/lib/api";
 import { useAuth } from "@/src/providers/auth-context";
-import { theme } from "@/src/theme/theme";
+import { ui } from "@/src/theme/ui";
 import React, { useEffect, useState } from "react";
-import { Alert, Button, TextInput, View } from "react-native";
+import { Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+/**
+ * Route screen for (consumer)/settings/profile/last-name.
+ */
 export default function LastNameScreen() {
     const { appUser, refreshMe } = useAuth();
     const [value, setValue] = useState("");
@@ -27,23 +32,16 @@ export default function LastNameScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>
+        <SafeAreaView style={ui.container} edges={["top"]}>
             <TopBar title="Last Name" />
-            <View style={{ padding: 16, gap: 12 }}>
-                <TextInput
+            <View style={[ui.contentPadding, { gap: 12 }]}>
+                <FormInput
+                    label="Last name"
                     value={value}
                     onChangeText={setValue}
                     placeholder="Last name"
-                    placeholderTextColor="#666"
-                    style={{
-                        borderWidth: 1,
-                        borderColor: theme.colors.divider,
-                        borderRadius: 12,
-                        padding: 12,
-                        color: theme.colors.text,
-                    }}
                 />
-                <Button title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
+                <PrimaryButton title={busy ? "Saving..." : "Save"} onPress={save} disabled={busy} />
             </View>
         </SafeAreaView>
     );

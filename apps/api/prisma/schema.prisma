@@ -22,11 +22,6 @@ enum BusinessStatus {
   inactive
 }
 
-enum AvailabilityTemplateStatus {
-  active
-  inactive
-}
-
 enum ActivityStatus {
   draft
   published
@@ -42,7 +37,9 @@ model User {
   lastName    String?
   city        String?
   phoneNumber String?
-  photoUrl    String?
+
+  photoAssetId String? @unique @map("photo_asset_id") @db.Uuid
+  photoAsset   Asset?  @relation("UserPhotoAsset", fields: [photoAssetId], references: [id], onDelete: SetNull)
 
   deletedAt   DateTime?
 
@@ -50,6 +47,7 @@ model User {
   swipes          UserSwipe[]
   savedActivities SavedActivity[]
   bookings        Booking[]
+  assets          Asset[] @relation("UserAssets")
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -69,58 +67,20 @@ model Business {
   city         String?
   lat          Decimal?
   lng          Decimal?
-  images       String[]       @default([])
   status       BusinessStatus @default(active)
 
-  availabilityTemplates AvailabilityTemplate[]
+  logoAssetId  String? @unique @map("logo_asset_id") @db.Uuid
+  logoAsset    Asset?  @relation("BusinessLogoAsset", fields: [logoAssetId], references: [id], onDelete: SetNull)
+
   activities            Activity[]
   bookings              Booking[]
+  assets                Asset[] @relation("BusinessAssets")
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([ownerUserId])
   @@index([status])
-}
-
-model AvailabilityTemplate {
-  id                   String                       @id @default(uuid()) @db.Uuid
-  businessId           String                       @map("business_id") @db.Uuid
-  business             Business                     @relation(fields: [businessId], references: [id], onDelete: Restrict)
-  
-  name                 String
-  daysOfWeek           Int[]                        @map("days_of_week") @db.SmallInt
-  startTime            DateTime                     @map("start_time") @db.Time
-  endTime              DateTime                     @map("end_time") @db.Time
-  slotDurationMinutes  Int                          @map("slot_duration_minutes")
-  capacity             Int
-  imageUrl             String?                      @map("image_url")
-  status               AvailabilityTemplateStatus   @default(active)
-
-  exceptions           AvailabilityException[]
-  activities           Activity[]
-
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @updatedAt @map("updated_at")
-
-  @@map("availability_templates")
-  @@index([businessId, updatedAt(sort: Desc)])
-  @@index([status])
-}
-
-model AvailabilityException {
-  id         String               @id @default(uuid()) @db.Uuid
-  templateId String               @map("template_id") @db.Uuid
-  template   AvailabilityTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-
-  startDate  DateTime             @map("start_date") @db.Date
-  endDate    DateTime             @map("end_date") @db.Date
-  reason     String?
-
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  @@map("availability_exceptions")
-  @@index([templateId, startDate, endDate])
 }
 
 model Activity {
@@ -146,9 +106,6 @@ model Activity {
   catalogGroupTitle      String?        @map("catalog_group_title")
   catalogGroupKind       String?        @map("catalog_group_kind")
 
-  availabilityTemplateId String?                  @map("availability_template_id") @db.Uuid
-  availabilityTemplate   AvailabilityTemplate?    @relation(fields: [availabilityTemplateId], references: [id], onDelete: SetNull)
-
   images                 ActivityImage[]
   savedBy                SavedActivity[]
   slotCapacities         SlotCapacity[]
@@ -160,7 +117,6 @@ model Activity {
   @@map("activities")
   @@index([businessId, updatedAt(sort: Desc)])
   @@index([status, city, updatedAt(sort: Desc)])
-  @@index([availabilityTemplateId])
   @@index([businessId, catalogGroupId, updatedAt(sort: Desc)], map: "activities_business_catalog_group_idx")
   @@index([status, catalogGroupId], map: "activities_status_catalog_group_idx")
 }
@@ -173,6 +129,9 @@ model ActivityImage {
   imageUrl    String   @map("image_url")
   isThumbnail Boolean  @default(false) @map("is_thumbnail")
   sortOrder   Int      @default(0) @map("sort_order")
+
+  assetId     String?  @map("asset_id") @db.Uuid
+  asset       Asset?   @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now()) @map("created_at")
 
@@ -245,6 +204,7 @@ model SlotCapacity {
   activityId   String              @map("activity_id") @db.Uuid
   activity     Activity            @relation(fields: [activityId], references: [id], onDelete: Cascade)
   
+  packageCode  String              @map("package_code")
   slotStart    DateTime            @map("slot_start")
   capacity     Int
   bookedSeats  Int                 @default(0) @map("booked_seats")
@@ -253,9 +213,10 @@ model SlotCapacity {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  @@unique([activityId, slotStart])
+  @@unique([activityId, packageCode, slotStart])
   @@map("slot_capacity")
   @@index([activityId, slotStart])
+  @@index([activityId, packageCode, slotStart])
   @@index([activityId, slotStart, status])
 }
 
@@ -289,4 +250,36 @@ model Booking {
   @@index([userId, slotStart(sort: Desc)])
   @@index([activityId, slotStart])
   @@index([businessId, slotStart])
+}
+
+model Asset {
+  id            String   @id @default(uuid()) @db.Uuid
+  
+  provider      String   @default("firebase")
+  storageKey    String   @map("storage_key")
+  downloadToken String?  @map("download_token")
+  
+  contentType   String?  @map("content_type")
+  sizeBytes     Int?     @map("size_bytes")
+  width         Int?
+  height        Int?
+  
+  variants      Json?
+  
+  userId        String?  @map("user_id") @db.Uuid
+  user          User?    @relation("UserAssets", fields: [userId], references: [id], onDelete: Cascade)
+  
+  businessId    String?  @map("business_id") @db.Uuid
+  business      Business? @relation("BusinessAssets", fields: [businessId], references: [id], onDelete: Cascade)
+  
+  userPhotoFor  User?    @relation("UserPhotoAsset")
+  businessLogoFor Business? @relation("BusinessLogoAsset")
+  activityImages ActivityImage[]
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  @@map("assets")
+  @@index([userId])
+  @@index([businessId])
 }

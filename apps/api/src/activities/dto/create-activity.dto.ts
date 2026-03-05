@@ -75,9 +75,5 @@ export class CreateActivityDto {
   catalogGroupKind?: string;
 
   @IsOptional()
-  @IsString()
-  availabilityTemplateId?: string;
-
-  @IsOptional()
   images?: CreateActivityImageDto[];
 }

@@ -4,6 +4,9 @@ import { admin } from "../auth/firebase-admin";
 import { PrismaService } from "../prisma/prisma.service";
 import { UpdateMeDto } from "./dto/update-me.dto";
 
+/**
+ * Current-user profile orchestration and account lifecycle behavior.
+ */
 @Injectable()
 export class MeService {
   constructor(
@@ -11,6 +14,9 @@ export class MeService {
     private readonly authService: AuthService
   ) {}
 
+  /**
+   * Returns or provisions the app user from Firebase identity, plus profile stats.
+   */
   async getOrCreateFromFirebase(firebaseUid: string, email?: string | null, picture?: string | null) {
     const user = await this.authService.getOrCreateUser(
       firebaseUid,
@@ -18,7 +24,7 @@ export class MeService {
       picture ?? undefined
     );
 
-    // Calculate completed bookings count
+    // Stats are derived at read time to avoid denormalized counters.
     const bookingsCompleted = await this.prisma.booking.count({
       where: {
         userId: user.id,
@@ -34,6 +40,9 @@ export class MeService {
     return { user, stats };
   }
 
+  /**
+   * Updates user profile fields by Firebase uid after soft-delete checks.
+   */
   async updateByFirebaseUid(firebaseUid: string, dto: UpdateMeDto) {
     const existing = await this.prisma.user.findUnique({
       where: { firebaseUid },
@@ -49,7 +58,6 @@ export class MeService {
         lastName: dto.lastName ?? undefined,
         phoneNumber: dto.phoneNumber ?? undefined,
         city: dto.city ?? undefined,
-        photoUrl: dto.photoUrl ?? undefined,
       },
       select: {
         id: true,
@@ -60,11 +68,19 @@ export class MeService {
         lastName: true,
         city: true,
         phoneNumber: true,
-        photoUrl: true,
+        photoAsset: {
+          select: {
+            storageKey: true,
+            downloadToken: true,
+          },
+        },
       },
     });
   }
 
+  /**
+   * Deletes non-business accounts: remove Firebase auth user, then soft-delete local record.
+   */
   async deleteMyAccount(firebaseUid: string) {
     const user = await this.prisma.user.findUnique({
       where: { firebaseUid },
@@ -80,7 +96,7 @@ export class MeService {
       );
     }
 
-    // 1) delete Firebase user
+    // Delete in Firebase first to prevent re-auth while local delete is pending.
     try {
       await admin.auth().deleteUser(firebaseUid);
     } catch (e: any) {
@@ -90,7 +106,7 @@ export class MeService {
       }
     }
 
-    // 2) soft-delete + scrub PII in Postgres
+    // Retain row for referential integrity while scrubbing personal data.
     await this.prisma.user.update({
       where: { firebaseUid },
       data: {
@@ -100,7 +116,6 @@ export class MeService {
         lastName: null,
         city: null,
         phoneNumber: null,
-        photoUrl: null,
       },
     });
   }

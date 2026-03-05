@@ -28,10 +28,16 @@ interface ValidationResult {
   errors: ValidationError[];
 }
 
+/**
+ * Retrieves and validates activity type schema definitions.
+ */
 @Injectable()
 export class ActivityTypeDefinitionsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Returns a type definition for a specific type and schema version.
+   */
   async getTypeDefinition(typeId: string, schemaVersion?: number) {
     const version = schemaVersion || 1;
     const typeDef = await this.prisma.activityTypeDefinition.findUnique({
@@ -50,6 +56,9 @@ export class ActivityTypeDefinitionsService {
     return typeDef;
   }
 
+  /**
+   * Returns available type definitions for the active schema version.
+   */
   async listTypeDefinitions() {
     // Return all type definitions (for now, only v1)
     const typeDefs = await this.prisma.activityTypeDefinition.findMany({
@@ -64,6 +73,9 @@ export class ActivityTypeDefinitionsService {
     return typeDefs;
   }
 
+  /**
+   * Validates activity `config` payload against the configured type schema.
+   */
   async validateActivityConfig(
     typeId: string,
     config: any,
@@ -75,6 +87,9 @@ export class ActivityTypeDefinitionsService {
     return this.validateAgainstSchema(config, configSchema.fields, "config");
   }
 
+  /**
+   * Validates activity `pricing` payload against the configured type schema.
+   */
   async validateActivityPricing(
     typeId: string,
     pricing: any,
@@ -86,6 +101,9 @@ export class ActivityTypeDefinitionsService {
     return this.validateAgainstSchema(pricing, pricingSchema.fields, "pricing");
   }
 
+  /**
+   * Runs field-level validation with required checks and type-specific constraints.
+   */
   private validateAgainstSchema(
     data: any,
     fields: FieldDefinition[],

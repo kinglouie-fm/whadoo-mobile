@@ -1,0 +1,136 @@
+appId: com.kinglouie-fm.whadoo
+---
+# Business Journey: Complete activity creation flow (assumes business is logged in)
+- launchApp
+- assertVisible: "Business"
+
+# Navigate to manage activities
+- tapOn:
+    point: 50%,91%
+
+# Click on create activity button
+- tapOn:
+    point: 82%,10%
+- assertVisible: "Create Activity"
+
+# Insert activity details
+
+# Title
+- tapOn: "e.g., Go-Kart Racing"
+- inputText: "Test Activity"
+
+# Type
+- tapOn:
+    point: 57%,31%
+
+# Description
+- tapOn: "Describe your activity..."
+- inputText: "Test Description"
+
+# City
+- tapOn: "e.g., Amsterdam"
+- inputText: "Test City"
+- tapOn:
+    point: 98%,60%
+
+# Address
+- tapOn: "Street address"
+- inputText: "Test Address"
+- tapOn:
+    point: 98%,60%
+
+# Category
+- tapOn: "e.g., Sports, Food, Entertainment"
+- inputText: "Test Category"
+- tapOn:
+    point: 98%,60%
+
+# Price from
+- tapOn: "0.00"
+- inputText: "1"
+- tapOn:
+    point: 98%,60%
+
+# Swipe to see catalog group ID
+- swipe:
+    start: 44%,89%
+    end: 46%,12%
+    duration: 1250
+- assertVisible: "Discovery Settings"
+
+# Catalog group ID
+- tapOn: "e.g., businessname-escape-room"
+- inputText: "test-id"
+- tapOn:
+    point: 98%,60%
+
+# Catalog group title
+- tapOn: "e.g., Escape Room at YourBusiness"
+- inputText: "Test Catalog Group Title"
+- tapOn:
+    point: 98%,60%
+
+# Catalog group kind
+- tapOn: "escape_room"
+- inputText: "Test Catalog Group Kind"
+- tapOn:
+    point: 98%,60%
+
+# Go to edit default package
+- tapOn: "Edit"
+- assertVisible: "Edit Package"
+
+# Swipe down to availability configuration
+- swipe:
+    start: 48%,76%
+    end: 48%,16%
+    duration: 1250
+- swipe:
+    start: 45%,84%
+    end: 50%,31%
+    duration: 833
+- assertVisible: "Availability Configuration"
+
+# Set weekdays
+- tapOn:
+    point: 11%,45%
+- tapOn:
+    point: 24%,45%
+- tapOn:
+    point: 39%,45%
+
+# Set start time
+- tapOn: "10:00:00"
+- inputText: "10:00:00"
+- tapOn:
+    point: 98%,60%
+
+# Set end time
+- tapOn: "22:00:00"
+- inputText: "22:00:00"
+
+# Set slot duration
+- tapOn: "30"
+- inputText: "30"
+- tapOn:
+    point: 98%,60%
+
+# Set capacity
+- tapOn: "12"
+- inputText: "15"
+- tapOn:
+    point: 98%,60%
+
+# Set availability active
+- tapOn:
+    point: 85%,77%
+
+# Save package
+- tapOn:
+    point: 86%,11%
+- assertVisible: "Create Activity"
+
+# Save activity
+- tapOn:
+    point: 86%,11%
+- assertVisible: "Manage Activities"

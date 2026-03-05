@@ -5,6 +5,9 @@ import React from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+/**
+ * Route screen for (business)/settings/privacy.
+ */
 export default function PrivacyScreen() {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={["top"]}>

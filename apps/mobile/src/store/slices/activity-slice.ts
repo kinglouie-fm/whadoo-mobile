@@ -26,7 +26,6 @@ export interface Activity {
   catalogGroupId?: string;
   catalogGroupTitle?: string;
   catalogGroupKind?: string;
-  availabilityTemplateId?: string;
   images: ActivityImage[];
   createdAt: string;
   updatedAt: string;
@@ -48,7 +47,6 @@ export interface CreateActivityData {
   catalogGroupId?: string;
   catalogGroupTitle?: string;
   catalogGroupKind?: string;
-  availabilityTemplateId?: string;
   images?: Omit<ActivityImage, "id">[];
 }
 
@@ -67,7 +65,6 @@ export interface UpdateActivityData {
   catalogGroupId?: string;
   catalogGroupTitle?: string;
   catalogGroupKind?: string;
-  availabilityTemplateId?: string;
   images?: Omit<ActivityImage, "id">[];
 }
 

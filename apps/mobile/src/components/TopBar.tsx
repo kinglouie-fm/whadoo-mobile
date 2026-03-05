@@ -1,9 +1,10 @@
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export function TopBar({
   title,
@@ -19,29 +20,12 @@ export function TopBar({
   const canGoBack = navigation?.canGoBack?.() ?? false;
 
   return (
-    <View
-      style={{
-        paddingHorizontal: 16,
-        paddingTop: 6,
-        paddingBottom: 10,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}
-    >
+    <View style={styles.container}>
       {/* Back */}
       <Pressable
         onPress={() => router.back()}
         disabled={!canGoBack}
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 19,
-          backgroundColor: "#1f1f1f",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: canGoBack ? 1 : 0, // keeps title centered
-        }}
+        style={[styles.button, { opacity: canGoBack ? 1 : 0 }]}
         hitSlop={12}
       >
         <MaterialIcons
@@ -52,31 +36,43 @@ export function TopBar({
       </Pressable>
 
       {/* Title */}
-      <Text
-        style={{ color: theme.colors.text, fontSize: 18, fontWeight: "700" }}
-      >
-        {title}
-      </Text>
+      <Text style={typography.h4}>{title}</Text>
 
       {/* Right (optional) */}
       {rightIcon ? (
         <Pressable
           onPress={onRightPress}
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 19,
-            backgroundColor: "#1f1f1f",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          style={styles.button}
           hitSlop={12}
         >
           <MaterialIcons name={rightIcon} size={18} color={theme.colors.text} />
         </Pressable>
       ) : (
-        <View style={{ width: 38, height: 38 }} />
+        <View style={styles.spacer} />
       )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  button: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: theme.colors.bg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  spacer: {
+    width: 38,
+    height: 38,
+  },
+});

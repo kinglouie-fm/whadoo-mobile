@@ -1,3 +1,5 @@
+import { PrimaryButton } from "@/src/components/Button";
+import { EmptyState } from "@/src/components/EmptyState";
 import { TopBar } from "@/src/components/TopBar";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import {
@@ -11,8 +13,10 @@ import {
   unsaveActivity,
 } from "@/src/store/slices/saved-activity-slice";
 import { theme } from "@/src/theme/theme";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -26,15 +30,20 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { useStoriesProgress } from "../../hooks/useStoriesProgress";
 
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = 400;
 
+/**
+ * Route screen for (consumer)/activity-detail.
+ */
 export default function ActivityDetailScreen() {
   const router = useRouter();
-  const { activityId, catalogGroupId } = useLocalSearchParams<{
+  const { activityId, catalogGroupId, businessId } = useLocalSearchParams<{
     activityId?: string;
     catalogGroupId?: string;
+    businessId?: string;
   }>();
   const dispatch = useAppDispatch();
   const { currentActivity, currentGroup, loading } = useAppSelector(
@@ -42,9 +51,7 @@ export default function ActivityDetailScreen() {
   );
   const savedItems = useAppSelector((state) => state.savedActivities.items);
 
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
-  const progressAnims = useRef<Animated.Value[]>([]).current;
 
   const displayData =
     currentGroup ||
@@ -70,35 +77,25 @@ export default function ActivityDetailScreen() {
         ? displayData.businessImages
         : [];
 
-  useEffect(() => {
-    if (images.length > 0) {
-      progressAnims.length = images.length;
-      for (let i = 0; i < images.length; i++) {
-        if (!progressAnims[i]) {
-          progressAnims[i] = new Animated.Value(0);
-        }
-      }
-    }
-  }, [images.length]);
-
-  useEffect(() => {
-    if (images.length > 0 && progressAnims[currentImageIndex]) {
-      progressAnims[currentImageIndex].setValue(0);
-      Animated.timing(progressAnims[currentImageIndex], {
-        toValue: 1,
-        duration: 3000,
-        useNativeDriver: false,
-      }).start(({ finished }) => {
-        if (finished && currentImageIndex < images.length - 1) {
-          setCurrentImageIndex(currentImageIndex + 1);
-        }
-      });
-    }
-  }, [currentImageIndex, images.length]);
+  // Stories hook (loop + pause on hold + tap navigation)
+  const {
+    index: currentImageIndex,
+    next,
+    prev,
+    pause,
+    resume,
+    progressWidthFor,
+    onPressIn,
+    onPressOut,
+    makeTapHandler,
+  } = useStoriesProgress({
+    length: images.length,
+    durationMs: 3000,
+  });
 
   useEffect(() => {
     if (catalogGroupId) {
-      dispatch(fetchActivityGroup(catalogGroupId));
+      dispatch(fetchActivityGroup({ catalogGroupId, businessId }));
     } else if (activityId) {
       dispatch(fetchConsumerActivity(activityId));
     }
@@ -106,7 +103,7 @@ export default function ActivityDetailScreen() {
       dispatch(clearCurrentActivity());
       dispatch(clearCurrentGroup());
     };
-  }, [activityId, catalogGroupId]);
+  }, [activityId, catalogGroupId, businessId]);
 
   useEffect(() => {
     if (representativeActivityId) {
@@ -147,23 +144,15 @@ export default function ActivityDetailScreen() {
     }
   };
 
-  const handleImageTap = (side: "left" | "right") => {
-    if (side === "left" && currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
-    } else if (side === "right" && currentImageIndex < images.length - 1) {
-      setCurrentImageIndex(currentImageIndex + 1);
-    }
-  };
-
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <SafeAreaView style={ui.container} edges={["top"]}>
         <TopBar
           title="Activity Details"
           rightIcon={isSaved ? "favorite" : "favorite-outline"}
           onRightPress={handleToggleSave}
         />
-        <View style={styles.loadingContainer}>
+        <View style={ui.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.accent} />
         </View>
       </SafeAreaView>
@@ -172,14 +161,14 @@ export default function ActivityDetailScreen() {
 
   if (!displayData || !representativeActivity) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <SafeAreaView style={ui.container} edges={["top"]}>
         <TopBar
           title="Activity Details"
           rightIcon={isSaved ? "favorite" : "favorite-outline"}
           onRightPress={handleToggleSave}
         />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Activity not found</Text>
+        <View style={ui.errorContainer}>
+          <EmptyState icon="error-outline" title="Activity not found" />
         </View>
       </SafeAreaView>
     );
@@ -191,17 +180,14 @@ export default function ActivityDetailScreen() {
   }, 0);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={ui.container} edges={["top"]}>
       <TopBar
         title=""
         rightIcon={isSaved ? "favorite" : "favorite-outline"}
         onRightPress={handleToggleSave}
       />
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={ui.scrollView} showsVerticalScrollIndicator={false}>
         {/* Image Carousel with Stories Progress */}
         <View style={styles.imageContainer}>
           {images.length > 0 ? (
@@ -212,60 +198,58 @@ export default function ActivityDetailScreen() {
                   style={styles.heroImage}
                   resizeMode="cover"
                 />
+
                 <TouchableOpacity
                   style={styles.tapLeft}
-                  onPress={() => handleImageTap("left")}
+                  onPress={makeTapHandler(prev)}
+                  onPressIn={onPressIn}
+                  onPressOut={onPressOut}
                   activeOpacity={1}
                 />
+
                 <TouchableOpacity
                   style={styles.tapRight}
-                  onPress={() => handleImageTap("right")}
+                  onPress={makeTapHandler(next)}
+                  onPressIn={onPressIn}
+                  onPressOut={onPressOut}
                   activeOpacity={1}
                 />
-              </View>
 
-              {images.length > 1 && (
-                <View style={styles.progressContainer}>
-                  {images.map((_, index) => (
-                    <View key={index} style={styles.progressBarBg}>
-                      <Animated.View
-                        style={[
-                          styles.progressBarFill,
-                          {
-                            width:
-                              index < currentImageIndex
-                                ? "100%"
-                                : index === currentImageIndex
-                                  ? progressAnims[index]?.interpolate({
-                                      inputRange: [0, 1],
-                                      outputRange: ["0%", "100%"],
-                                    })
-                                  : "0%",
-                          },
-                        ]}
-                      />
-                    </View>
-                  ))}
-                </View>
-              )}
+                {images.length > 1 && (
+                  <View style={styles.progressContainer}>
+                    {images.map((_, index) => (
+                      <View key={index} style={styles.progressBarBg}>
+                        <Animated.View
+                          style={[
+                            styles.progressBarFill,
+                            { width: progressWidthFor(index) },
+                          ]}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
             </>
           ) : (
             <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderText}>📸</Text>
+              <EmptyState icon="image-not-supported" title="No photos" />
             </View>
           )}
         </View>
 
         <View style={styles.content}>
           <View style={styles.titleSection}>
-            <Text style={styles.title}>
+            <Text style={[typography.h1, { marginBottom: theme.spacing.sm }]}>
               {displayData.catalogGroupTitle || representativeActivity.title}
             </Text>
             {displayData.businessName && (
-              <Text style={styles.subtitle}>{displayData.businessName}</Text>
+              <Text style={[typography.h4, { marginBottom: theme.spacing.sm }]}>
+                {displayData.businessName}
+              </Text>
             )}
             {displayData.businessCity && (
-              <Text style={styles.location}>
+              <Text style={typography.bodyMuted}>
                 📍 {displayData.businessCity}
                 {displayData.businessAddress &&
                   `, ${displayData.businessAddress}`}
@@ -274,9 +258,11 @@ export default function ActivityDetailScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Information</Text>
+            <Text style={[typography.h4, { marginBottom: theme.spacing.md }]}>
+              Information
+            </Text>
             {representativeActivity.description && (
-              <Text style={styles.description}>
+              <Text style={typography.body}>
                 {representativeActivity.description}
               </Text>
             )}
@@ -284,42 +270,23 @@ export default function ActivityDetailScreen() {
 
           {lowestPrice > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>From</Text>
-              <Text style={styles.priceValue}>€{lowestPrice.toFixed(2)}</Text>
-            </View>
-          )}
-
-          {images.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Photos</Text>
-              <View style={styles.photosGrid}>
-                {images.map((uri: string, index: number) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.photoCard}
-                    onPress={() => setCurrentImageIndex(index)}
-                  >
-                    <Image
-                      source={{ uri }}
-                      style={styles.photoThumbnail}
-                      resizeMode="cover"
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <Text style={[typography.h4, { marginBottom: theme.spacing.md }]}>
+                From
+              </Text>
+              <Text style={typography.price}>€{lowestPrice.toFixed(2)}</Text>
             </View>
           )}
         </View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={styles.bookButton}
+        <PrimaryButton
+          title="Book"
           onPress={() => {
-            if (catalogGroupId) {
+            if (catalogGroupId && businessId) {
               router.push({
                 pathname: "/(consumer)/booking-options",
-                params: { catalogGroupId },
+                params: { catalogGroupId, businessId },
               });
             } else if (representativeActivityId) {
               router.push({
@@ -328,37 +295,13 @@ export default function ActivityDetailScreen() {
               });
             }
           }}
-        >
-          <Text style={styles.bookButtonText}>Book</Text>
-        </TouchableOpacity>
+        />
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  errorText: {
-    fontSize: 16,
-    color: theme.colors.muted,
-    textAlign: "center",
-  },
   imageContainer: {
     position: "relative",
   },
@@ -391,16 +334,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  placeholderText: {
-    fontSize: 64,
-  },
   progressContainer: {
     position: "absolute",
-    top: 16,
-    left: 12,
-    right: 12,
+    top: theme.spacing.lg,
+    left: theme.spacing.md,
+    right: theme.spacing.md,
     flexDirection: "row",
-    gap: 4,
+    gap: theme.spacing.sm / 2,
     zIndex: 10,
   },
   progressBarBg: {
@@ -416,82 +356,23 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   content: {
-    padding: 20,
+    padding: theme.spacing.lg,
     paddingBottom: 100,
   },
   titleSection: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: theme.colors.muted,
-    marginBottom: 8,
-  },
-  location: {
-    fontSize: 16,
-    color: theme.colors.muted,
+    marginBottom: theme.spacing.xl,
   },
   section: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: theme.colors.text,
-    marginBottom: 12,
-  },
-  description: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: theme.colors.text,
-  },
-  priceValue: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: theme.colors.text,
-  },
-  photosGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  photoCard: {
-    width: (width - 56) / 2,
-    height: 140,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: theme.colors.surface,
-  },
-  photoThumbnail: {
-    width: "100%",
-    height: "100%",
+    marginBottom: theme.spacing.xxl,
   },
   bottomBar: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
+    padding: theme.spacing.lg,
     backgroundColor: theme.colors.bg,
     borderTopWidth: 1,
     borderTopColor: theme.colors.divider,
-  },
-  bookButton: {
-    backgroundColor: theme.colors.accent,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  bookButtonText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: theme.colors.bg,
   },
 });

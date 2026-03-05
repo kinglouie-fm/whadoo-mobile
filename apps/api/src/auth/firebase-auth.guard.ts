@@ -1,8 +1,14 @@
-import { CanActivate, ExecutionContext, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { Request } from "express";
-import type admin from "firebase-admin";
+import {
+  CanActivate,
+  ExecutionContext,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Request } from 'express';
+import type admin from 'firebase-admin';
 
-export type Role = "user" | "business";
+export type Role = 'user' | 'business';
 
 export type RequestAppUser = {
   id: string;
@@ -20,19 +26,27 @@ export type AuthedRequest = Request & {
   appUser?: RequestAppUser;
 };
 
+/**
+ * Verifies Firebase bearer tokens and attaches decoded identity to the request.
+ */
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
-  constructor(@Inject("FIREBASE_ADMIN") private readonly firebaseAdmin: typeof admin) {}
+  constructor(
+    @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: typeof admin,
+  ) {}
 
+  /**
+   * Rejects missing/invalid tokens and populates `req.firebase` on success.
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<AuthedRequest>();
     const header = req.headers.authorization;
 
-    if (!header?.startsWith("Bearer ")) {
-      throw new UnauthorizedException("Missing Bearer token");
+    if (!header?.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Missing Bearer token');
     }
 
-    const token = header.slice("Bearer ".length).trim();
+    const token = header.slice('Bearer '.length).trim();
 
     try {
       const decoded = await this.firebaseAdmin.auth().verifyIdToken(token);
@@ -43,12 +57,12 @@ export class FirebaseAuthGuard implements CanActivate {
         name: decoded.name,
         picture: decoded.picture,
       };
-      console.log("verifyIdToken OK uid=", decoded.uid);
 
       return true;
     } catch (e) {
-      console.error("verifyIdToken failed:", e);
-      throw new UnauthorizedException("Invalid Firebase token");
+      // Avoid exposing verification details to clients.
+      console.error('verifyIdToken failed:');
+      throw new UnauthorizedException('Invalid Firebase token');
     }
   }
 }

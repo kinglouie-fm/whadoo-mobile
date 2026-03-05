@@ -1,16 +1,29 @@
+import { FormInput, TextArea } from "@/src/components/Input";
 import { theme } from "@/src/theme/theme";
-import React, { useMemo, useState } from "react";
+import { typography } from "@/src/theme/typography";
+import { ui } from "@/src/theme/ui";
+import React, { useState } from "react";
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PrimaryButton, SecondaryButton } from "./Button";
+
+interface Availability {
+  daysOfWeek: number[];
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes: number;
+  capacity: number;
+  status: "active" | "inactive";
+}
 
 interface Package {
   code: string;
@@ -33,20 +46,13 @@ interface Package {
   includes_wine?: boolean;
   includes_extras?: boolean;
   difficulty_level?: string;
+  availability?: Availability;
 }
 
 interface PackagesEditorProps {
   packages: Package[];
   onChange: (packages: Package[]) => void;
 }
-
-const stylesVars = {
-  cardBg: "rgba(255,255,255,0.08)",
-  inputBg: "rgba(255,255,255,0.06)",
-  border: "rgba(255,255,255,0.12)",
-  subText: "rgba(255,255,255,0.78)",
-  subText2: "rgba(255,255,255,0.62)",
-};
 
 export const PackagesEditor: React.FC<PackagesEditorProps> = ({
   packages,
@@ -56,16 +62,7 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
 
-  const inputProps = useMemo(
-    () => ({
-      underlineColorAndroid: "transparent" as const, // ✅ remove Android blue underline
-      selectionColor: theme.colors.accent,
-      cursorColor: theme.colors.accent,
-      placeholderTextColor: stylesVars.subText2,
-      keyboardAppearance: "dark" as const,
-    }),
-    [],
-  );
+  const insets = useSafeAreaInsets();
 
   const handleAdd = () => {
     const newPackage: Package = {
@@ -73,6 +70,15 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
       title: "",
       is_default: packages.length === 0,
       sort_order: packages.length,
+      min_participants: 1,
+      availability: {
+        daysOfWeek: [1, 2, 3, 4, 5, 6, 7],
+        startTime: "10:00:00",
+        endTime: "22:00:00",
+        slotDurationMinutes: 30,
+        capacity: 12,
+        status: "active",
+      },
     };
     setEditingPackage(newPackage);
     setEditingIndex(null);
@@ -105,6 +111,16 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
     );
     if (isDuplicate) {
       Alert.alert("Validation Error", "Package code must be unique");
+      return;
+    }
+
+    if (!editingPackage.availability) {
+      Alert.alert("Validation Error", "Availability configuration is required");
+      return;
+    }
+
+    if (editingPackage.availability.daysOfWeek.length === 0) {
+      Alert.alert("Validation Error", "Select at least one day of the week");
       return;
     }
 
@@ -147,39 +163,46 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
     );
   };
 
+  const withSortOrders = (list: Package[]) =>
+    list.map((pkg, idx) => ({ ...pkg, sort_order: idx }));
+
   const handleMoveUp = (index: number) => {
     if (index === 0) return;
-    const updatedPackages = [...packages];
-    [updatedPackages[index - 1], updatedPackages[index]] = [
-      updatedPackages[index],
-      updatedPackages[index - 1],
+
+    const reordered = [...packages];
+    [reordered[index - 1], reordered[index]] = [
+      reordered[index],
+      reordered[index - 1],
     ];
-    updatedPackages.forEach((pkg, idx) => (pkg.sort_order = idx));
-    onChange(updatedPackages);
+
+    onChange(withSortOrders(reordered));
   };
 
   const handleMoveDown = (index: number) => {
     if (index === packages.length - 1) return;
-    const updatedPackages = [...packages];
-    [updatedPackages[index], updatedPackages[index + 1]] = [
-      updatedPackages[index + 1],
-      updatedPackages[index],
+
+    const reordered = [...packages];
+    [reordered[index], reordered[index + 1]] = [
+      reordered[index + 1],
+      reordered[index],
     ];
-    updatedPackages.forEach((pkg, idx) => (pkg.sort_order = idx));
-    onChange(updatedPackages);
+
+    onChange(withSortOrders(reordered));
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Packages / Formulas</Text>
-        <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-          <Text style={styles.addButtonText}>+ Add Package</Text>
-        </TouchableOpacity>
+        <Text style={typography.label}>Packages / Formulas</Text>
+        <SecondaryButton
+          title="+ Add Package"
+          style={styles.headerButton}
+          onPress={handleAdd}
+        />
       </View>
 
       {packages.length === 0 ? (
-        <Text style={styles.emptyText}>
+        <Text style={[typography.bodyMuted, styles.emptyText]}>
           No packages defined. Add at least one package to publish.
         </Text>
       ) : (
@@ -188,18 +211,18 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
             <View key={index} style={styles.packageCard}>
               <View style={styles.packageHeader}>
                 <View style={styles.packageInfo}>
-                  <Text style={styles.packageTitle} numberOfLines={1}>
+                  <Text style={typography.body} numberOfLines={1}>
                     {pkg.title}
-                    {pkg.is_default ? (
+                    {pkg.is_default && (
                       <Text style={styles.defaultBadge}> (Default)</Text>
-                    ) : null}
+                    )}
                   </Text>
-                  <Text style={styles.packageCode}>Code: {pkg.code}</Text>
-                  {pkg.track_type ? (
-                    <Text style={styles.packageTrackType}>
-                      {pkg.track_type === "indoor" ? "🏢 Indoor" : "🌳 Outdoor"}
+                  <Text style={typography.captionSmall}>Code: {pkg.code}</Text>
+                  {pkg.track_type && (
+                    <Text style={typography.caption}>
+                      {pkg.track_type === "indoor" ? "Indoor" : "Outdoor"}
                     </Text>
-                  ) : null}
+                  )}
                 </View>
 
                 <View style={styles.packageActions}>
@@ -237,19 +260,23 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
                     onPress={() => handleRemove(index)}
                     style={[styles.actionButton, styles.removeButton]}
                   >
-                    <Text style={styles.removeButtonText}>Remove</Text>
+                    <Text style={[styles.actionButtonText, { color: "#fff" }]}>
+                      Remove
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {pkg.description ? (
-                <Text style={styles.packageDescription}>{pkg.description}</Text>
-              ) : null}
-              {pkg.base_price != null ? (
-                <Text style={styles.packagePrice}>
+              {pkg.description && (
+                <Text style={[typography.body, styles.packageDescription]}>
+                  {pkg.description}
+                </Text>
+              )}
+              {pkg.base_price != null && (
+                <Text style={[typography.body, styles.packagePrice]}>
                   Price: {pkg.currency || "EUR"} {pkg.base_price}
                 </Text>
-              ) : null}
+              )}
             </View>
           ))}
         </ScrollView>
@@ -258,439 +285,587 @@ export const PackagesEditor: React.FC<PackagesEditorProps> = ({
       <Modal
         visible={modalVisible}
         animationType="slide"
+        presentationStyle="fullScreen"
+        statusBarTranslucent
         onRequestClose={() => setModalVisible(false)}
       >
-        <ScrollView
-          style={styles.modalContainer}
-          contentContainerStyle={{ paddingBottom: 40 }}
-        >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
+        <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+          <View
+            style={[
+              styles.modalHeaderBar,
+              {
+                paddingTop: insets.top + theme.spacing.md,
+                paddingBottom: theme.spacing.md,
+              },
+            ]}
+          >
+            <SecondaryButton
+              title="Cancel"
+              onPress={() => setModalVisible(false)}
+              style={styles.headerButton}
+            />
+            <Text style={[typography.h4, styles.headerTitle]}>
               {editingIndex !== null ? "Edit Package" : "Add Package"}
             </Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.closeButton}>✕</Text>
-            </TouchableOpacity>
+            <PrimaryButton
+              title="Save"
+              onPress={handleSave}
+              style={styles.headerButton}
+            />
           </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>
-              Package Code <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              {...inputProps}
-              style={styles.input}
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={[
+              styles.modalScrollContent,
+              { paddingBottom: 40 + insets.bottom },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <FormInput
+              label="Package Code *"
               value={editingPackage?.code || ""}
               onChangeText={(text) =>
                 setEditingPackage((prev) => ({ ...prev!, code: text }))
               }
               placeholder="e.g., standard, mini-gp, grand-gp"
             />
-          </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>
-              Package Title <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              {...inputProps}
-              style={styles.input}
+            <FormInput
+              label="Package Title *"
               value={editingPackage?.title || ""}
               onChangeText={(text) =>
                 setEditingPackage((prev) => ({ ...prev!, title: text }))
               }
               placeholder="e.g., Standard Session, Mini GP"
             />
-          </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>
-              Track Type <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.trackTypeRow}>
-              <TouchableOpacity
-                style={[
-                  styles.trackTypeOption,
-                  editingPackage?.track_type === "indoor" &&
-                    styles.trackTypeOptionSelected,
-                ]}
-                onPress={() =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    track_type: "indoor",
-                  }))
-                }
+            <View>
+              <Text
+                style={[typography.label, { marginBottom: theme.spacing.sm }]}
               >
-                <Text
+                Track Type <Text style={{ color: theme.colors.danger }}>*</Text>
+              </Text>
+              <View style={styles.trackTypeRow}>
+                <TouchableOpacity
                   style={[
-                    styles.trackTypeText,
+                    styles.trackTypeOption,
                     editingPackage?.track_type === "indoor" &&
-                      styles.trackTypeTextSelected,
+                      styles.trackTypeOptionSelected,
                   ]}
+                  onPress={() =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      track_type: "indoor",
+                    }))
+                  }
                 >
-                  Indoor
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.trackTypeText,
+                      editingPackage?.track_type === "indoor" &&
+                        styles.trackTypeTextSelected,
+                    ]}
+                  >
+                    Indoor
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.trackTypeOption,
-                  editingPackage?.track_type === "outdoor" &&
-                    styles.trackTypeOptionSelected,
-                ]}
-                onPress={() =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    track_type: "outdoor",
-                  }))
-                }
-              >
-                <Text
+                <TouchableOpacity
                   style={[
-                    styles.trackTypeText,
+                    styles.trackTypeOption,
                     editingPackage?.track_type === "outdoor" &&
-                      styles.trackTypeTextSelected,
+                      styles.trackTypeOptionSelected,
                   ]}
+                  onPress={() =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      track_type: "outdoor",
+                    }))
+                  }
                 >
-                  Outdoor
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.trackTypeText,
+                      editingPackage?.track_type === "outdoor" &&
+                        styles.trackTypeTextSelected,
+                    ]}
+                  >
+                    Outdoor
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-              {...inputProps}
-              style={[styles.input, styles.textArea]}
+            <TextArea
+              label="Description"
               value={editingPackage?.description || ""}
               onChangeText={(text) =>
                 setEditingPackage((prev) => ({ ...prev!, description: text }))
               }
               placeholder="Describe this package..."
-              multiline
               numberOfLines={3}
             />
-          </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Format Details (one per line)</Text>
-            <TextInput
-              {...inputProps}
-              style={[styles.input, styles.textArea]}
+            <TextArea
+              label="Format Details (one per line)"
               value={editingPackage?.format_lines || ""}
-              onChangeText={(text) =>
-                setEditingPackage((prev) => ({ ...prev!, format_lines: text }))
-              }
-              placeholder={"e.g., 8 min qualifying\n16 min race"}
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-          <View style={styles.formRow}>
-            <View style={[styles.formGroup, styles.formGroupHalf]}>
-              <Text style={styles.label}>Base Price</Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.base_price?.toString() || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    base_price: text ? parseFloat(text) : undefined,
-                  }))
-                }
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            <View style={[styles.formGroup, styles.formGroupHalf]}>
-              <Text style={styles.label}>Currency</Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.currency || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({ ...prev!, currency: text }))
-                }
-                placeholder="EUR"
-              />
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>
-              Pricing Model <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.trackTypeRow}>
-              <TouchableOpacity
-                style={[
-                  styles.trackTypeOption,
-                  (editingPackage?.pricing_type || "per_person") === "per_person" &&
-                    styles.trackTypeOptionSelected,
-                ]}
-                onPress={() =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    pricing_type: "per_person",
-                  }))
-                }
-              >
-                <Text
-                  style={[
-                    styles.trackTypeText,
-                    (editingPackage?.pricing_type || "per_person") === "per_person" &&
-                      styles.trackTypeTextSelected,
-                  ]}
-                >
-                  Per Person
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.trackTypeOption,
-                  editingPackage?.pricing_type === "fixed" &&
-                    styles.trackTypeOptionSelected,
-                ]}
-                onPress={() =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    pricing_type: "fixed",
-                  }))
-                }
-              >
-                <Text
-                  style={[
-                    styles.trackTypeText,
-                    editingPackage?.pricing_type === "fixed" &&
-                      styles.trackTypeTextSelected,
-                  ]}
-                >
-                  Fixed (Group Rate)
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.fieldHint}>
-              {(editingPackage?.pricing_type || "per_person") === "per_person"
-                ? "Price multiplied by number of participants"
-                : "Fixed price regardless of participant count"}
-            </Text>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Minimum Participants</Text>
-            <TextInput
-              {...inputProps}
-              style={styles.input}
-              value={editingPackage?.min_participants?.toString() || ""}
               onChangeText={(text) =>
                 setEditingPackage((prev) => ({
                   ...prev!,
-                  min_participants: text ? parseInt(text) : undefined,
+                  format_lines: text,
                 }))
               }
-              placeholder="e.g., 5"
+              placeholder={"e.g., 8 min qualifying\n16 min race"}
+              numberOfLines={4}
+            />
+
+            <View style={styles.formRow}>
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Base Price"
+                  value={editingPackage?.base_price?.toString() || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      base_price: text ? parseFloat(text) : undefined,
+                    }))
+                  }
+                  placeholder="0.00"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Currency"
+                  value={editingPackage?.currency || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({ ...prev!, currency: text }))
+                  }
+                  placeholder="EUR"
+                />
+              </View>
+            </View>
+
+            <View>
+              <Text
+                style={[typography.label, { marginBottom: theme.spacing.sm }]}
+              >
+                Pricing Model{" "}
+                <Text style={{ color: theme.colors.danger }}>*</Text>
+              </Text>
+              <View style={styles.trackTypeRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.trackTypeOption,
+                    (editingPackage?.pricing_type || "per_person") ===
+                      "per_person" && styles.trackTypeOptionSelected,
+                  ]}
+                  onPress={() =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      pricing_type: "per_person",
+                    }))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.trackTypeText,
+                      (editingPackage?.pricing_type || "per_person") ===
+                        "per_person" && styles.trackTypeTextSelected,
+                    ]}
+                  >
+                    Per Person
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.trackTypeOption,
+                    editingPackage?.pricing_type === "fixed" &&
+                      styles.trackTypeOptionSelected,
+                  ]}
+                  onPress={() =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      pricing_type: "fixed",
+                    }))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.trackTypeText,
+                      editingPackage?.pricing_type === "fixed" &&
+                        styles.trackTypeTextSelected,
+                    ]}
+                  >
+                    Fixed (Group Rate)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.fieldHint}>
+                {(editingPackage?.pricing_type || "per_person") === "per_person"
+                  ? "Price multiplied by number of participants"
+                  : "Fixed price regardless of participant count"}
+              </Text>
+            </View>
+
+            <FormInput
+              label="Minimum Participants *"
+              value={editingPackage?.min_participants?.toString() || "1"}
+              onChangeText={(text) =>
+                setEditingPackage((prev) => ({
+                  ...prev!,
+                  min_participants: text ? parseInt(text) : 1,
+                }))
+              }
+              placeholder="1"
               keyboardType="number-pad"
             />
-          </View>
 
-          <View style={styles.formRow}>
-            <View style={[styles.formGroup, styles.formGroupHalf]}>
-              <Text style={styles.label}>Minimum Age</Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.age_min?.toString() || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    age_min: text ? parseInt(text) : undefined,
-                  }))
-                }
-                placeholder="e.g., 8"
-                keyboardType="number-pad"
-              />
+            <FormInput
+              label="Maximum Participants"
+              value={editingPackage?.max_participants?.toString() || ""}
+              onChangeText={(text) =>
+                setEditingPackage((prev) => ({
+                  ...prev!,
+                  max_participants: text ? parseInt(text) : undefined,
+                }))
+              }
+              placeholder="No limit"
+              keyboardType="number-pad"
+            />
+
+            <View style={styles.formRow}>
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Minimum Age"
+                  value={editingPackage?.age_min?.toString() || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      age_min: text ? parseInt(text) : undefined,
+                    }))
+                  }
+                  placeholder="e.g., 8"
+                  keyboardType="number-pad"
+                />
+              </View>
+
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Maximum Age"
+                  value={editingPackage?.age_max?.toString() || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      age_max: text ? parseInt(text) : undefined,
+                    }))
+                  }
+                  placeholder="e.g., 12"
+                  keyboardType="number-pad"
+                />
+              </View>
             </View>
 
-            <View style={[styles.formGroup, styles.formGroupHalf]}>
-              <Text style={styles.label}>Maximum Age</Text>
-              <TextInput
-                {...inputProps}
-                style={styles.input}
-                value={editingPackage?.age_max?.toString() || ""}
-                onChangeText={(text) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    age_max: text ? parseInt(text) : undefined,
-                  }))
-                }
-                placeholder="e.g., 12"
-                keyboardType="number-pad"
-              />
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Schedule Note</Text>
-            <TextInput
-              {...inputProps}
-              style={styles.input}
+            <FormInput
+              label="Schedule Note"
               value={editingPackage?.schedule_note || ""}
               onChangeText={(text) =>
-                setEditingPackage((prev) => ({ ...prev!, schedule_note: text }))
+                setEditingPackage((prev) => ({
+                  ...prev!,
+                  schedule_note: text,
+                }))
               }
               placeholder="e.g., First Wednesday of month at 17:15"
             />
-          </View>
 
-          <View style={styles.formGroup}>
-            <View style={styles.switchRow}>
-              <Text style={styles.label}>Default Package</Text>
-              <Switch
-                value={editingPackage?.is_default || false}
-                onValueChange={(value) =>
-                  setEditingPackage((prev) => ({ ...prev!, is_default: value }))
-                }
-                trackColor={{
-                  false: "rgba(255,255,255,0.18)",
-                  true: theme.colors.accent,
-                }}
-                thumbColor={"#fff"}
-              />
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <View style={styles.switchRow}>
-              <Text style={styles.label}>
-                Request Only (not bookable online)
+            <View style={styles.sectionDivider}>
+              <Text style={[typography.h4, styles.sectionTitle]}>
+                Availability Configuration
               </Text>
-              <Switch
-                value={editingPackage?.request_only || false}
-                onValueChange={(value) =>
-                  setEditingPackage((prev) => ({
-                    ...prev!,
-                    request_only: value,
-                  }))
-                }
-                trackColor={{
-                  false: "rgba(255,255,255,0.18)",
-                  true: theme.colors.accent,
-                }}
-                thumbColor={"#fff"}
-              />
+              <Text style={styles.sectionHint}>
+                Configure when this package can be booked
+              </Text>
             </View>
-          </View>
 
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
-              onPress={handleSave}
-            >
-              <Text style={styles.buttonText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+            <View>
+              <Text
+                style={[typography.label, { marginBottom: theme.spacing.sm }]}
+              >
+                Days of Week{" "}
+                <Text style={{ color: theme.colors.danger }}>*</Text>
+              </Text>
+              <View style={styles.daysGrid}>
+                {[
+                  { value: 1, label: "Mon" },
+                  { value: 2, label: "Tue" },
+                  { value: 3, label: "Wed" },
+                  { value: 4, label: "Thu" },
+                  { value: 5, label: "Fri" },
+                  { value: 6, label: "Sat" },
+                  { value: 7, label: "Sun" },
+                ].map((day) => {
+                  const isSelected =
+                    editingPackage?.availability?.daysOfWeek.includes(
+                      day.value,
+                    );
+                  return (
+                    <TouchableOpacity
+                      key={day.value}
+                      style={[
+                        styles.dayButton,
+                        isSelected && styles.dayButtonSelected,
+                      ]}
+                      onPress={() => {
+                        setEditingPackage((prev) => {
+                          if (!prev) return prev;
+                          const currentDays =
+                            prev.availability?.daysOfWeek || [];
+                          const newDays = isSelected
+                            ? currentDays.filter((d) => d !== day.value)
+                            : [...currentDays, day.value].sort();
+                          return {
+                            ...prev,
+                            availability: {
+                              ...prev.availability!,
+                              daysOfWeek: newDays,
+                            },
+                          };
+                        });
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.dayButtonText,
+                          isSelected && styles.dayButtonTextSelected,
+                        ]}
+                      >
+                        {day.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Start Time *"
+                  value={editingPackage?.availability?.startTime || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      availability: {
+                        ...prev!.availability!,
+                        startTime: text,
+                      },
+                    }))
+                  }
+                  placeholder="10:00:00"
+                />
+              </View>
+
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="End Time *"
+                  value={editingPackage?.availability?.endTime || ""}
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      availability: {
+                        ...prev!.availability!,
+                        endTime: text,
+                      },
+                    }))
+                  }
+                  placeholder="22:00:00"
+                />
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Slot Duration (min) *"
+                  value={
+                    editingPackage?.availability?.slotDurationMinutes?.toString() ||
+                    ""
+                  }
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      availability: {
+                        ...prev!.availability!,
+                        slotDurationMinutes: text ? parseInt(text) : 30,
+                      },
+                    }))
+                  }
+                  placeholder="30"
+                  keyboardType="number-pad"
+                />
+              </View>
+
+              <View style={styles.formGroupHalf}>
+                <FormInput
+                  label="Capacity *"
+                  value={
+                    editingPackage?.availability?.capacity?.toString() || ""
+                  }
+                  onChangeText={(text) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      availability: {
+                        ...prev!.availability!,
+                        capacity: text ? parseInt(text) : 1,
+                      },
+                    }))
+                  }
+                  placeholder="12"
+                  keyboardType="number-pad"
+                />
+              </View>
+            </View>
+
+            <View>
+              <View style={styles.switchRow}>
+                <Text style={typography.label}>Availability Active</Text>
+                <Switch
+                  value={
+                    editingPackage?.availability?.status === "active" || false
+                  }
+                  onValueChange={(value) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      availability: {
+                        ...prev!.availability!,
+                        status: value ? "active" : "inactive",
+                      },
+                    }))
+                  }
+                  trackColor={{
+                    false: "rgba(255,255,255,0.18)",
+                    true: theme.colors.accent,
+                  }}
+                  thumbColor={"#fff"}
+                />
+              </View>
+              <Text style={styles.fieldHint}>
+                When active, customers can book this package during configured
+                times
+              </Text>
+            </View>
+
+            <View>
+              <View style={styles.switchRow}>
+                <Text style={typography.label}>Default Package</Text>
+                <Switch
+                  value={editingPackage?.is_default || false}
+                  onValueChange={(value) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      is_default: value,
+                    }))
+                  }
+                  trackColor={{
+                    false: "rgba(255,255,255,0.18)",
+                    true: theme.colors.accent,
+                  }}
+                  thumbColor={"#fff"}
+                />
+              </View>
+            </View>
+
+            <View>
+              <View style={styles.switchRow}>
+                <Text style={typography.label}>
+                  Request Only (not bookable online)
+                </Text>
+                <Switch
+                  value={editingPackage?.request_only || false}
+                  onValueChange={(value) =>
+                    setEditingPackage((prev) => ({
+                      ...prev!,
+                      request_only: value,
+                    }))
+                  }
+                  trackColor={{
+                    false: "rgba(255,255,255,0.18)",
+                    true: theme.colors.accent,
+                  }}
+                  thumbColor={"#fff"}
+                />
+              </View>
+            </View>
+          </ScrollView>
+        </View>
       </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { marginVertical: theme.spacing.lg },
+  container: {
+    marginVertical: theme.spacing.lg,
+  },
 
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    ...ui.rowBetween,
+    marginBottom: theme.spacing.md,
   },
-  headerText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: stylesVars.subText2,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+  headerButton: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    minWidth: 70,
   },
-
-  addButton: {
-    height: 34,
-    paddingHorizontal: 12,
-    borderRadius: 17,
-    backgroundColor: stylesVars.cardBg,
-    borderWidth: 1,
-    borderColor: stylesVars.border,
-    alignItems: "center",
-    justifyContent: "center",
+  headerTitle: {
+    flex: 1,
+    textAlign: "center" as const,
   },
-  addButtonText: { color: theme.colors.text, fontWeight: "900", fontSize: 13 },
 
   emptyText: {
-    color: stylesVars.subText2,
     textAlign: "center",
-    paddingVertical: 18,
-    fontWeight: "700",
+    paddingVertical: theme.spacing.lg,
   },
-  packagesList: { maxHeight: 420 },
+  packagesList: {
+    maxHeight: 420,
+  },
 
   packageCard: {
-    backgroundColor: stylesVars.cardBg,
-    padding: theme.spacing.md,
-    borderRadius: 18,
+    ...ui.card,
     marginBottom: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: stylesVars.border,
   },
 
   packageHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    ...ui.rowBetween,
     alignItems: "flex-start",
-    gap: 12,
+    gap: theme.spacing.md,
   },
-  packageInfo: { flex: 1, minWidth: 0 },
-
-  packageTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: theme.colors.text,
-    marginBottom: 4,
+  packageInfo: {
+    flex: 1,
+    minWidth: 0,
   },
-  defaultBadge: { color: theme.colors.accent, fontSize: 12, fontWeight: "900" },
 
-  packageCode: { fontSize: 12, color: stylesVars.subText2, fontWeight: "700" },
-  packageTrackType: {
+  defaultBadge: {
+    color: theme.colors.accent,
     fontSize: 12,
-    color: stylesVars.subText,
-    marginTop: 4,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 
   packageDescription: {
-    fontSize: 13,
-    color: theme.colors.text,
-    marginTop: 10,
-    fontWeight: "600",
+    marginTop: theme.spacing.sm,
   },
   packagePrice: {
-    fontSize: 13,
-    color: theme.colors.text,
-    marginTop: 8,
+    marginTop: theme.spacing.sm,
     fontWeight: "900",
   },
 
   packageActions: {
     flexDirection: "row",
-    gap: 6,
+    gap: theme.spacing.sm,
     flexWrap: "wrap",
     justifyContent: "flex-end",
     maxWidth: 180,
@@ -698,111 +873,125 @@ const styles = StyleSheet.create({
 
   actionButton: {
     height: 30,
-    paddingHorizontal: 10,
+    paddingHorizontal: theme.spacing.sm,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: stylesVars.border,
+    borderColor: theme.colors.divider,
     alignItems: "center",
     justifyContent: "center",
   },
-  actionButtonDisabled: { opacity: 0.4 },
+  actionButtonDisabled: {
+    opacity: 0.4,
+  },
   actionButtonText: {
-    color: theme.colors.text,
-    fontSize: 12,
+    ...typography.captionSmall,
     fontWeight: "900",
   },
 
   removeButton: {
     backgroundColor: theme.colors.danger,
-    borderColor: theme.colors.danger,
   },
-  removeButtonText: { color: "#fff", fontSize: 12, fontWeight: "900" },
 
-  modalContainer: {
+  modalHeaderBar: {
+    ...ui.rowBetween,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.bg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.divider,
+  },
+  modalScroll: {
     flex: 1,
     backgroundColor: theme.colors.bg,
+  },
+  modalScrollContent: {
     padding: theme.spacing.lg,
+    paddingBottom: 40,
   },
-  modalHeader: {
+
+  formRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-    paddingTop: theme.spacing.lg,
+    gap: theme.spacing.sm,
   },
-  modalTitle: { fontSize: 16, fontWeight: "900", color: theme.colors.text },
-  closeButton: { fontSize: 22, color: stylesVars.subText2, fontWeight: "900" },
-
-  formGroup: { marginBottom: 14 },
-  formRow: { flexDirection: "row", gap: 10 },
-  formGroupHalf: { flex: 1 },
-
-  label: {
-    fontSize: 12,
-    fontWeight: "900",
-    marginBottom: 8,
-    color: stylesVars.subText2,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
+  formGroupHalf: {
+    flex: 1,
   },
-  required: { color: theme.colors.danger, fontWeight: "900" },
-
-  input: {
-    borderWidth: 1,
-    borderColor: stylesVars.border,
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 15,
-    backgroundColor: stylesVars.inputBg,
-    color: theme.colors.text,
-  },
-  textArea: { minHeight: 90, textAlignVertical: "top" },
 
   switchRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
+    ...ui.rowBetween,
+    gap: theme.spacing.md,
   },
 
-  modalActions: {
+  trackTypeRow: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 16,
-    marginBottom: 30,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
   },
-  button: {
-    flex: 1,
-    height: 46,
-    borderRadius: 23,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cancelButton: { backgroundColor: "#2A2A2A" },
-  saveButton: { backgroundColor: theme.colors.accent },
-  buttonText: { color: "#fff", fontSize: 13, fontWeight: "900" },
-
-  trackTypeRow: { flexDirection: "row", gap: 10 },
   trackTypeOption: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.md,
     borderWidth: 1,
-    borderColor: stylesVars.border,
+    borderColor: theme.colors.divider,
     borderRadius: 999,
     alignItems: "center",
-    backgroundColor: stylesVars.inputBg,
+    backgroundColor: theme.colors.surface,
   },
   trackTypeOptionSelected: {
     backgroundColor: theme.colors.accent,
     borderColor: theme.colors.accent,
   },
-  trackTypeText: { fontSize: 13, fontWeight: "900", color: theme.colors.text },
-  trackTypeTextSelected: { color: "#0B0B0B" }, // ✅ readable on accent
+  trackTypeText: {
+    ...typography.caption,
+    fontWeight: "900",
+  },
+  trackTypeTextSelected: {
+    color: "#0B0B0B",
+  },
   fieldHint: {
-    fontSize: 12,
-    color: stylesVars.subText2,
-    marginTop: 8,
+    ...typography.captionSmall,
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+  },
+  sectionDivider: {
+    marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.divider,
+    paddingTop: theme.spacing.lg,
+  },
+  sectionTitle: {
+    marginBottom: theme.spacing.xs,
+  },
+  sectionHint: {
+    ...typography.captionSmall,
+    color: theme.colors.muted,
+  },
+  daysGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+  },
+  dayButton: {
+    width: 45,
+    height: 40,
+    borderWidth: 1,
+    borderColor: theme.colors.divider,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface,
+  },
+  dayButtonSelected: {
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accent,
+  },
+  dayButtonText: {
+    ...typography.caption,
+    fontWeight: "900",
+  },
+  dayButtonTextSelected: {
+    color: "#0B0B0B",
   },
 });

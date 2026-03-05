@@ -1,6 +1,6 @@
 import { theme } from "@/src/theme/theme";
 import { MaterialIcons } from "@expo/vector-icons";
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import {
   Animated,
   Dimensions,
@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useStoriesProgress } from "../../hooks/useStoriesProgress";
 import { GroupedCard } from "../store/slices/grouped-card-slice";
 
 const { width } = Dimensions.get("window");
@@ -20,37 +21,30 @@ interface SwipeCardProps {
 }
 
 export function SwipeCard({ card }: SwipeCardProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  // Use images array if available, otherwise fallback to thumbnailUrl
+  const images =
+    card.images && card.images.length > 0
+      ? card.images
+      : card.thumbnailUrl
+        ? [card.thumbnailUrl]
+        : [];
 
-  // For now, we only have one image (thumbnailUrl), but the structure supports multiple
-  const images = card.thumbnailUrl ? [card.thumbnailUrl] : [];
-
-  useEffect(() => {
-    if (images.length > 0) {
-      progressAnim.setValue(0);
-      Animated.timing(progressAnim, {
-        toValue: 1,
-        duration: 3000,
-        useNativeDriver: false,
-      }).start(({ finished }) => {
-        if (finished && currentImageIndex < images.length - 1) {
-          setCurrentImageIndex(currentImageIndex + 1);
-        }
-      });
-    }
-  }, [currentImageIndex, images.length]);
-
-  const handleImageTap = (side: "left" | "right") => {
-    if (side === "left" && currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
-    } else if (side === "right" && currentImageIndex < images.length - 1) {
-      setCurrentImageIndex(currentImageIndex + 1);
-    }
-  };
+  const {
+    index: currentImageIndex,
+    next,
+    prev,
+    pause,
+    resume,
+    progressWidthFor,
+    onPressIn,
+    onPressOut,
+    makeTapHandler,
+  } = useStoriesProgress({
+    length: images.length,
+    durationMs: 5000,
+  });
 
   const truncateToLines = (text: string, maxLines: number = 2) => {
-    // Rough estimate: ~40 chars per line for mobile
     const maxChars = maxLines * 40;
     if (text.length <= maxChars) return text;
     return text.substring(0, maxChars).trim() + "...";
@@ -73,12 +67,17 @@ export function SwipeCard({ card }: SwipeCardProps) {
             {/* Tap Areas */}
             <TouchableOpacity
               style={styles.tapLeft}
-              onPress={() => handleImageTap("left")}
+              onPress={makeTapHandler(prev)}
+              onPressIn={onPressIn}
+              onPressOut={onPressOut}
               activeOpacity={1}
             />
+
             <TouchableOpacity
               style={styles.tapRight}
-              onPress={() => handleImageTap("right")}
+              onPress={makeTapHandler(next)}
+              onPressIn={onPressIn}
+              onPressOut={onPressOut}
               activeOpacity={1}
             />
 
@@ -91,15 +90,7 @@ export function SwipeCard({ card }: SwipeCardProps) {
                       style={[
                         styles.progressBarFill,
                         {
-                          width:
-                            index < currentImageIndex
-                              ? "100%"
-                              : index === currentImageIndex
-                                ? progressAnim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: ["0%", "100%"],
-                                  })
-                                : "0%",
+                          width: progressWidthFor(index),
                         },
                       ]}
                     />

@@ -43,6 +43,9 @@ function PrimaryButton({ title, onPress, disabled }: { title: string; onPress: (
     );
 }
 
+/**
+ * Route screen for (auth)/register.
+ */
 export default function RegisterScreen() {
     const router = useRouter();
     const [email, setEmail] = useState("");

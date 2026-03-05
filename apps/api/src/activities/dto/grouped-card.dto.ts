@@ -7,6 +7,7 @@ export interface GroupedCardDto {
   city: string;
   locationSummary: string;
   thumbnailUrl?: string;
+  images?: string[]; // All activity image URLs
   priceFrom: number;
   tags: string[];
   activityCount: number;
