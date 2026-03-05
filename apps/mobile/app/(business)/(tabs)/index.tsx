@@ -72,7 +72,15 @@ export default function BusinessHomeScreen() {
       headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       headerLeft: () => (
         <View style={styles.headerLeft}>
-          <Avatar name={avatarName} logoAsset={(business as any)?.logoAsset} size={40} />
+          <Pressable
+            onPress={() => router.push("/(business)/settings/profile/logo")}
+          >
+            <Avatar
+              name={avatarName}
+              logoAsset={(business as any)?.logoAsset}
+              size={40}
+            />
+          </Pressable>
         </View>
       ),
       headerTitle: () => (

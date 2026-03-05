@@ -1,5 +1,4 @@
 import { Avatar } from "@/src/components/Avatar";
-import { IconButton } from "@/src/components/Button";
 import { EmptyState } from "@/src/components/EmptyState";
 import { useAuth } from "@/src/providers/auth-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -234,11 +233,11 @@ export default function DiscoveryListScreen() {
           </View>
         </View>
       ),
-      headerRight: () => (
-        <View style={styles.headerRight}>
-          <IconButton icon="more-horiz" size={22} onPress={() => {}} />
-        </View>
-      ),
+      // headerRight: () => (
+      //   <View style={styles.headerRight}>
+      //     <IconButton icon="more-horiz" size={22} onPress={() => {}} />
+      //   </View>
+      // ),
     });
   }, [navigation, appUser]);
 

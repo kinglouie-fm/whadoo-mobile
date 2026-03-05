@@ -1,5 +1,5 @@
 import { Avatar } from "@/src/components/Avatar";
-import { IconButton, PrimaryButton } from "@/src/components/Button";
+import { PrimaryButton } from "@/src/components/Button";
 import { EmptyState } from "@/src/components/EmptyState";
 import { SwipeCard } from "@/src/components/SwipeCard";
 import { useAuth } from "@/src/providers/auth-context";
@@ -76,15 +76,15 @@ export default function DiscoverySwipeScreen() {
           </View>
         </View>
       ),
-      headerRight: () => (
-        <View style={styles.headerRight}>
-          <IconButton
-            icon="more-horiz"
-            size={22}
-            onPress={() => {}}
-          />
-        </View>
-      ),
+      // headerRight: () => (
+      //   <View style={styles.headerRight}>
+      //     <IconButton
+      //       icon="more-horiz"
+      //       size={22}
+      //       onPress={() => {}}
+      //     />
+      //   </View>
+      // ),
     });
   }, [navigation, appUser]);
 

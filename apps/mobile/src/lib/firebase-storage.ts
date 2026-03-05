@@ -1,4 +1,4 @@
-import { getAuth } from "@react-native-firebase/auth";
+import { getAuth, getIdToken } from "@react-native-firebase/auth";
 import * as ImagePicker from "expo-image-picker";
 
 export interface UploadResult {
@@ -63,7 +63,7 @@ export async function uploadToStaging(
     throw new Error("User not authenticated");
   }
 
-  const token = await user.getIdToken();
+  const token = await getIdToken(user);
 
   const formData = new FormData();
 
