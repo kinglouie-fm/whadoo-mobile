@@ -38,6 +38,9 @@ function Row({
     );
 }
 
+/**
+ * Route screen for (consumer)/settings/account/index.
+ */
 export default function AccountScreen() {
     const { appUser } = useAuth();
     const router = useRouter();

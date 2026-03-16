@@ -37,12 +37,13 @@ export function ImageUploadButton({
       setUploading(true);
 
       // Upload to staging
-      const uploadResult = await uploadToStaging(image.uri, appUser!.firebaseUid);
+      const uploadResult = await uploadToStaging(image);
 
       // Finalize with backend
       await apiPost("/assets/finalize", {
         storageKey: uploadResult.storageKey,
-        contentType: "image/jpeg",
+        contentType: uploadResult.contentType,
+        sizeBytes: uploadResult.sizeBytes,
         width: image.width,
         height: image.height,
         context,

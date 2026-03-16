@@ -1,19 +1,15 @@
-import { getApp } from "@react-native-firebase/app";
-import {
-  getDownloadURL,
-  getStorage,
-  putFile,
-  ref,
-} from "@react-native-firebase/storage";
+import { getAuth, getIdToken } from "@react-native-firebase/auth";
 import * as ImagePicker from "expo-image-picker";
-import "react-native-get-random-values";
-import { v4 as uuidv4 } from "uuid";
 
 export interface UploadResult {
   storageKey: string;
-  downloadURL: string;
+  contentType: string;
+  sizeBytes: number;
 }
 
+/**
+ * Pick an image from the media library.
+ */
 export async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") {
@@ -31,6 +27,9 @@ export async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> 
   return result.assets[0];
 }
 
+/**
+ * Pick multiple images from the media library.
+ */
 export async function pickMultipleImages(): Promise<
   ImagePicker.ImagePickerAsset[]
 > {
@@ -50,20 +49,66 @@ export async function pickMultipleImages(): Promise<
   return result.assets;
 }
 
+/**
+ * Upload an image to the staging area.
+ */
 export async function uploadToStaging(
-  imageUri: string,
-  firebaseUid: string,
+  asset: ImagePicker.ImagePickerAsset,
 ): Promise<UploadResult> {
-  const filename = `${uuidv4()}.jpg`;
-  const storageKey = `staging/${firebaseUid}/${filename}`;
+  const API_URL = process.env.EXPO_PUBLIC_API_URL!;
 
-  const app = getApp();
-  const storage = getStorage(app);
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
 
-  const storageRef = ref(storage, storageKey);
+  const token = await getIdToken(user);
 
-  await putFile(storageRef, imageUri);
-  const downloadURL = await getDownloadURL(storageRef);
+  const formData = new FormData();
 
-  return { storageKey, downloadURL };
+  const mimeType = asset.mimeType || "image/jpeg";
+  const ext = mimeType.split("/")[1]?.split("+")[0] || "jpg";
+
+  formData.append("image", {
+    uri: asset.uri,
+    name: asset.fileName || `upload.${ext}`,
+    type: mimeType,
+  } as any);
+
+  const response = await fetch(`${API_URL}/assets/upload`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let errorMessage = `Upload failed (${response.status})`;
+
+    try {
+      const errorData = await response.json();
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (errorData.error) {
+        const errorMap: Record<string, string> = {
+          INVALID_FILE_TYPE:
+            "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.",
+          FILE_TOO_LARGE: "File is too large. Maximum size is 10MB.",
+          MAX_IMAGES_REACHED: "Activity already has the maximum of 5 images.",
+          RATE_LIMIT_EXCEEDED:
+            "Too many uploads. Please wait before trying again.",
+        };
+        errorMessage = errorMap[errorData.error] || errorData.error;
+      }
+    } catch {
+      const text = await response.text();
+      if (text) errorMessage = text;
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  return await response.json();
 }

@@ -1,5 +1,5 @@
 import { Avatar } from "@/src/components/Avatar";
-import { IconButton, PrimaryButton } from "@/src/components/Button";
+import { PrimaryButton } from "@/src/components/Button";
 import { EmptyState } from "@/src/components/EmptyState";
 import { SwipeCard } from "@/src/components/SwipeCard";
 import { useAuth } from "@/src/providers/auth-context";
@@ -23,6 +23,9 @@ import Swiper from "react-native-deck-swiper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+/**
+ * Route screen for (consumer)/(tabs)/index.
+ */
 export default function DiscoverySwipeScreen() {
   const router = useRouter();
   const navigation = useNavigation();
@@ -73,15 +76,15 @@ export default function DiscoverySwipeScreen() {
           </View>
         </View>
       ),
-      headerRight: () => (
-        <View style={styles.headerRight}>
-          <IconButton
-            icon="more-horiz"
-            size={22}
-            onPress={() => {}}
-          />
-        </View>
-      ),
+      // headerRight: () => (
+      //   <View style={styles.headerRight}>
+      //     <IconButton
+      //       icon="more-horiz"
+      //       size={22}
+      //       onPress={() => {}}
+      //     />
+      //   </View>
+      // ),
     });
   }, [navigation, appUser]);
 
@@ -139,7 +142,10 @@ export default function DiscoverySwipeScreen() {
       // Navigate to detail screen
       router.push({
         pathname: "/(consumer)/booking-options",
-        params: { catalogGroupId: card.catalogGroupId },
+        params: { 
+          catalogGroupId: card.catalogGroupId,
+          businessId: card.businessId,
+        },
       });
     }
     dispatch(advanceCard());
@@ -161,7 +167,10 @@ export default function DiscoverySwipeScreen() {
       // Navigate to detail screen
       router.push({
         pathname: "/(consumer)/activity-detail",
-        params: { catalogGroupId: card.catalogGroupId },
+        params: { 
+          catalogGroupId: card.catalogGroupId,
+          businessId: card.businessId,
+        },
       });
     }
     dispatch(advanceCard());

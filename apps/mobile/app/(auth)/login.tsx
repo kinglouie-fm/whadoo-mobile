@@ -10,6 +10,9 @@ import React, { useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import { StyleSheet } from "react-native";
 
+/**
+ * Route screen for (auth)/login.
+ */
 export default function LoginScreen() {
     const router = useRouter();
 

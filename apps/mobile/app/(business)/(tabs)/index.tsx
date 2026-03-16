@@ -26,6 +26,9 @@ import {
   View,
 } from "react-native";
 
+/**
+ * Route screen for (business)/(tabs)/index.
+ */
 export default function BusinessHomeScreen() {
   const router = useRouter();
   const navigation = useNavigation();
@@ -69,7 +72,15 @@ export default function BusinessHomeScreen() {
       headerStyle: { backgroundColor: theme.colors.bg, height: 120 },
       headerLeft: () => (
         <View style={styles.headerLeft}>
-          <Avatar name={avatarName} logoAsset={(business as any)?.logoAsset} size={40} />
+          <Pressable
+            onPress={() => router.push("/(business)/settings/profile/logo")}
+          >
+            <Avatar
+              name={avatarName}
+              logoAsset={(business as any)?.logoAsset}
+              size={40}
+            />
+          </Pressable>
         </View>
       ),
       headerTitle: () => (
@@ -151,13 +162,6 @@ export default function BusinessHomeScreen() {
             subtitle="See upcoming bookings & cancellations"
             icon="list"
             onPress={() => router.push("/(business)/bookings")}
-          />
-
-          <ActionTile
-            title="Manage availability"
-            subtitle="Opening hours, slot duration, templates"
-            icon="timeline"
-            onPress={() => router.push("/(business)/(tabs)/availability")}
           />
 
           <ActionTile

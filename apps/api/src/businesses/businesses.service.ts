@@ -3,6 +3,9 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateBusinessDto } from "./dto/create-business.dto";
 import { UpdateBusinessDto } from "./dto/update-business.dto";
 
+/**
+ * Business profile persistence and ownership-scoped mutation helpers.
+ */
 @Injectable()
 export class BusinessesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -28,6 +31,9 @@ export class BusinessesService {
     updatedAt: true,
   };
 
+  /**
+   * Returns the first business owned by the given user id.
+   */
   async getMyBusiness(ownerUserId: string) {
     const business = await this.prisma.business.findFirst({
       where: { ownerUserId },
@@ -42,6 +48,9 @@ export class BusinessesService {
    * - If user already has a business, return it.
    * - Otherwise create it.
    * - Also promote user role to "business".
+   */
+  /**
+   * Creates a business for the owner if missing and promotes role to `business`.
    */
   async createMyBusiness(ownerUserId: string, dto: CreateBusinessDto) {
     return this.prisma.$transaction(async (tx) => {
@@ -66,7 +75,7 @@ export class BusinessesService {
         select: this.businessSelect,
       });
 
-      // Promote role for MVP (so RouteGuard routes into business tabs)
+      // Role promotion is part of onboarding side effects for business creation.
       await tx.user.update({
         where: { id: ownerUserId },
         data: { role: "business" },
@@ -76,6 +85,9 @@ export class BusinessesService {
     });
   }
 
+  /**
+   * Updates the authenticated user's own business profile.
+   */
   async updateMyBusiness(ownerUserId: string, dto: UpdateBusinessDto) {
     const existing = await this.prisma.business.findFirst({
       where: { ownerUserId },
@@ -86,7 +98,7 @@ export class BusinessesService {
       throw new ForbiddenException("Business not found. Create a business first.");
     }
 
-    // Map 'location' to 'address' if provided
+    // Accept legacy `location` input and map it to canonical `address`.
     const addressValue = dto.location !== undefined ? dto.location : dto.address;
 
     return this.prisma.business.update({
@@ -104,6 +116,9 @@ export class BusinessesService {
     });
   }
 
+  /**
+   * Updates a business by id after explicit ownership verification.
+   */
   async updateBusiness(ownerUserId: string, businessId: string, dto: UpdateBusinessDto) {
     const existing = await this.prisma.business.findUnique({
       where: { id: businessId },
@@ -119,7 +134,7 @@ export class BusinessesService {
       throw new ForbiddenException("You do not own this business.");
     }
 
-    // Map 'location' to 'address' if provided
+    // Accept legacy `location` input and map it to canonical `address`.
     const addressValue = dto.location !== undefined ? dto.location : dto.address;
 
     return this.prisma.business.update({

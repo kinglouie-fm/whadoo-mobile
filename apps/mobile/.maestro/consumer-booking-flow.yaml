@@ -1,0 +1,73 @@
+appId: com.kinglouie-fm.whadoo
+---
+# Consumer Journey: Complete booking flow (assumes user is logged in)
+- launchApp
+- assertVisible: "Your Location"
+
+# Swipe to view activity details
+- swipe:
+    start: 50%,56%
+    end: 48%,12%
+    duration: 1267
+
+# Timeout
+- assertVisible: "Information"
+
+# Start booking process
+- tapOn:
+    point: 48%,94%
+
+- assertVisible: "Booking Options"
+
+# Select Package
+- swipe:
+    start: 55%,47%
+    end: 55%,11%
+    duration: 966
+
+# Select participants
+- tapOn:
+    point: 70%,69%
+
+# Swipe to click on date and time button
+- swipe:
+    start: 50%,77%
+    end: 50%,47%
+    duration: 600
+- tapOn:
+    point: 51%,92%
+
+- assertVisible: "Select Date & Time"
+
+# Go to next month
+- tapOn:
+    point: 87%,30%
+
+# Select first day of the month
+- tapOn:
+    point: 51%,38%
+
+# Select first time slot
+- tapOn:
+    point: 20%,72%
+
+# Swipe to click on continue to overview button
+- swipe:
+    start: 46%,67%
+    end: 47%,21%
+    duration: 933
+
+- assertVisible: "Continue to Overview"
+
+# Click on continue to overview button
+- tapOn:
+    point: 49%,93%
+
+- assertVisible: "Booking Details"
+
+# Click on confirm booking button
+- tapOn:
+    point: 52%,94%
+
+# Verify booking confirmation message
+- assertVisible: "My Bookings"

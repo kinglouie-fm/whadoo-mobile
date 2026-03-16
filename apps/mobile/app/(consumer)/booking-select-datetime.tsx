@@ -9,11 +9,11 @@ import { ui } from "@/src/theme/ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,6 +27,9 @@ interface TimeSlot {
   remainingCapacity: number;
 }
 
+/**
+ * Route screen for (consumer)/booking-select-datetime.
+ */
 export default function BookingSelectDateTimeScreen() {
   const router = useRouter();
   const { activityId, participantsCount, packageName, packageCode } =
@@ -45,12 +48,12 @@ export default function BookingSelectDateTimeScreen() {
   const today = new Date().toISOString().split("T")[0];
 
   const fetchAvailability = async (date: string) => {
-    if (!activityId || !participantsCount) return;
+    if (!activityId || !participantsCount || !packageCode) return;
 
     setLoading(true);
     try {
       const response = await apiGet<{ slots: any[] }>(
-        `/availability?activityId=${activityId}&date=${date}&partySize=${participantsCount}`,
+        `/availability?activityId=${activityId}&packageCode=${packageCode}&date=${date}&partySize=${participantsCount}`,
       );
 
       // Map backend response to TimeSlot format
@@ -154,7 +157,9 @@ export default function BookingSelectDateTimeScreen() {
 
         {/* Calendar */}
         <View style={[ui.section, styles.sectionContent]}>
-          <Text style={[typography.h3, styles.sectionTitle]}>Select a Date</Text>
+          <Text style={[typography.h3, styles.sectionTitle]}>
+            Select a Date
+          </Text>
           <Calendar
             minDate={today}
             onDayPress={handleDateSelect}
@@ -195,7 +200,10 @@ export default function BookingSelectDateTimeScreen() {
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color={theme.colors.accent} />
                 <Text
-                  style={[typography.bodyMuted, { marginTop: theme.spacing.sm }]}
+                  style={[
+                    typography.bodyMuted,
+                    { marginTop: theme.spacing.sm },
+                  ]}
                 >
                   Loading available times...
                 </Text>

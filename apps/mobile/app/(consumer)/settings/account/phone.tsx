@@ -9,6 +9,9 @@ import React, { useEffect, useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+/**
+ * Route screen for (consumer)/settings/account/phone.
+ */
 export default function EditPhoneScreen() {
   const { appUser, refreshMe } = useAuth();
   const [value, setValue] = useState("");

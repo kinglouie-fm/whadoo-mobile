@@ -11,6 +11,9 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+/**
+ * Route screen for (business)/settings/account/email.
+ */
 export default function EmailScreen() {
     const { refreshMe } = useAuth();
 

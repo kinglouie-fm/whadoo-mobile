@@ -1,8 +1,5 @@
 import { SecondaryButton, DangerButton, IconButton } from "./Button";
-import {
-  pickMultipleImages,
-  uploadToStaging,
-} from "@/src/lib/firebase-storage";
+import { pickMultipleImages } from "@/src/lib/firebase-storage";
 import { useAuth } from "@/src/providers/auth-context";
 import { apiPost, apiDelete } from "@/src/lib/api";
 import React, { useState } from "react";
@@ -32,6 +29,8 @@ interface PendingImage {
   uri: string;
   width: number;
   height: number;
+  mimeType?: string;
+  fileName?: string | null;
 }
 
 interface MultiImageUploadProps {
@@ -82,6 +81,8 @@ export function MultiImageUpload({
         uri: img.uri,
         width: img.width || 900,
         height: img.height || 900,
+        mimeType: img.mimeType,
+        fileName: img.fileName,
       }));
 
       onPendingImagesChange([...pendingImages, ...newPendingImages]);

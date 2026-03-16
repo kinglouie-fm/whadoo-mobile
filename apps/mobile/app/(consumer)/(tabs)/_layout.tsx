@@ -3,6 +3,9 @@ import { theme } from "@/src/theme/theme";
 import { Tabs } from "expo-router";
 import React from "react";
 
+/**
+ * Defines layout and navigation for (consumer)/(tabs)/_layout routes.
+ */
 export default function ConsumerTabsLayout() {
   return (
     <Tabs
@@ -18,6 +21,7 @@ export default function ConsumerTabsLayout() {
       }}
     >
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="discover" />
       <Tabs.Screen name="saved" />
       <Tabs.Screen name="bookings" />
       <Tabs.Screen name="profile" />

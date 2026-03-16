@@ -7,6 +7,9 @@ import React, { useState } from "react";
 import { Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+/**
+ * Route screen for (consumer)/settings/account/other.
+ */
 export default function OtherScreen() {
     const { signOut, role } = useAuth();
     const [busy, setBusy] = useState(false);

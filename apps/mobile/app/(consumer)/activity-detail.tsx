@@ -16,7 +16,7 @@ import { theme } from "@/src/theme/theme";
 import { typography } from "@/src/theme/typography";
 import { ui } from "@/src/theme/ui";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -30,15 +30,20 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { useStoriesProgress } from "../../hooks/useStoriesProgress";
 
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = 400;
 
+/**
+ * Route screen for (consumer)/activity-detail.
+ */
 export default function ActivityDetailScreen() {
   const router = useRouter();
-  const { activityId, catalogGroupId } = useLocalSearchParams<{
+  const { activityId, catalogGroupId, businessId } = useLocalSearchParams<{
     activityId?: string;
     catalogGroupId?: string;
+    businessId?: string;
   }>();
   const dispatch = useAppDispatch();
   const { currentActivity, currentGroup, loading } = useAppSelector(
@@ -46,9 +51,7 @@ export default function ActivityDetailScreen() {
   );
   const savedItems = useAppSelector((state) => state.savedActivities.items);
 
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
-  const progressAnims = useRef<Animated.Value[]>([]).current;
 
   const displayData =
     currentGroup ||
@@ -74,35 +77,25 @@ export default function ActivityDetailScreen() {
         ? displayData.businessImages
         : [];
 
-  useEffect(() => {
-    if (images.length > 0) {
-      progressAnims.length = images.length;
-      for (let i = 0; i < images.length; i++) {
-        if (!progressAnims[i]) {
-          progressAnims[i] = new Animated.Value(0);
-        }
-      }
-    }
-  }, [images.length]);
-
-  useEffect(() => {
-    if (images.length > 0 && progressAnims[currentImageIndex]) {
-      progressAnims[currentImageIndex].setValue(0);
-      Animated.timing(progressAnims[currentImageIndex], {
-        toValue: 1,
-        duration: 3000,
-        useNativeDriver: false,
-      }).start(({ finished }) => {
-        if (finished && currentImageIndex < images.length - 1) {
-          setCurrentImageIndex(currentImageIndex + 1);
-        }
-      });
-    }
-  }, [currentImageIndex, images.length]);
+  // Stories hook (loop + pause on hold + tap navigation)
+  const {
+    index: currentImageIndex,
+    next,
+    prev,
+    pause,
+    resume,
+    progressWidthFor,
+    onPressIn,
+    onPressOut,
+    makeTapHandler,
+  } = useStoriesProgress({
+    length: images.length,
+    durationMs: 3000,
+  });
 
   useEffect(() => {
     if (catalogGroupId) {
-      dispatch(fetchActivityGroup(catalogGroupId));
+      dispatch(fetchActivityGroup({ catalogGroupId, businessId }));
     } else if (activityId) {
       dispatch(fetchConsumerActivity(activityId));
     }
@@ -110,7 +103,7 @@ export default function ActivityDetailScreen() {
       dispatch(clearCurrentActivity());
       dispatch(clearCurrentGroup());
     };
-  }, [activityId, catalogGroupId]);
+  }, [activityId, catalogGroupId, businessId]);
 
   useEffect(() => {
     if (representativeActivityId) {
@@ -148,14 +141,6 @@ export default function ActivityDetailScreen() {
         text2: "Please try again",
         position: "bottom",
       });
-    }
-  };
-
-  const handleImageTap = (side: "left" | "right") => {
-    if (side === "left" && currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
-    } else if (side === "right" && currentImageIndex < images.length - 1) {
-      setCurrentImageIndex(currentImageIndex + 1);
     }
   };
 
@@ -213,42 +198,38 @@ export default function ActivityDetailScreen() {
                   style={styles.heroImage}
                   resizeMode="cover"
                 />
+
                 <TouchableOpacity
                   style={styles.tapLeft}
-                  onPress={() => handleImageTap("left")}
+                  onPress={makeTapHandler(prev)}
+                  onPressIn={onPressIn}
+                  onPressOut={onPressOut}
                   activeOpacity={1}
                 />
+
                 <TouchableOpacity
                   style={styles.tapRight}
-                  onPress={() => handleImageTap("right")}
+                  onPress={makeTapHandler(next)}
+                  onPressIn={onPressIn}
+                  onPressOut={onPressOut}
                   activeOpacity={1}
                 />
-              </View>
 
-              {images.length > 1 && (
-                <View style={styles.progressContainer}>
-                  {images.map((_, index) => (
-                    <View key={index} style={styles.progressBarBg}>
-                      <Animated.View
-                        style={[
-                          styles.progressBarFill,
-                          {
-                            width:
-                              index < currentImageIndex
-                                ? "100%"
-                                : index === currentImageIndex
-                                  ? progressAnims[index]?.interpolate({
-                                      inputRange: [0, 1],
-                                      outputRange: ["0%", "100%"],
-                                    })
-                                  : "0%",
-                          },
-                        ]}
-                      />
-                    </View>
-                  ))}
-                </View>
-              )}
+                {images.length > 1 && (
+                  <View style={styles.progressContainer}>
+                    {images.map((_, index) => (
+                      <View key={index} style={styles.progressBarBg}>
+                        <Animated.View
+                          style={[
+                            styles.progressBarFill,
+                            { width: progressWidthFor(index) },
+                          ]}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
             </>
           ) : (
             <View style={styles.placeholderImage}>
@@ -295,29 +276,6 @@ export default function ActivityDetailScreen() {
               <Text style={typography.price}>€{lowestPrice.toFixed(2)}</Text>
             </View>
           )}
-          {/* 
-          {images.length > 0 && (
-            <View style={styles.section}>
-              <Text style={[typography.h4, { marginBottom: theme.spacing.md }]}>
-                Photos
-              </Text>
-              <View style={styles.photosGrid}>
-                {images.map((uri: string, index: number) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.photoCard}
-                    onPress={() => setCurrentImageIndex(index)}
-                  >
-                    <Image
-                      source={{ uri }}
-                      style={styles.photoThumbnail}
-                      resizeMode="cover"
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )} */}
         </View>
       </ScrollView>
 
@@ -325,10 +283,10 @@ export default function ActivityDetailScreen() {
         <PrimaryButton
           title="Book"
           onPress={() => {
-            if (catalogGroupId) {
+            if (catalogGroupId && businessId) {
               router.push({
                 pathname: "/(consumer)/booking-options",
-                params: { catalogGroupId },
+                params: { catalogGroupId, businessId },
               });
             } else if (representativeActivityId) {
               router.push({

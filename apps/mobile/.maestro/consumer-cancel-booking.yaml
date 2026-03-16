@@ -1,0 +1,41 @@
+appId: com.kinglouie-fm.whadoo
+---
+# Consumer Journey: Cancel Booking flow (assumes user is logged in)
+- launchApp
+- assertVisible: "Your Location"
+
+# Navigate to my bookings
+- tapOn:
+    point: 61%,91%
+- assertVisible: "My Bookings"
+
+# Filter bookings by status. Open filter menu
+- tapOn:
+    point: 91%,10%
+
+# Select active status
+- tapOn:
+    point: 17%,85%
+- assertVisible: "My Bookings"
+
+# Select a booking
+- tapOn:
+    point: 61%,32%
+- assertVisible: "Booking Details"
+
+# Swipe to see cancel button
+- swipe:
+    start: 52%,57%
+    end: 54%,22%
+    duration: 817
+- assertVisible: "Cancel Booking"
+
+# Click on cancel booking button
+- tapOn:
+    point: 51%,94%
+- assertVisible: "Yes, Cancel"
+
+# Verify booking cancellation message
+- tapOn:
+    point: 68%,57%
+- assertVisible: "My Bookings"

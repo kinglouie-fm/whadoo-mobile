@@ -59,9 +59,5 @@ export class UpdateActivityDto {
   catalogGroupKind?: string;
 
   @IsOptional()
-  @IsString()
-  availabilityTemplateId?: string;
-
-  @IsOptional()
   images?: CreateActivityImageDto[];
 }

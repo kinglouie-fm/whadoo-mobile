@@ -9,6 +9,9 @@ import React, { useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { StyleSheet } from "react-native";
 
+/**
+ * Route screen for (auth)/index.
+ */
 export default function AuthHomeScreen() {
     const router = useRouter();
     const [busy, setBusy] = useState(false);

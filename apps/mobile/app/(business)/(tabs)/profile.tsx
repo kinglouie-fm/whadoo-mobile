@@ -58,6 +58,9 @@ function Row({
   );
 }
 
+/**
+ * Route screen for (business)/(tabs)/profile.
+ */
 export default function BusinessProfileHome() {
   const { signOut } = useAuth();
   const { business } = useBusiness();
@@ -81,15 +84,21 @@ export default function BusinessProfileHome() {
   return (
     <SafeAreaView style={ui.container} edges={["top"]}>
       <View style={styles.content}>
-        <Card style={styles.profileCard}>
-          <Avatar name={name} logoAsset={(business as any)?.logoAsset} />
-          <View style={{ flex: 1 }}>
-            <Text style={typography.h4}>{name}</Text>
-            <Text style={[typography.captionMuted, styles.subtitle]}>
-              Business
-            </Text>
-          </View>
-        </Card>
+        <Pressable onPress={() => router.push("/(business)/settings/profile")}>
+          <Card style={styles.profileCard}>
+            <Pressable
+              onPress={() => router.push("/(business)/settings/profile/logo")}
+            >
+              <Avatar name={name} logoAsset={(business as any)?.logoAsset} />
+            </Pressable>
+            <View style={{ flex: 1 }}>
+              <Text style={typography.h4}>{name}</Text>
+              <Text style={[typography.captionMuted, styles.subtitle]}>
+                Business
+              </Text>
+            </View>
+          </Card>
+        </Pressable>
 
         <View style={styles.menuSection}>
           <Row
@@ -97,12 +106,6 @@ export default function BusinessProfileHome() {
             title="Manage activities"
             subtitle="Create, edit, publish activities"
             onPress={() => router.push("/(business)/(tabs)/activities")}
-          />
-          <Row
-            icon="timeline"
-            title="Manage availabilities"
-            subtitle="Availability templates"
-            onPress={() => router.push("/(business)/(tabs)/availability")}
           />
           <Row
             icon="settings"
@@ -117,12 +120,24 @@ export default function BusinessProfileHome() {
           title="Log out"
           subtitle="Log out the account"
           danger
-          onPress={async () => {
-            try {
-              await signOut();
-            } catch (e: any) {
-              Alert.alert("Logout failed", e?.message ?? String(e));
-            }
+          onPress={() => {
+            Alert.alert("Log Out", "Are you sure you want to log out?", [
+              {
+                text: "Cancel",
+                style: "cancel",
+              },
+              {
+                text: "Log Out",
+                style: "destructive",
+                onPress: async () => {
+                  try {
+                    await signOut();
+                  } catch (e: any) {
+                    Alert.alert("Logout failed", e?.message ?? String(e));
+                  }
+                },
+              },
+            ]);
           }}
         />
       </View>

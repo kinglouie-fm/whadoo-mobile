@@ -41,6 +41,9 @@ import Toast from "react-native-toast-message";
 type FilterStatus = "all" | "draft" | "published" | "inactive";
 const FILTERS: FilterStatus[] = ["all", "draft", "published", "inactive"];
 
+/**
+ * Route screen for (business)/(tabs)/activities.
+ */
 export default function ActivitiesScreen() {
   const router = useRouter();
   const navigation = useNavigation();
@@ -73,9 +76,7 @@ export default function ActivitiesScreen() {
 
   const publishableIds = useMemo(
     () =>
-      selectedActivities
-        .filter((a) => a.status === "draft" && !!a.availabilityTemplateId)
-        .map((a) => a.id),
+      selectedActivities.filter((a) => a.status === "draft").map((a) => a.id),
     [selectedActivities],
   );
 
@@ -385,15 +386,13 @@ export default function ActivitiesScreen() {
       return { label: "Published", color: theme.colors.accent };
     if (item.status === "inactive")
       return { label: "Inactive", color: theme.colors.muted };
-    if (!item.availabilityTemplateId)
-      return { label: "Needs Template", color: theme.colors.danger };
     return { label: "Not Published", color: theme.colors.muted };
   };
 
   const openRowActions = (item: Activity) => {
     if (selectMode) return;
 
-    const canPublish = item.status === "draft" && !!item.availabilityTemplateId;
+    const canPublish = item.status === "draft";
 
     const buttons: any[] = [
       {
@@ -405,11 +404,11 @@ export default function ActivitiesScreen() {
 
     if (item.status === "draft") {
       buttons.push({
-        text: canPublish ? "Publish" : "Publish (needs template)",
+        text: canPublish ? "Publish" : "Publish",
         onPress: () =>
           canPublish
             ? handlePublish(item.id)
-            : handlePublishError({ code: "TEMPLATE_REQUIRED" }),
+            : handlePublishError({ code: "PUBLISH_REQUIRED" }),
       });
     }
 

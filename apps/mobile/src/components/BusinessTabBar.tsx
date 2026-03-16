@@ -11,8 +11,6 @@ function iconFor(routeName: string): keyof typeof MaterialIcons.glyphMap {
       return "home";
     case "activities":
       return "grid-view";
-    case "availability":
-      return "timeline";
     case "profile":
       return "person";
     default:
@@ -34,6 +32,7 @@ export function BusinessTabBar({
         paddingTop: 10,
         paddingBottom: insets.bottom + 10,
         backgroundColor: theme.colors.bg,
+        alignItems: "center",
       }}
     >
       <View
@@ -45,9 +44,9 @@ export function BusinessTabBar({
           borderColor: theme.colors.divider,
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: "center",
+          gap: 20,
           paddingHorizontal: 14,
-
           // light shadow (works iOS; Android uses elevation)
           shadowColor: "#000",
           shadowOpacity: 0.25,

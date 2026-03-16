@@ -37,6 +37,9 @@ function Row({
   );
 }
 
+/**
+ * Route screen for (business)/settings/profile/index.
+ */
 export default function BusinessProfileSettingsScreen() {
   const { business } = useBusiness();
   const router = useRouter();
