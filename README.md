@@ -2,7 +2,7 @@
 
 Activity booking platform with React Native mobile app and NestJS API backend. Login available through E-Mail or Google.
 
-## Quick Start (After Setup)
+## Quick Start (Check setup checklist too)
 
 ```bash
 pnpm db          # Start database
