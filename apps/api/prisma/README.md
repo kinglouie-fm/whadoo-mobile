@@ -45,7 +45,7 @@ This is the main seed script for development. It creates realistic test data.
 **Run from root directory:**
 
 ```bash
-npx tsx apps/api/prisma/multiple-business-and-seed-data.ts
+npx tsx prisma/multiple-business-and-seed-data.ts
 ```
 
 **What it creates:**

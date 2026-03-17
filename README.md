@@ -115,7 +115,7 @@ mkdir -p apps/api/.secrets
 # apps/api/.secrets/firebase-service-account.json
 ```
 
-**Important:** The `.secrets` directory is gitignored for security. Never commit Firebase credentials.
+**Important:** The `.secrets` directory is gitignored for security.
 
 #### Get Firebase Config File for iOS
 
@@ -127,7 +127,7 @@ mkdir -p apps/api/.secrets
    - App nickname: `whadoo` (or your preference)
    - Register the app
 4. Download `GoogleService-Info.plist`
-5. Save it to `apps/mobile/GoogleService-Info.plist`
+5. Save it to `apps/mobile/GoogleService-Info.plist` and `apps/mobile/ios/whadoo/GoogleService-Info.plist`
 
 **Note:** A template file `GoogleService-Info.plist.example` is provided for reference.
 
@@ -211,18 +211,6 @@ The default values in `apps/api/.env.example` should work for local development:
 
 **No changes needed unless you modified the database configuration.**
 
-#### API Test Environment
-
-```bash
-# Copy the test environment example
-cp apps/api/.env.test.example apps/api/.env.test
-```
-
-**IMPORTANT:** Edit `apps/api/.env.test` and update `GOOGLE_APPLICATION_CREDENTIALS`:
-
-- It MUST be an absolute path
-- Replace with your actual path: `/Users/yourname/path/to/whadoo/apps/api/.secrets/firebase-service-account.json`
-
 #### Mobile App Environment
 
 ```bash
@@ -268,7 +256,7 @@ The seed script creates 20 business owner accounts with sample data for testing.
 
 ```bash
 # From the root directory
-npx tsx apps/api/prisma/multiple-business-and-seed-data.ts
+npx tsx prisma/multiple-business-and-seed-data.ts
 ```
 
 **What this creates:**
@@ -282,7 +270,8 @@ npx tsx apps/api/prisma/multiple-business-and-seed-data.ts
 ### 7. Build Mobile App (First Time Only)
 
 ```bash
-# From root directory or apps/mobile directory
+# From apps/mobile directory
+# If you were inside apps/api: cd ../mobile
 npx expo run:ios
 ```
 

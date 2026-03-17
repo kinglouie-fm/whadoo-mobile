@@ -24,7 +24,7 @@ Use this checklist to ensure you've completed all setup steps correctly.
 - [ ] Saved service account as `apps/api/.secrets/firebase-service-account.json`
 - [ ] Registered iOS app in Firebase (Bundle ID: `com.kinglouie-fm.whadoo`)
 - [ ] Downloaded `GoogleService-Info.plist`
-- [ ] Saved `GoogleService-Info.plist` to `apps/mobile/`
+- [ ] Saved `GoogleService-Info.plist` to `apps/mobile/` and `apps/mobile/ios/whadoo/`
 - [ ] Set Firebase Storage rules (copied from README)
 
 ## Environment Variables Checklist
