@@ -2,20 +2,56 @@
 
 Activity booking platform with React Native mobile app and NestJS API backend. Login available through E-Mail or Google.
 
+## Quick Start (After Setup)
+
+```bash
+pnpm db          # Start database
+pnpm api         # Start backend (in new terminal)
+pnpm mobile:dev  # Start mobile app (in new terminal)
+# Press 'i' for iOS simulator
+```
+
+## Project Structure
+
+```
+/apps
+  /api      - NestJS backend API (port 3000)
+  /mobile   - React Native Expo app
+  /infra    - Docker Compose configuration
+  /coverage - Jest test coverage reports (auto-generated, gitignored)
+```
+
 ## Prerequisites
 
-- **Node.js** 18+ and **pnpm** 9+
+### Required Software
+
+- **Node.js** 20+ (check with `node --version`)
+- **pnpm** 10.28.1+ (install with `npm install -g pnpm`)
 - **Docker Desktop** (for PostgreSQL database)
-- **Xcode** (for iOS development, macOS only)
-- **Firebase Project** (for authentication)
+- **Xcode** 15.0+ (for iOS development, macOS only)
+  - Accept Xcode license: `sudo xcodebuild -license accept`
+  - iOS Simulator (comes with Xcode)
+  - CocoaPods (usually installed with Xcode)
+
+### Required Services
+
+- **Firebase Project** with Blaze (paid) plan
+  - Required for Firebase Authentication and Storage
+  - Free tier is NOT sufficient due to Storage requirements
 
 ## First-Time Setup
 
+Follow these steps in order. This only needs to be done once.
+
 ### 1. Install Dependencies
+
+From the root directory:
 
 ```bash
 pnpm install
 ```
+
+This installs dependencies for all workspace packages (API, mobile).
 
 ### 2. Setup Database
 
@@ -25,42 +61,80 @@ Start PostgreSQL with Docker:
 pnpm db
 ```
 
-**Database credentials:**
+This creates and starts a PostgreSQL container with the following credentials:
 
-- Host: `localhost:your-port`
-- Database: `your-database`
-- User: `your-user`
-- Password: `your-password`
+- Host: `localhost:5432`
+- Database: `whadoo_dev`
+- User: `whadoo`
+- Password: `whadoo_password`
 
-**Connect to database:**
+**Verify database is running:**
 
 ```bash
-# Using psql
+docker ps | grep whadoo_postgres
+```
+
+**Connect to database (optional):**
+
+```bash
+# Using psql inside the container
 docker exec -it whadoo_postgres psql -U whadoo -d whadoo_dev
 ```
 
 ### 3. Setup Firebase
 
-- Call the project whadoo-mobile
+**IMPORTANT:** You need a Firebase project with a **Blaze (paid) plan** for Firebase Storage to work.
+
+#### Create Firebase Project
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project
+3. Name it `whadoo-mobile` (or your preferred name)
+4. Enable Firebase Authentication:
+   - Go to **Authentication** → **Sign-in method**
+   - Enable **Email/Password** provider
+   - Enable **Google** provider
+5. Enable Firebase Storage:
+   - Go to **Storage** → **Get Started**
+   - Choose a location for your default bucket
+6. Upgrade to Blaze plan if not already on it
 
 #### Get Firebase Service Account
 
-1. Go to [Firebase Console](https://console.firebase.google.com/) → Your Project
-2. Navigate to **Project Settings** → **Service Accounts**
-3. Click **"Generate New Private Key"**
-4. Save as `apps/api/prisma/firebase-service-account.json`
+1. In Firebase Console → Navigate to **Project Settings** → **Service Accounts**
+2. Click **"Generate New Private Key"**
+3. Download the JSON file
 
-#### Get Firebase Config Files for Mobile
+**Save the service account file:**
+
+```bash
+# Create the .secrets directory in apps/api
+mkdir -p apps/api/.secrets
+
+# Move/copy the downloaded file to:
+# apps/api/.secrets/firebase-service-account.json
+```
+
+**Important:** The `.secrets` directory is gitignored for security. Never commit Firebase credentials.
+
+#### Get Firebase Config File for iOS
 
 1. In Firebase Console → **Project Settings** → **General**
 2. Scroll to **Your apps** section
-3. Download config files:
-   - **iOS**: Download `GoogleService-Info.plist` → Save to `apps/mobile/`
-   - **Android**: Download `google-services.json` → Save to `apps/mobile/`
+3. If you don't have an iOS app registered:
+   - Click **"Add app"** → Choose **iOS**
+   - Bundle ID: `com.kinglouie-fm.whadoo` (matches `apps/mobile/app.json`)
+   - App nickname: `whadoo` (or your preference)
+   - Register the app
+4. Download `GoogleService-Info.plist`
+5. Save it to `apps/mobile/GoogleService-Info.plist`
 
-#### Get Firebase Storage
+**Note:** A template file `GoogleService-Info.plist.example` is provided for reference.
 
-1. Set the rules
+#### Setup Firebase Storage Rules
+
+1. In Firebase Console → **Storage** → **Rules**
+2. Replace the default rules with the following:
 
 ```js
 rules_version = '2';
@@ -116,115 +190,227 @@ service firebase.storage {
 }
 ```
 
-### 4. Configure Environment
+3. Click **"Publish"** to save the rules
 
-Create `apps/api/.env`:
+### 4. Configure Environment Variables
 
-```bash
-PORT=3000
-DATABASE_URL="postgresql://..."
+Copy the example files and fill in your specific values:
 
-DEV_ADMIN_SECRET=...
-NODE_ENV=development
-GOOGLE_APPLICATION_CREDENTIALS="./.secrets/firebase-service-account.json"
-FIREBASE_SERVICE_ACCOUNT_PATH="./.secrets/firebase-service-account.json"
-```
-
-### 5. Add the following .env to apps/mobile when using Google Sign-In and Firebase Storage (from GoogleService-Info.plist)
+#### API Backend Environment
 
 ```bash
-EXPO_PUBLIC_API_URL=http://localhost:3000
-EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=<CLIENT_ID>
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=<STORAGE_BUCKET>
+# Copy the example file
+cp apps/api/.env.example apps/api/.env
 ```
 
-- Attention: You need a Blaze account for setting up Firebase Storage!
+The default values in `apps/api/.env.example` should work for local development:
 
-### 6. Run Database Migrations
+- `DATABASE_URL` is correct if you used the Docker setup
+- `DEV_ADMIN_SECRET` can stay as "admin" for development (used for admin endpoints)
+- Firebase paths are correct if you saved the file to `apps/api/.secrets/`
+
+**No changes needed unless you modified the database configuration.**
+
+#### API Test Environment
+
+```bash
+# Copy the test environment example
+cp apps/api/.env.test.example apps/api/.env.test
+```
+
+**IMPORTANT:** Edit `apps/api/.env.test` and update `GOOGLE_APPLICATION_CREDENTIALS`:
+
+- It MUST be an absolute path
+- Replace with your actual path: `/Users/yourname/path/to/whadoo/apps/api/.secrets/firebase-service-account.json`
+
+#### Mobile App Environment
+
+```bash
+# Copy the example file
+cp apps/mobile/.env.example apps/mobile/.env
+```
+
+Now edit `apps/mobile/.env` and update these values from your `GoogleService-Info.plist`:
+
+**To find the values:**
+
+1. Open `apps/mobile/GoogleService-Info.plist` in a text editor
+2. **EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID**:
+   - Find `<key>CLIENT_ID</key>`
+   - Copy the `<string>` value on the next line
+3. **EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET**:
+   - Find `<key>STORAGE_BUCKET</key>`
+   - Copy the `<string>` value (format: `your-project-id.appspot.com`)
+4. **EXPO_PUBLIC_API_URL**:
+   - Keep as `http://localhost:3000` for iOS simulator
+   - For physical iOS devices, use your machine's local IP: `http://192.168.1.XXX:3000`
+
+### 5. Run Database Migrations
 
 ```bash
 cd apps/api
 pnpm prisma migrate dev
 ```
 
-### 7. Seed Database
+This creates the database tables from the Prisma schema.
 
-See detailed seeding instructions in [`apps/api/prisma/README.md`](./apps/api/prisma/README.md)
-
-### 8. Build Mobile App (First Time Only)
+**Generate Prisma Client:**
 
 ```bash
-# iOS
+pnpm prisma generate
+```
+
+This generates the TypeScript types for database access.
+
+### 6. Seed Database (Optional but Recommended)
+
+The seed script creates 20 business owner accounts with sample data for testing.
+
+```bash
+# From the root directory
+npx tsx apps/api/prisma/multiple-business-and-seed-data.ts
+```
+
+**What this creates:**
+
+- 20 business owner accounts in Firebase Auth
+- 20 business profiles with activities in your database
+- Login credentials will be printed in the terminal
+
+**Note:** See detailed seeding instructions in [`apps/api/prisma/README.md`](./apps/api/prisma/README.md)
+
+### 7. Build Mobile App (First Time Only)
+
+```bash
+# From root directory or apps/mobile directory
 npx expo run:ios
 ```
 
-This creates the native builds with Firebase integration. Only needed once or when native dependencies change.
+**What this does:**
 
-## Running the App
+- Creates native iOS build folders
+- Installs CocoaPods dependencies
+- Integrates Firebase SDK
+- Opens the app in iOS Simulator
 
-### Start Database
+**Note:** This step takes 5-10 minutes on first run. You only need to run this:
+
+- Once during initial setup
+- When native dependencies change (rare)
+- When updating Firebase configuration
+
+### 8. Verify Setup
+
+Check that everything is working:
+
+```bash
+# Verify database is running
+docker ps | grep whadoo_postgres
+
+# Verify API can connect to database
+curl http://localhost:3000
+
+# Check environment variables are set
+cd apps/api && cat .env | grep -v PASSWORD
+```
+
+## Daily Development Workflow
+
+After initial setup, you only need these commands each time you work on the project:
+
+### Terminal 1: Start Database
 
 ```bash
 pnpm db
 ```
 
-### Start API Backend
+Wait for: `database system is ready to accept connections`
+
+### Terminal 2: Start API Backend
 
 ```bash
 pnpm api
 ```
 
-API runs at `http://localhost:3000`
+Wait for: `Nest application successfully started` at `http://localhost:3000`
 
-### Start Mobile App
+### Terminal 3: Start Mobile App
 
 ```bash
 pnpm mobile:dev
 ```
 
-Then press:
+Then press `i` for iOS simulator.
 
-- `i` for iOS simulator
+**Tip:** Keep these three terminals running while developing.
 
 ## Useful Commands
 
-### Database
+### Database Management
 
 ```bash
 pnpm db          # Start database
 pnpm db:stop     # Stop database
-pnpm db:down     # Stop and remove database
+pnpm db:down     # Stop and remove database (deletes all data!)
 pnpm db:logs     # View database logs
 ```
 
-### Prisma
+### Prisma Commands
 
 ```bash
 cd apps/api
-pnpm prisma studio              # Open Prisma Studio (database GUI)
-pnpm prisma migrate dev         # Create and apply migration
-pnpm prisma generate            # Regenerate Prisma Client
+
+pnpm prisma studio              # Open Prisma Studio (database GUI at localhost:5555)
+pnpm prisma migrate dev         # Create and apply new migration
+pnpm prisma generate            # Regenerate Prisma Client after schema changes
+pnpm prisma db push             # Push schema changes without creating migration
+pnpm prisma db seed             # Run seed scripts
 ```
 
-### Mobile
+### Mobile Development
 
 ```bash
-pnpm mobile:dev                 # Start with dev client
+pnpm mobile:dev                 # Start with dev client (recommended)
 pnpm mobile                     # Start Expo dev server
+npx expo start -c               # Start with cache cleared
+npx expo run:ios                # Rebuild native iOS app
 ```
 
-## Troubleshooting
+### Testing
 
-### Database connection issues
+- Refer to `apps/mobile/.maestro/README.md` for running the E2E tests.
 
-- Ensure Docker is running: `docker ps`
-- Check database logs: `pnpm db:logs`
+## Architecture Overview
 
-### Firebase authentication errors
+### API Structure
 
-- Verify `GOOGLE_APPLICATION_CREDENTIALS` is set
-- Check that `firebase-service-account.json` exists
+```
+apps/api/
+├── src/
+│   ├── modules/          # Feature modules (users, businesses, activities, etc.)
+│   ├── common/           # Shared utilities, guards, decorators
+│   ├── config/           # Configuration files
+│   └── main.ts           # Application entry point
+├── prisma/
+│   ├── schema.prisma     # Database schema
+│   ├── migrations/       # Database migrations
+│   └── *.ts              # Seed scripts
+└── test/                 # Test utilities and setup
+```
 
-### Mobile app won't start
+### Mobile Structure
 
-- Clear cache: `npx expo start -c`
+```
+apps/mobile/
+├── app/                  # Expo Router pages
+│   ├── (auth)/          # Authentication flow
+│   ├── (tabs)/          # Main app tabs
+│   └── _layout.tsx      # Root layout
+├── components/           # Reusable React components
+├── hooks/               # Custom React hooks
+├── src/
+│   ├── api/             # API client
+│   ├── store/           # Redux store
+│   └── types/           # TypeScript types
+└── assets/              # Images, fonts, etc.
+```
