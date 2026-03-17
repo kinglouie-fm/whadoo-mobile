@@ -37,19 +37,28 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# testing
+coverage/
+.nyc_output/
+
 app-example
 
 # generated native folders
 /ios
 /android
 
+# Firebase config files (contain sensitive keys)
 GoogleService-Info.plist
+google-services.json
+
+# iOS specific
 *.p8
 *.mobileprovision
 ios/Pods/
 ios/Podfile.lock
 
 .pnpm-store/
-docs/
 
-Setup.md
+# Documentation (if you want to keep docs/ private, otherwise remove this line)
+docs/
+ARCHITECTURE.md

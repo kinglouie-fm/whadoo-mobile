@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 
+	This is a template file. Replace with your actual GoogleService-Info.plist
+	
+	To get your actual file:
+	1. Go to Firebase Console: https://console.firebase.google.com/
+	2. Select your project
+	3. Navigate to Project Settings → General
+	4. Scroll to "Your apps" section
+	5. Click on your iOS app
+	6. Download GoogleService-Info.plist
+	7. Save it to this directory as "GoogleService-Info.plist" (without .example)
+	
+	IMPORTANT: The actual file is gitignored for security
+	-->
+	<key>CLIENT_ID</key>
+	<string>your_client_id_here</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>your_reversed_client_id_here</string>
+	<key>API_KEY</key>
+	<string>your_api_key_here</string>
+	<key>GCM_SENDER_ID</key>
+	<string>your_sender_id_here</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.kinglouie-fm.whadoo</string>
+	<key>PROJECT_ID</key>
+	<string>your_project_id_here</string>
+	<key>STORAGE_BUCKET</key>
+	<string>your_project_id.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>your_google_app_id_here</string>
+</dict>
+</plist>
