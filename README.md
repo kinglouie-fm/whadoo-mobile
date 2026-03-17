@@ -282,11 +282,12 @@ npx expo run:ios
 - Integrates Firebase SDK
 - Opens the app in iOS Simulator
 
-**Note:** This step takes 5-10 minutes on first run. You only need to run this:
+**Note:** This step takes a while. You only have to run this once. If you should encounter an error after the app opened, please try with:
 
-- Once during initial setup
-- When native dependencies change (rare)
-- When updating Firebase configuration
+```bash
+# From root
+pnpm mobile:dev
+```
 
 ### 8. Verify Setup
 
