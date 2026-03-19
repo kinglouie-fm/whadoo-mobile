@@ -2,23 +2,33 @@
 
 Activity booking platform with React Native mobile app and NestJS API backend. Login available through E-Mail or Google.
 
-## Quick Start (Check setup checklist too)
+The project uses Expo but runs as a native iOS app in the simulator via Xcode.
+
+## For Evaluation
+
+For evaluation, all required environment variables and Firebase configuration files are already included in the ZIP.
+
+The following files are already included in the correct locations:
+
+- `apps/api/.env`
+- `apps/mobile/.env`
+- `apps/api/.secrets/firebase-service-account.json`
+- `apps/mobile/GoogleService-Info.plist`
+- `apps/mobile/ios/whadoo/GoogleService-Info.plist`
+
+Thus, you can skip the Firebase setup completely, meaning you can skip steps 3 and 4.
+
+Also, the app is not submitted as an `.ipa` file. Instead, the complete source code and project files are provided, as permitted by the course instructor.
+
+## Quick Start
 
 ```bash
-pnpm db          # Start database
-pnpm api         # Start backend (in new terminal)
-pnpm mobile:dev  # Start mobile app (in new terminal)
+# Froom root
+pnpm install
+pnpm db # Start database (requires Docker Desktop running)
+pnpm api # Start backend (in new terminal)
+pnpm mobile:dev # Start mobile app (in new terminal)
 # Press 'i' for iOS simulator
-```
-
-## Project Structure
-
-```
-/apps
-  /api      - NestJS backend API (port 3000)
-  /mobile   - React Native Expo app
-  /infra    - Docker Compose configuration
-  /coverage - Jest test coverage reports (auto-generated, gitignored)
 ```
 
 ## Prerequisites
@@ -29,9 +39,6 @@ pnpm mobile:dev  # Start mobile app (in new terminal)
 - **pnpm** 10.28.1+ (install with `npm install -g pnpm`)
 - **Docker Desktop** (for PostgreSQL database)
 - **Xcode** 15.0+ (for iOS development, macOS only)
-  - Accept Xcode license: `sudo xcodebuild -license accept`
-  - iOS Simulator (comes with Xcode)
-  - CocoaPods (usually installed with Xcode)
 
 ### Required Services
 
@@ -39,7 +46,7 @@ pnpm mobile:dev  # Start mobile app (in new terminal)
   - Required for Firebase Authentication and Storage
   - Free tier is NOT sufficient due to Storage requirements
 
-## First-Time Setup
+## First-Time Setup (Check SETUP-CHECKLIST.md too)
 
 Follow these steps in order. This only needs to be done once.
 
@@ -67,6 +74,8 @@ This creates and starts a PostgreSQL container with the following credentials:
 - Database: `whadoo_dev`
 - User: `whadoo`
 - Password: `whadoo_password`
+
+If you'd like to change the credentials, you can do so inside `apps/infra/docker-compose.yaml`
 
 **Verify database is running:**
 
@@ -267,7 +276,9 @@ npx tsx prisma/multiple-business-and-seed-data.ts
 
 **Note:** See detailed seeding instructions in [`apps/api/prisma/README.md`](./apps/api/prisma/README.md)
 
-### 7. Build Mobile App (First Time Only)
+### 7. Run on iOS Simulator
+
+#### Option A: Build Mobile App (First Time Only)
 
 ```bash
 # From apps/mobile directory
@@ -289,6 +300,22 @@ npx expo run:ios
 pnpm mobile:dev
 ```
 
+#### Option B: Run directly in Xcode
+
+Open the iOS workspace in Xcode:
+
+```bash
+# apps/mobile/ios/whadoo.xcworkspace
+apps/mobile/ios/<AppName>.xcworkspace
+```
+
+If dependencies or pods are missing, run:
+
+```bash
+cd apps/mobile
+npx pod-install
+```
+
 ### 8. Verify Setup
 
 Check that everything is working:
@@ -304,7 +331,7 @@ curl http://localhost:3000
 cd apps/api && cat .env | grep -v PASSWORD
 ```
 
-## Daily Development Workflow
+## Daily development
 
 After initial setup, you only need these commands each time you work on the project:
 
@@ -369,38 +396,3 @@ npx expo run:ios                # Rebuild native iOS app
 ### Testing
 
 - Refer to `apps/mobile/.maestro/README.md` for running the E2E tests.
-
-## Architecture Overview
-
-### API Structure
-
-```
-apps/api/
-├── src/
-│   ├── modules/          # Feature modules (users, businesses, activities, etc.)
-│   ├── common/           # Shared utilities, guards, decorators
-│   ├── config/           # Configuration files
-│   └── main.ts           # Application entry point
-├── prisma/
-│   ├── schema.prisma     # Database schema
-│   ├── migrations/       # Database migrations
-│   └── *.ts              # Seed scripts
-└── test/                 # Test utilities and setup
-```
-
-### Mobile Structure
-
-```
-apps/mobile/
-├── app/                  # Expo Router pages
-│   ├── (auth)/          # Authentication flow
-│   ├── (tabs)/          # Main app tabs
-│   └── _layout.tsx      # Root layout
-├── components/           # Reusable React components
-├── hooks/               # Custom React hooks
-├── src/
-│   ├── api/             # API client
-│   ├── store/           # Redux store
-│   └── types/           # TypeScript types
-└── assets/              # Images, fonts, etc.
-```

@@ -42,7 +42,7 @@ DATABASE_URL="postgresql://whadoo:whadoo_password@localhost:5432/whadoo_dev?sche
 
 This is the main seed script for development. It creates realistic test data.
 
-**Run from root directory:**
+**Run from apps/api directory:**
 
 ```bash
 npx tsx prisma/multiple-business-and-seed-data.ts
