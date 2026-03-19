@@ -2,8 +2,6 @@
 
 Activity booking platform with React Native mobile app and NestJS API backend. Login available through E-Mail or Google.
 
-The project uses Expo but runs as a native iOS app in the simulator via Xcode.
-
 ## For Evaluation
 
 For evaluation, all required environment variables and Firebase configuration files are already included in the ZIP.
@@ -16,20 +14,9 @@ The following files are already included in the correct locations:
 - `apps/mobile/GoogleService-Info.plist`
 - `apps/mobile/ios/whadoo/GoogleService-Info.plist`
 
-Thus, you can skip the Firebase setup completely, meaning you can skip steps 3 and 4.
+**Important:** Thus, you can skip the Firebase setup completely, meaning you can skip steps 3 and 4.
 
 Also, the app is not submitted as an `.ipa` file. Instead, the complete source code and project files are provided, as permitted by the course instructor.
-
-## Quick Start
-
-```bash
-# Froom root
-pnpm install
-pnpm db # Start database (requires Docker Desktop running)
-pnpm api # Start backend (in new terminal)
-pnpm mobile:dev # Start mobile app (in new terminal)
-# Press 'i' for iOS simulator
-```
 
 ## Prerequisites
 
@@ -40,7 +27,7 @@ pnpm mobile:dev # Start mobile app (in new terminal)
 - **Docker Desktop** (for PostgreSQL database)
 - **Xcode** 15.0+ (for iOS development, macOS only)
 
-### Required Services
+### Required Services (only required if you want to set up the project from scratch)
 
 - **Firebase Project** with Blaze (paid) plan
   - Required for Firebase Authentication and Storage
@@ -62,7 +49,7 @@ This installs dependencies for all workspace packages (API, mobile).
 
 ### 2. Setup Database
 
-Start PostgreSQL with Docker:
+Start PostgreSQL with Docker from root directory:
 
 ```bash
 pnpm db
@@ -251,6 +238,11 @@ pnpm prisma migrate dev
 
 This creates the database tables from the Prisma schema.
 
+**Note:** When running `pnpm prisma migrate dev`, you may see a warning about a unique constraint.
+
+For a fresh setup, this is expected.  
+Please confirm with `yes` and enter any name (e.g. `init`).
+
 **Generate Prisma Client:**
 
 ```bash
@@ -264,7 +256,6 @@ This generates the TypeScript types for database access.
 The seed script creates 20 business owner accounts with sample data for testing.
 
 ```bash
-# From the root directory
 npx tsx prisma/multiple-business-and-seed-data.ts
 ```
 
@@ -276,14 +267,24 @@ npx tsx prisma/multiple-business-and-seed-data.ts
 
 **Note:** See detailed seeding instructions in [`apps/api/prisma/README.md`](./apps/api/prisma/README.md)
 
-### 7. Run on iOS Simulator
+### 7. Start api from root
+
+```bash
+# From root
+# cd ../..
+pnpm api
+```
+
+### 8. Run on iOS Simulator
 
 #### Option A: Build Mobile App (First Time Only)
 
+From `apps/mobile` directory, in a new terminal, run:
+
 ```bash
-# From apps/mobile directory
-# If you were inside apps/api: cd ../mobile
+cd apps/mobile
 npx expo run:ios
+# Press 'i' for iOS
 ```
 
 **What this does:**
@@ -298,16 +299,28 @@ npx expo run:ios
 ```bash
 # From root
 pnpm mobile:dev
+# Press 'i' for iOS
 ```
 
 #### Option B: Run directly in Xcode
 
+**Note:** Make sure the Expo/Metro bundler is already running in a separate terminal. Otherwise the app may show “No script URL provided”.
+
+Start the Expo/Metro bundler:
+
+```bash
+# From root
+pnpm mobile:dev
+```
+
 Open the iOS workspace in Xcode:
 
 ```bash
-# apps/mobile/ios/whadoo.xcworkspace
+# e.g. apps/mobile/ios/whadoo.xcworkspace
 apps/mobile/ios/<AppName>.xcworkspace
 ```
+
+Then, select a simulator (e.g. iPhone 17 Pro) and press the Run button.
 
 If dependencies or pods are missing, run:
 
